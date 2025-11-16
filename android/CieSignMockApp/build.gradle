@@ -1,0 +1,56 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "it.ipzs.ciesign.mock"
+    compileSdk = 34
+    ndkVersion = "26.2.11394342"
+
+    defaultConfig {
+        applicationId = "it.ipzs.ciesign.mock"
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables.useSupportLibrary = true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        buildConfig = false
+    }
+    packaging {
+        resources.pickFirsts += ["META-INF/*"]
+    }
+}
+
+dependencies {
+    implementation(project(":cieSignSdk"))
+    implementation("androidx.activity:activity-ktx:1.9.3")
+
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.1")
+
+    testImplementation("junit:junit:4.13.2")
+}

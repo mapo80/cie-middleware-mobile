@@ -61,7 +61,6 @@ long CTSAClient::GetTimeStampToken(UUCByteArray& digest, const char* szPolicyID,
 	UUCByteArray tsdata;
 	
 #ifdef __ANDROID__
-
 	long nRet = GetTSAResponse(m_szTSAUrl, m_szTSAUsername, m_szTSAPassword, tsaRequest, tsdata);
 	if(nRet != 0)
 		return nRet;
@@ -159,6 +158,18 @@ long CTSAClient::GetTimeStampToken(UUCByteArray& digest, const char* szPolicyID,
 
 	return 0;
 }
+
+#ifdef __ANDROID__
+long GetTSAResponse(char* /*szTsaURL*/,
+                    char* /*szTsaUsername*/,
+                    char* /*szTsaPassword*/,
+                    UUCByteArray& /*request*/,
+                    UUCByteArray& response)
+{
+    response.removeAll();
+    return -1;
+}
+#endif
 
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {

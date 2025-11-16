@@ -54,3 +54,5 @@ packages/**/*.rpm
 *.gz
 *.so
 libcie_sign_sdk.a
+cie_sign_sdk/.vcpkg/
+cie_sign_sdk/Dependencies-*/
