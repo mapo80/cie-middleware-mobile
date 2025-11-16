@@ -21,10 +21,13 @@ class MockSignInstrumentedTest {
 
         val sdk = CieSignSdk()
         val result = sdk.mockSignPdf(sampleBytes, outputFile)
+        val internalCopy = File(context.filesDir, "mock_signed_android.pdf")
+        internalCopy.outputStream().use { it.write(result) }
 
         val header = result.take(4).toByteArray().decodeToString()
         assertTrue("Result should be a PDF", header.startsWith("%PDF"))
         assertTrue("Signed PDF should contain signature dictionary", String(result).contains("/Type/Sig"))
         assertTrue("Signed PDF should be persisted on disk", outputFile.exists() && outputFile.length().toInt() == result.size)
+        assertTrue("Internal copy should exist", internalCopy.exists())
     }
 }
