@@ -1,78 +1,63 @@
-[![Join the #cie-middleware channel](https://img.shields.io/badge/Slack%20channel-%23cie--middleware-blue.svg?logo=slack)](https://developersitalia.slack.com/messages/C7FPGAG94)
-[![Get invited](https://slack.developers.italia.it/badge.svg)](https://slack.developers.italia.it/)
-[![CIE on forum.italia.it](https://img.shields.io/badge/Forum-CIE-blue.svg)](https://forum.italia.it/c/cie) [![Build Status](https://travis-ci.com/italia/cie-middleware-linux.svg?branch=master)](https://travis-ci.com/italia/cie-middleware-linux)
+# CIE Mobile Signing SDK
 
-CIE (Carta di Identità Elettronica) Linux middleware
+Questo repository contiene il lavoro di modernizzazione e porting mobile dello stack di firma per Carta d'Identità Elettronica (CIE). L'obiettivo è fornire un **SDK nativo comune** per iOS e Android, con API allineate e riusabili da un plugin Flutter. Di seguito una panoramica delle componenti principali e delle attività completate/da completare.
 
-#  CIE 3.0 PKCS11 MIDDLEWARE [![Build status](https://ci.appveyor.com/api/projects/status/dpc0ditjn04ylw6y?svg=true)](https://ci.appveyor.com/project/italia/cie-middleware)
+## Obiettivi principali
 
-## Disclaimer
+1. **Core C/C++ condiviso** – rifattorizzare `cie_sign_sdk` in una libreria portabile (`ciesign_core`) che implementa la firma PKCS#7/PDF e offre callback per NFC, storage e logging.
+2. **Bridge piattaforma** – fornire wrapper Kotlin (Android) e Swift (iOS) che espongono la stessa interfaccia (`CieSignSdk`), convertendo errori e modelli dati in strutture idiomatiche.
+3. **Plugin Flutter** – progettare un pacchetto `cie_sign_flutter` che usi MethodChannel/FFI per interagire con i bridge nativi e offra API Dart asincrone per la firma.
+4. **Test e automazione** – predisporre pipeline per buildare le dipendenze (vcpkg), compilare librerie native (AAR/XCFramework), eseguire test mock su emulatori/simulatori e produrre i PDF firmati da validare.
 
-This product is **beta software**. Use it in production at your own judgment.
+## Struttura del repository
 
-## Requirements
+```
+├── android/                  # Progetto Gradle con moduli "cieSignSdk" e "CieSignMockApp"
+├── ios/                      # Progetto Xcode per i test iOS
+├── cie_sign_sdk/             # Sorgenti C/C++ e script vcpkg
+├── sdk_unified_plan.md       # Piano architetturale per lo SDK unificato
+└── README.md                 # Questo documento
+```
 
-- running pcscd
-- cmake >=3.15
+### Modulo Android
+- `android/cieSignSdk`: contiene il codice JNI (`mock_sign_android.cpp`) più le classi Kotlin `CieSignSdk`/`NativeBridge`.
+- `android/CieSignMockApp`: host app di test con instrumentation `MockSignInstrumentedTest` che firma `sample.pdf` sia in memoria sia su disco. Il PDF prodotto è salvato in `android/mock_signed_android.pdf` per analisi.
 
-- pcsclite library (for SC communication )
-- ssl library
+### Modulo iOS
+- `ios/CieSignIosTests.xcodeproj`: progetto Xcode con target `CieSignIosTests` e host app `CieSignIosHost`. Il test Swift (`MockSignTests`) usa la stessa pipeline mock e produce il PDF `mock_signed_ios.pdf`.
 
-On Debian and derivatives the lib requirements can be installed with the
-packages `libpcsclite-dev libssl-dev`.
-Library versions as of Ubuntu 18.04 are reported to work.
+### Core native (`cie_sign_sdk/`)
+- `CMakeLists.txt` aggiornata per funzionare in ambienti cross (Android/iOS) e saltare i test quando richiesto (`CIE_SIGN_SDK_SKIP_TESTS`).
+- Script vcpkg:
+  - `scripts/bootstrap_vcpkg.sh`
+  - `scripts/build_dependencies.sh` (triplet desktop)
+  - `scripts/build_ios_dependencies.sh`
+  - `scripts/build_android_dependencies.sh`
+- Documentazione:
+  - `docs/build_mobile.md` – guida generale
+  - `docs/tests_ios.md` – istruzioni per XCTest
+  - `docs/tests_android.md` – istruzioni per AVD/test strumentali
 
+## Stato attuale
 
-The official building approach is using Eclipse, for historical reasons.
-Versions from 4.18 onward are working, this is due to JDT version being tied
-to the IDE's one.
-For a more up-to-date approach using gradle check the user fork mentioned in
-the comments at [1].
+- ✅ Aggiornamento PoDoFo/OpenSSL e supporto PDF signing mock.
+- ✅ Progetto iOS con test che verifica ByteRange e certificato mock.
+- ✅ Progetto Android con JNI, instrumentation test e PDF esportato.
+- ✅ Script per dipendenze iOS/Android e pipeline manuale di build (Gradle/Xcode).
+- 🔄 In corso: definizione interfaccia unificata e plugin Flutter (`sdk_unified_plan.md`).
 
+## Prossimi passi
 
-[1]: https://github.com/italia/cie-middleware-linux/issues/6
+1. Consolidare l’API C (`cie_sign_platform.h`) con hook NFC/log/storage e implementare versioni mock per i test automatici.
+2. Pubblicare wrapper Kotlin/Swift con interfacce identiche, includendo conversione degli errori, callback di stato e parametri di configurazione (policy, TSA, appearance).
+3. Realizzare il plugin Flutter (channel) e l’app di esempio, sfruttando i build artefacts prodotti dai moduli native.
+4. Automatizzare la CI (macOS host) per compilare, testare e allegare gli artefatti (PDF firmati) a ogni release/tag.
+5. Pianificare l’integrazione NFC reale (Android `NfcAdapter`, iOS `CoreNFC`) con inserimento del codice specifico tramite interfacce condivise.
 
+## Come contribuire
 
-## Build
+1. Assicurati di avere le dipendenze installate (vcpkg, Android SDK/NDK, Xcode).
+2. Segui le guide in `docs/` per buildare host/iOS/Android.
+3. Apri una PR con descrizione dettagliata, screenshot/log dei test e PDF generati. Ricordati di non committare directory generate (`cie_sign_sdk/.vcpkg`, `Dependencies-*`, `android/cieSignSdk/.cxx`).
 
-Build happens in three steps:
-
-1. build signing library `cie_sign_sdk` using cmake
-1. build C++ middleware project `cie-pkcs11` using Eclipse
-1. compile Java application `CIEID` using Eclipse
-
-
-### cie_sign_sdk
-
-This will build a static library and copy it into `cie-pkcs11/Sign`
-
-    cd cie_sign_sdk
-    cmake -B build/
-    cmake --build build/
-    cmake --install build/
-
-### cie-pkcs11
-
-Open the repository root directory with Eclipse, its auto-discovery tool should
-find at least two projects:
-
-- cie-pkcs11, a C++ project
-- CIEID, a Java project
-
-In *Project Explorer* view, select the project root, then select menu item
-`Project > Build project`.
-This should leave a `libcie-pkcs11.so` object in Debug (the default target).
-
-### CIEID
-
-These steps can be performed with or without Eclipse.
-
-If using Eclipse install the *JDT* plugin, switch to "Java" *perspective*,
-select CIEID in the *Package Explorer* view, add a Debug or Run configuration
-starting `it.ipzs.cieid.MainApplication` as main class.
-
-Add `-Djna.library.path=".:../Debug"` to VM arguments.
-
-When directly calling the JVM be sure to make the `libcie-pkcs11.so` available
-to JNA either using the `jna.library.path` property or installing the library
-in a path searched by default, e.g. `/usr/local/lib`.
+Grazie per contribuire allo sviluppo dello SDK CIE mobile!
