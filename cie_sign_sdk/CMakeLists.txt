@@ -1,20 +1,29 @@
 cmake_minimum_required(VERSION 3.15.3)
 
-set(DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/Dependencies CACHE PATH "Third-party dependency root")
-set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
-set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
-set(INSTALL_DIR ${CMAKE_SOURCE_DIR}/../cie-pkcs11/Sign)
+set(CIE_SIGN_SDK_ROOT ${CMAKE_CURRENT_LIST_DIR})
+set(DEPENDENCIES_DIR ${CIE_SIGN_SDK_ROOT}/Dependencies CACHE PATH "Third-party dependency root")
+set(SOURCE_DIR ${CIE_SIGN_SDK_ROOT}/src)
+set(INCLUDE_DIR ${CIE_SIGN_SDK_ROOT}/include)
+set(INSTALL_DIR ${CIE_SIGN_SDK_ROOT}/../cie-pkcs11/Sign)
 
-message("DEPENDENCIES_DIR: " ${CMAKE_SOURCE_DIR})
-message("SOURCE_DIR: " ${CMAKE_SOURCE_DIR})
-message("INCLUDE_DIR: " ${CMAKE_SOURCE_DIR})
+message("DEPENDENCIES_DIR: " ${DEPENDENCIES_DIR})
+message("SOURCE_DIR: " ${SOURCE_DIR})
+message("INCLUDE_DIR: " ${INCLUDE_DIR})
 
 project(cie_sign_sdk)
+
+if(NOT DEFINED CIE_SIGN_SDK_SKIP_TESTS)
+    set(CIE_SIGN_SDK_SKIP_TESTS OFF)
+endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+if(ANDROID)
+    add_compile_options(-Wno-format-security -Wno-mismatched-new-delete -Wno-tautological-constant-out-of-range-compare)
+endif()
 
 set(SRC_LIST
     ${SOURCE_DIR}/Base64.cpp
@@ -216,18 +225,20 @@ install(FILES ${INCLUDE_DIR}/disigonsdk.h ${INCLUDE_DIR}/CIEEngine.h DESTINATION
 install(TARGETS ciesign_core DESTINATION ${INSTALL_DIR})
 install(FILES ${INCLUDE_DIR}/mobile/cie_sign.h DESTINATION ${INSTALL_DIR}/mobile)
 
-enable_testing()
+if(NOT CIE_SIGN_SDK_SKIP_TESTS AND NOT ANDROID)
+    enable_testing()
 
-add_executable(mock_sign_test
-    tests/mock/mock_apdu_sequence.cpp
-    tests/mock/mock_transport.cpp
-    tests/mock/mock_sign_test.cpp
-)
-target_include_directories(mock_sign_test PRIVATE
-    ${INCLUDE_LIST}
-    ${INCLUDE_DIR}/mobile
-)
-target_link_libraries(mock_sign_test PRIVATE ciesign_core)
-target_compile_definitions(mock_sign_test PRIVATE CIE_SIGN_SDK_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+    add_executable(mock_sign_test
+        tests/mock/mock_apdu_sequence.cpp
+        tests/mock/mock_transport.cpp
+        tests/mock/mock_sign_test.cpp
+    )
+    target_include_directories(mock_sign_test PRIVATE
+        ${INCLUDE_LIST}
+        ${INCLUDE_DIR}/mobile
+    )
+    target_link_libraries(mock_sign_test PRIVATE ciesign_core)
+    target_compile_definitions(mock_sign_test PRIVATE CIE_SIGN_SDK_SOURCE_DIR="${CIE_SIGN_SDK_ROOT}")
 
-add_test(NAME mock_sign_test COMMAND mock_sign_test)
+    add_test(NAME mock_sign_test COMMAND mock_sign_test)
+endif()

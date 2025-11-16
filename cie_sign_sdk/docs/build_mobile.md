@@ -72,7 +72,17 @@ Questa guida descrive come preparare l’ambiente, costruire le dipendenze e com
 
    Tutte le librerie vengono salvate in `Dependencies-ios/...`. Durante la configurazione CMake passare `-DDEPENDENCIES_DIR=/path/to/Dependencies-ios` (oppure impostare `IOS_DEPENDENCIES_DIR` quando si lancia `scripts/build_ios.sh`).
 
-6. Lo script `build_dependencies.sh` ora copia anche le librerie ausiliarie richieste da PoDoFo/Freetype (brotli, libjpeg-turbo, libtiff, liblzma, utf8proc e libexpat) in `Dependencies/<pkg>`. Su macOS Apple Silicon è consigliato eseguire:
+6. Per i target mobili ci sono wrapper dedicati che delegano allo script principale mantenendo coerente la cartella di destinazione:
+
+   ```bash
+   # iOS
+   ./scripts/build_ios_dependencies.sh arm64-ios
+
+   # Android
+   ./scripts/build_android_dependencies.sh arm64-android
+   ```
+
+   Lo script `build_dependencies.sh` continua a copiare anche le librerie ausiliarie richieste da PoDoFo/Freetype (brotli, libjpeg-turbo, libtiff, liblzma, utf8proc e libexpat) in `Dependencies/<pkg>`. Su macOS Apple Silicon è consigliato eseguire:
    ```bash
    ./scripts/build_dependencies.sh arm64-osx
    ```
@@ -102,13 +112,24 @@ Questa guida descrive come preparare l’ambiente, costruire le dipendenze e com
 4. Per creare una `xcframework`, ripetere la build con `iphonesimulator` (modificando il toolchain o impostando `CMAKE_OSX_SYSROOT`) e poi combinare gli output con `xcodebuild -create-xcframework`.
 
 ## 7. Build per Android
-1. Impostare `ANDROID_NDK_ROOT` (es. `export ANDROID_NDK_ROOT=$HOME/Library/Android/sdk/ndk/25.2.9519653`).
-2. Eseguire:
+Il percorso aggiornato è basato su Gradle/NDK e si appoggia al progetto `android/`.
+
+1. Preparare l’SDK/NDK seguendo [`docs/tests_android.md`](tests_android.md) e popolare `Dependencies-arm64-android/` tramite:
    ```bash
-   ./scripts/build_android.sh
+   cd cie_sign_sdk
+   ./scripts/build_android_dependencies.sh arm64-android
    ```
-3. Il build produce `build/android/libciesign_core.a` pronto per essere inserito in un `.aar`.
-4. Per ABI multiple ripetere cambiando `ANDROID_ABI` (passare `-DANDROID_ABI=armeabi-v7a` ecc. modificando lo script o esportando `ANDROID_ABI`).
+2. Dal root del repository:
+   ```bash
+   cd android
+   ./gradlew :CieSignMockApp:assembleDebug
+   ```
+   Il task esegue l’`externalNativeBuild` e genera `android/cieSignSdk/build/intermediates/cxx/.../libciesign_mobile.so`.
+3. Per eseguire il test end-to-end e ottenere il PDF firmato:
+   ```bash
+   ./gradlew :CieSignMockApp:connectedDebugAndroidTest   # richiede un AVD ARM64
+   ```
+   Vedi [`docs/tests_android.md`](tests_android.md) per i dettagli sull’avvio dell’emulatore e sul recupero del file `mock_signed_android.pdf`.
 
 ## 8. Packaging suggerito
 1. **iOS**:

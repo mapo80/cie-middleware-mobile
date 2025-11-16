@@ -1,0 +1,15 @@
+plugins {
+    id("com.android.application") version "8.6.0" apply false
+    id("com.android.library") version "8.6.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+}
+
+tasks.register("printAndroidEnv") {
+    group = "help"
+    description = "Prints the Android toolchain paths used by the project."
+    doLast {
+        println("JAVA_HOME=${System.getenv("JAVA_HOME") ?: "not set"}")
+        println("ANDROID_SDK_ROOT=${System.getenv("ANDROID_SDK_ROOT") ?: "not set"}")
+        println("ANDROID_NDK_HOME=${System.getenv("ANDROID_NDK_HOME") ?: System.getenv("ANDROID_NDK_ROOT") ?: "not set"}")
+    }
+}
