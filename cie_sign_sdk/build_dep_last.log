@@ -1,0 +1,71 @@
+Installing dependencies for triplet arm64-osx
+Computing installation plan...
+The following packages are already installed:
+    bzip2[core,tool]:arm64-osx@1.0.8#6
+    curl[core,ssl,openssl,non-http]:arm64-osx@8.17.0
+    fontconfig:arm64-osx@2.15.0#4
+    freetype[core,zlib,png,bzip2,brotli]:arm64-osx@2.13.3
+    libpng:arm64-osx@1.6.50
+    libxml2[core,zlib,iconv]:arm64-osx@2.15.0
+    openssl:arm64-osx@3.6.0#3
+    podofo[core,fontmanager,fontconfig]:arm64-osx@1.0.2#1
+    zlib:arm64-osx@1.3.1
+Total install time: 638 us
+The package bzip2 is compatible with built-in CMake targets:
+
+    find_package(BZip2 REQUIRED)
+    target_link_libraries(main PRIVATE BZip2::BZip2)
+
+curl is compatible with built-in CMake targets:
+
+    find_package(CURL REQUIRED)
+    target_link_libraries(main PRIVATE CURL::libcurl)
+
+fontconfig is compatible with built-in CMake targets:
+
+  find_package(Fontconfig REQUIRED) # since CMake 3.14
+  target_link_libraries(main PRIVATE Fontconfig::Fontconfig)
+
+fontconfig provides pkg-config modules:
+
+  # Font configuration and customization library
+  fontconfig
+
+freetype is compatible with built-in CMake targets:
+
+    find_package(Freetype REQUIRED)
+    target_link_libraries(main PRIVATE Freetype::Freetype) # since CMake 3.10
+
+libpng provides CMake targets:
+
+  find_package(PNG REQUIRED)
+  target_link_libraries(main PRIVATE PNG::PNG)
+
+The package libxml2 is compatible with built-in CMake targets:
+
+    find_package(LibXml2 REQUIRED)
+    target_link_libraries(main PRIVATE LibXml2::LibXml2)
+
+openssl is compatible with built-in CMake targets:
+
+  find_package(OpenSSL REQUIRED)
+  target_link_libraries(main PRIVATE OpenSSL::SSL)
+  target_link_libraries(main PRIVATE OpenSSL::Crypto)
+
+podofo provides CMake targets:
+
+  find_package(podofo CONFIG REQUIRED)
+  target_link_libraries(main PRIVATE podofo::podofo)
+
+podofo provides pkg-config modules:
+
+  # A C++ library to work with the PDF file format
+  libpodofo
+
+The package zlib is compatible with built-in CMake targets:
+
+    find_package(ZLIB REQUIRED)
+    target_link_libraries(main PRIVATE ZLIB::ZLIB)
+
+All requested installations completed successfully in: 638 us
+Dependencies copied to /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies

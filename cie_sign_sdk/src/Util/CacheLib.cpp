@@ -25,6 +25,7 @@
 #include "cryptopp/sha.h"
 
 #include <pwd.h>
+#include <cstring>
 
 using namespace CryptoPP;
 
@@ -382,4 +383,36 @@ void CacheSetData(const char *PAN, uint8_t *certificate, int certificateSize, ui
     file.close();
 }
 
+#endif
+
+#ifndef WIN32
+int decrypt(std::string& ciphertext, std::string& message)
+{
+    byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];
+    byte iv[CryptoPP::AES::BLOCKSIZE];
+    std::memset(key, 0x00, sizeof(key));
+    std::memset(iv, 0x00, sizeof(iv));
+
+    std::string enckey = ENCRYPTION_KEY;
+    byte digest[SHA1::DIGESTSIZE];
+    SHA1().CalculateDigest(digest,
+        reinterpret_cast<const byte*>(enckey.data()),
+        enckey.size());
+    std::memcpy(key, digest, CryptoPP::AES::DEFAULT_KEYLENGTH);
+
+    try
+    {
+        CryptoPP::AES::Decryption aesDecryption(key, CryptoPP::AES::DEFAULT_KEYLENGTH);
+        CryptoPP::CBC_Mode_ExternalCipher::Decryption cbcDecryption(aesDecryption, iv);
+        CryptoPP::StringSource ss(ciphertext, true,
+            new CryptoPP::StreamTransformationFilter(cbcDecryption,
+                new CryptoPP::StringSink(message)));
+        return static_cast<int>(message.size());
+    }
+    catch (const CryptoPP::Exception&)
+    {
+        message.clear();
+        return -1;
+    }
+}
 #endif

@@ -3,7 +3,18 @@
 #include <stdlib.h>
 #include "defines.h"
 #include <string>
-#include <wintypes.h>
+
+#if defined(__has_include)
+#  if __has_include(<PCSC/wintypes.h>)
+#    include <PCSC/wintypes.h>
+#  elif __has_include(<winscard.h>)
+#    include <winscard.h>
+#  else
+#    include "mobile/winscard_stub.h"
+#  endif
+#else
+#  include "mobile/winscard_stub.h"
+#endif
 
 #ifndef OutputDebugString
 #define OutputDebugString printf

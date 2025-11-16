@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <cstdio>
 
 extern CLog Log;
 
@@ -1674,7 +1675,7 @@ void IAS::VerificaSOD(ByteArray &SOD, std::map<BYTE, ByteDynArray> &hashSet) {
 			throw Exception("Impossibile validare il certificato di Document Signer");
 	}
 	*/
-	exit_func
+exit_func
 }
 
 #define DWL_MSGRESULT 0
@@ -1689,3 +1690,50 @@ void IAS::VerificaSOD(ByteArray &SOD, std::map<BYTE, ByteDynArray> &hashSet) {
 //    }
 //    return TRUE;
 //}
+
+void GetPublicKeyFromCert(CryptoPP::BufferedTransformation& certin,
+                          CryptoPP::BufferedTransformation& keyout,
+                          CryptoPP::BufferedTransformation& issuer,
+                          CryptoPP::Integer& serial)
+{
+    using namespace CryptoPP;
+
+    BERSequenceDecoder x509Cert(certin);
+    BERSequenceDecoder tbsCert(x509Cert);
+
+    BERGeneralDecoder context(tbsCert, 0xa0);
+    word32 ver;
+    BERDecodeUnsigned<word32>(context, ver, INTEGER, 2, 2);
+
+    serial.BERDecode(tbsCert);
+
+    BERSequenceDecoder signature(tbsCert);
+    signature.SkipAll();
+
+    BERSequenceDecoder issuerName(tbsCert);
+    issuerName.CopyTo(issuer);
+    issuerName.SkipAll();
+
+    BERSequenceDecoder validity(tbsCert);
+    validity.SkipAll();
+
+    BERSequenceDecoder subjectName(tbsCert);
+    subjectName.SkipAll();
+
+    BERSequenceDecoder spki(tbsCert);
+    DERSequenceEncoder spkiEncoder(keyout);
+    spki.CopyTo(spkiEncoder);
+    spkiEncoder.MessageEnd();
+
+    spki.SkipAll();
+    tbsCert.SkipAll();
+    x509Cert.SkipAll();
+}
+
+void notifyCardNotRegistered(const char* szPAN)
+{
+    if (szPAN && szPAN[0])
+    {
+        std::fprintf(stderr, "CIE card not registered: %s\n", szPAN);
+    }
+}

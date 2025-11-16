@@ -11,13 +11,19 @@
 #define _PDFSIGNATUREGENERATOR_H_
 
 #include "podofo/podofo.h"
-#include "podofo/doc/PdfSignOutputDevice.h"
-#include "podofo/doc/PdfSignatureField.h"
 #include "ASN1/UUCByteArray.h"
 
+#include <memory>
+#include <optional>
+#include <string>
 
-using namespace PoDoFo;
-using namespace std;
+namespace PoDoFo {
+class PdfSigningContext;
+class PdfSignerId;
+class PdfSignature;
+class PdfSigner;
+class StreamDevice;
+}
 
 class PdfSignatureGenerator
 {
@@ -47,24 +53,20 @@ public:
 	const double getHeight(int pageIndex);
 	
 private:
-	PdfMemDocument* m_pPdfDocument;
-	
-	PdfSignatureField* m_pSignatureField;
-	
-	PdfSignOutputDevice* m_pSignOutputDevice;
-	
-	PdfOutputDevice* m_pFinalOutDevice;
-	
-	char* m_pMainDocbuffer;
-	
-	char* m_pSignDocbuffer;
-	
-	const double lastSignatureY(int left, int bottom);
-	
+	std::unique_ptr<PoDoFo::PdfMemDocument> m_pPdfDocument;
+	PoDoFo::PdfSignature* m_pSignatureField;
+	std::unique_ptr<PoDoFo::PdfSigningContext> m_pSigningContext;
+	std::shared_ptr<PoDoFo::PdfSigner> m_pSigner;
+	std::shared_ptr<PoDoFo::StreamDevice> m_pDevice;
+	PoDoFo::PdfSigningResults m_signingResults;
+	std::optional<PoDoFo::PdfSignerId> m_signerId;
+	std::string m_subFilter;
 	int m_actualLen;
+    size_t m_placeholderSize;
+    std::string m_originalPdfData;
+    std::string m_streamBuffer;
 	
-	static bool IsSignatureField(const PdfMemDocument* pDoc, const PdfObject *const pObj);
-	
+	static bool IsSignatureField(const PoDoFo::PdfMemDocument* pDoc, const PoDoFo::PdfObject *const pObj);
 };
 
 #endif // _PDFSIGNATUREGENERATOR_H_

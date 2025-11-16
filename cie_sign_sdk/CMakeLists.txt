@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15.3)
 
-set(DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/Dependencies)
+set(DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/Dependencies CACHE PATH "Third-party dependency root")
 set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/src)
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 set(INSTALL_DIR ${CMAKE_SOURCE_DIR}/../cie-pkcs11/Sign)
@@ -12,6 +12,9 @@ message("INCLUDE_DIR: " ${CMAKE_SOURCE_DIR})
 project(cie_sign_sdk)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(SRC_LIST
     ${SOURCE_DIR}/Base64.cpp
@@ -35,7 +38,6 @@ set(SRC_LIST
     ${SOURCE_DIR}/SignerInfoGenerator.cpp
     ${SOURCE_DIR}/TSAClient.cpp
     ${SOURCE_DIR}/UUCLogger.cpp
-    ${SOURCE_DIR}/UUCProperties.cpp
     ${SOURCE_DIR}/UUCStringTable.cpp
     ${SOURCE_DIR}/UUCTextFileReader.cpp
     ${SOURCE_DIR}/UUCTextFileWriter.cpp
@@ -91,10 +93,6 @@ set(SRC_LIST
     ${SOURCE_DIR}/CSP/IAS.cpp
     ${SOURCE_DIR}/CSP/ATR.cpp
     ${SOURCE_DIR}/CSP/ExtAuthKey.cpp
-    ${SOURCE_DIR}/PCSC/APDU.cpp
-    ${SOURCE_DIR}/PCSC/CardLocker.cpp
-    ${SOURCE_DIR}/PCSC/PCSC.cpp
-    ${SOURCE_DIR}/PCSC/Token.cpp
     ${SOURCE_DIR}/Util/Array.cpp
     ${SOURCE_DIR}/Util/CacheLib.cpp
     ${SOURCE_DIR}/Util/CryptoppUtils.cpp
@@ -121,6 +119,11 @@ set(SRC_LIST
     ${SOURCE_DIR}/Crypto/SHA512.cpp
     )
 
+list(APPEND SRC_LIST
+    ${SOURCE_DIR}/PCSC/APDU.cpp
+    ${SOURCE_DIR}/PCSC/Token.cpp
+)
+
 add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
 
 set(INCLUDE_LIST
@@ -144,9 +147,87 @@ set(INCLUDE_LIST
     ${DEPENDENCIES_DIR}/zlib/include
     ${DEPENDENCIES_DIR}/libxml2/include/libxml2
     ${DEPENDENCIES_DIR}/libiconv/include
+    ${DEPENDENCIES_DIR}/cryptopp/include
  )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_LIST})
 
+set(LIBICONV_LIB_PATH ${DEPENDENCIES_DIR}/libiconv/lib/libiconv.a)
+
+set(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/openssl/lib/libcrypto.a
+    ${DEPENDENCIES_DIR}/openssl/lib/libssl.a
+    ${DEPENDENCIES_DIR}/libcurl/lib/libcurl.a
+    ${DEPENDENCIES_DIR}/libxml2/lib/libxml2.a
+    ${DEPENDENCIES_DIR}/zlib/lib/libz.a
+    ${DEPENDENCIES_DIR}/libpng/lib/libpng16.a
+    ${DEPENDENCIES_DIR}/freetype/lib/libfreetype.a
+    ${DEPENDENCIES_DIR}/fontconfig/lib/libfontconfig.a
+    ${DEPENDENCIES_DIR}/podofo/lib/libpodofo.a
+    ${DEPENDENCIES_DIR}/podofo/lib/libpodofo_private.a
+    ${DEPENDENCIES_DIR}/podofo/lib/libpodofo_3rdparty.a
+    ${DEPENDENCIES_DIR}/bzip2/lib/libbz2.a
+    ${DEPENDENCIES_DIR}/brotli/lib/libbrotlienc.a
+    ${DEPENDENCIES_DIR}/brotli/lib/libbrotlidec.a
+    ${DEPENDENCIES_DIR}/brotli/lib/libbrotlicommon.a
+    ${DEPENDENCIES_DIR}/libjpeg/lib/libjpeg.a
+    ${DEPENDENCIES_DIR}/libjpeg/lib/libturbojpeg.a
+    ${DEPENDENCIES_DIR}/libtiff/lib/libtiff.a
+    ${DEPENDENCIES_DIR}/liblzma/lib/liblzma.a
+    ${DEPENDENCIES_DIR}/utf8proc/lib/libutf8proc.a
+    ${DEPENDENCIES_DIR}/expat/lib/libexpat.a
+    ${DEPENDENCIES_DIR}/cryptopp/lib/libcryptopp.a
+)
+
+if(EXISTS ${LIBICONV_LIB_PATH})
+    list(APPEND CIESIGN_THIRD_PARTY_LIBS ${LIBICONV_LIB_PATH})
+else()
+    find_library(SYSTEM_ICONV iconv)
+    if(SYSTEM_ICONV)
+        list(APPEND CIESIGN_THIRD_PARTY_LIBS ${SYSTEM_ICONV})
+    endif()
+endif()
+
+if(APPLE)
+    find_library(COREFOUNDATION_FRAMEWORK CoreFoundation)
+    find_library(SYSTEMCONFIG_FRAMEWORK SystemConfiguration)
+    if(COREFOUNDATION_FRAMEWORK)
+        list(APPEND CIESIGN_THIRD_PARTY_LIBS ${COREFOUNDATION_FRAMEWORK})
+    endif()
+    if(SYSTEMCONFIG_FRAMEWORK)
+        list(APPEND CIESIGN_THIRD_PARTY_LIBS ${SYSTEMCONFIG_FRAMEWORK})
+    endif()
+endif()
+
+add_library(ciesign_core STATIC
+    ${SOURCE_DIR}/mobile/cie_sign_core.cpp
+)
+
+target_include_directories(ciesign_core
+    PRIVATE ${INCLUDE_LIST}
+    PUBLIC ${INCLUDE_DIR}/mobile
+)
+
+target_link_libraries(ciesign_core PUBLIC ${PROJECT_NAME} ${CIESIGN_THIRD_PARTY_LIBS})
+
 install(TARGETS ${PROJECT_NAME} DESTINATION ${INSTALL_DIR})
 install(FILES ${INCLUDE_DIR}/disigonsdk.h ${INCLUDE_DIR}/CIEEngine.h DESTINATION ${INSTALL_DIR})
+
+install(TARGETS ciesign_core DESTINATION ${INSTALL_DIR})
+install(FILES ${INCLUDE_DIR}/mobile/cie_sign.h DESTINATION ${INSTALL_DIR}/mobile)
+
+enable_testing()
+
+add_executable(mock_sign_test
+    tests/mock/mock_apdu_sequence.cpp
+    tests/mock/mock_transport.cpp
+    tests/mock/mock_sign_test.cpp
+)
+target_include_directories(mock_sign_test PRIVATE
+    ${INCLUDE_LIST}
+    ${INCLUDE_DIR}/mobile
+)
+target_link_libraries(mock_sign_test PRIVATE ciesign_core)
+target_compile_definitions(mock_sign_test PRIVATE CIE_SIGN_SDK_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+
+add_test(NAME mock_sign_test COMMAND mock_sign_test)

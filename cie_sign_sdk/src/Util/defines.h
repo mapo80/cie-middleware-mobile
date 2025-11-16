@@ -1,6 +1,7 @@
 #pragma once
 
 #include "funccallinfo.h"
+#include "definitions.h"
 
 #define StatusWord uint16_t
 

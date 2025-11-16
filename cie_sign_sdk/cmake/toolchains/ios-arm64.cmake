@@ -1,0 +1,18 @@
+set(CMAKE_SYSTEM_NAME iOS)
+
+execute_process(
+    COMMAND xcrun --sdk iphoneos --show-sdk-path
+    OUTPUT_VARIABLE IOS_SDK_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+if(NOT IOS_SDK_PATH)
+    message(FATAL_ERROR "Unable to locate iPhoneOS SDK. Ensure Xcode is installed.")
+endif()
+
+set(CMAKE_OSX_SYSROOT "${IOS_SDK_PATH}" CACHE PATH "" FORCE)
+set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "" FORCE)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0" CACHE STRING "" FORCE)
+set(CMAKE_IOS_INSTALL_COMBINED YES CACHE BOOL "" FORCE)
+
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)

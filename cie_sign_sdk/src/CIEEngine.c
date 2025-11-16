@@ -469,7 +469,31 @@ static EVP_PKEY *cie_load_pubkey(ENGINE *engine, const char *s_key_id,
     
     printf("call cie_load_pubkey\n");
     
-    return 1;
+    (void)engine;
+    (void)s_key_id;
+    (void)ui_method;
+    (void)callback_data;
+
+    if (!cie_x509_certificate && cie_certificate && cie_certlen > 0) {
+        cie_x509_certificate = d2i_X509(NULL, &cie_certificate, cie_certlen);
+    }
+
+    if (!cie_x509_certificate) {
+        printf("cie_load_pubkey: certificate not available\n");
+        return NULL;
+    }
+
+    X509 *cert = X509_dup(cie_x509_certificate);
+    if (!cert)
+        return NULL;
+
+    EVP_PKEY *pubkey = X509_get_pubkey(cert);
+    if (!pubkey) {
+        printf("cie_load_pubkey: X509_get_pubkey failed\n");
+    }
+
+    X509_free(cert);
+    return pubkey;
 }
 
 

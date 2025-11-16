@@ -1,8 +1,15 @@
 #include "ATR.h"
-#include "../LOGGER/Logger.h"
-#include <algorithm>
-
+#if defined(__has_include)
+#  if __has_include("../LOGGER/Logger.h")
+#    include "../LOGGER/Logger.h"
 using namespace CieIDLogger;
+#  else
+#    define LOG_INFO(...)
+#  endif
+#else
+#  define LOG_INFO(...)
+#endif
+#include <algorithm>
 
 cie_atr atr_list[] = {
         {CIE_Type::CIE_NXP,     "NXP",      		{ 0x80, 0x31, 0x80, 0x65, 0x49, 0x54, 0x4E, 0x58, 0x50 }},

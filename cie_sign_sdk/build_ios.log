@@ -1,0 +1,813 @@
+DEPENDENCIES_DIR: /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk
+SOURCE_DIR: /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk
+INCLUDE_DIR: /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk
+CMake Warning (dev) at CMakeLists.txt:163 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:164 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:166 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+CMake Warning (dev) at CMakeLists.txt:167 (install):
+  Policy CMP0177 is not set: install() DESTINATION paths are normalized.  Run
+  "cmake --help-policy CMP0177" for policy details.  Use the cmake_policy
+  command to set the policy and suppress this warning.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/build/ios
+[  1%] Building CXX object CMakeFiles/cie_sign_sdk.dir/src/CIESigner.cpp.o
+[  2%] Building CXX object CMakeFiles/cie_sign_sdk.dir/src/disigonsdk.cpp.o
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:25:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:208:30: warning: 'GetName' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  208 | const std::string & PdfName::GetName() const
+      |                              ^              
+      |                                              __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:135:46: note: previous declaration is here
+  135 |     PODOFO_NOTHROW inline const std::string& GetName() const;
+      |                                              ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:216:17: warning: 'GetLength' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  216 | size_t PdfName::GetLength() const
+      |                 ^                
+      |                                   __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:140:34: note: previous declaration is here
+  140 |     PODOFO_NOTHROW inline size_t GetLength() const;
+      |                                  ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:224:15: warning: 'operator!=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  224 | bool PdfName::operator!=( const PdfName & rhs ) const
+      |               ^                                      
+      |                                                       __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:173:32: note: previous declaration is here
+  173 |     PODOFO_NOTHROW inline bool operator!=( const PdfName & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:237:15: warning: 'operator<' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  237 | bool PdfName::operator<( const PdfName & rhs ) const
+      |               ^                                     
+      |                                                      __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:188:32: note: previous declaration is here
+  188 |     PODOFO_NOTHROW inline bool operator<( const PdfName & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:242:15: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  242 | bool PdfName::operator==( const PdfName & rhs ) const
+      |               ^                                      
+      |                                                       __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:150:32: note: previous declaration is here
+  150 |     PODOFO_NOTHROW inline bool operator==( const PdfName & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:247:15: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  247 | bool PdfName::operator==( const std::string & rhs ) const
+      |               ^                                          
+      |                                                           __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:168:32: note: previous declaration is here
+  168 |     PODOFO_NOTHROW inline bool operator==( const std::string& rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:252:25: warning: 'operator=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  252 | const PdfName& PdfName::operator=( const PdfName & rhs )
+      |                         ^                               
+      |                                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:145:42: note: previous declaration is here
+  145 |     PODOFO_NOTHROW inline const PdfName& operator=( const PdfName & rhs );
+      |                                          ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfParser.h:25:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:26:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfRefCountedInputDevice.h:120:50: warning: 'Device' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  120 | inline PdfInputDevice* PdfRefCountedInputDevice::Device() const
+      |                                                  ^             
+      |                                                                 __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfRefCountedInputDevice.h:94:43: note: previous declaration is here
+   94 |     PODOFO_NOTHROW inline PdfInputDevice* Device() const;
+      |                                           ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfParser.h:25:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:268:27: warning: 'IsWhitespace' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  268 | inline bool PdfTokenizer::IsWhitespace(const unsigned char ch)
+      |                           ^                                   
+      |                                                                __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:122:39: note: previous declaration is here
+  122 |     PODOFO_NOTHROW inline static bool IsWhitespace(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:276:27: warning: 'IsDelimiter' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  276 | inline bool PdfTokenizer::IsDelimiter(const unsigned char ch)
+      |                           ^                                  
+      |                                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:129:39: note: previous declaration is here
+  129 |     PODOFO_NOTHROW inline static bool IsDelimiter(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:284:27: warning: 'IsRegular' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  284 | inline bool PdfTokenizer::IsRegular(const unsigned char ch)
+      |                           ^                                
+      |                                                             __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:136:39: note: previous declaration is here
+  136 |     PODOFO_NOTHROW inline static bool IsRegular(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:292:27: warning: 'IsPrintable' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  292 | inline bool PdfTokenizer::IsPrintable(const unsigned char ch)
+      |                           ^                                  
+      |                                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:142:39: note: previous declaration is here
+  142 |     PODOFO_NOTHROW inline static bool IsPrintable(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:300:26: warning: 'GetHexValue' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  300 | inline int PdfTokenizer::GetHexValue(const unsigned char ch)
+      |                          ^                                  
+      |                                                              __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:153:38: note: previous declaration is here
+  153 |     PODOFO_NOTHROW inline static int GetHexValue(const unsigned char ch);
+      |                                      ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfParser.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfVecObjects.h:25:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:163:36: warning: 'operator=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  163 | const PdfReference & PdfReference::operator=( const PdfReference & rhs )
+      |                                    ^                                    
+      |                                                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:94:48: note: previous declaration is here
+   94 |     PODOFO_NOTHROW inline const PdfReference & operator=( const PdfReference & rhs );
+      |                                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:173:20: warning: 'operator<' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  173 | bool PdfReference::operator<( const PdfReference & rhs ) const
+      |                    ^                                          
+      |                                                                __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:122:32: note: previous declaration is here
+  122 |     PODOFO_NOTHROW inline bool operator<( const PdfReference & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:181:20: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  181 | bool PdfReference::operator==( const PdfReference & rhs ) const
+      |                    ^                                           
+      |                                                                 __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:110:32: note: previous declaration is here
+  110 |     PODOFO_NOTHROW inline bool operator==( const PdfReference & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:189:27: warning: 'operator!=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  189 | inline bool PdfReference::operator!=( const PdfReference & rhs ) const
+      |                           ^                                           
+      |                                                                        __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:116:32: note: previous declaration is here
+  116 |     PODOFO_NOTHROW inline bool operator!=( const PdfReference & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:197:20: warning: 'SetObjectNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  197 | void PdfReference::SetObjectNumber( pdf_objnum o )
+      |                    ^                              
+      |                                                    __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:127:32: note: previous declaration is here
+  127 |     PODOFO_NOTHROW inline void SetObjectNumber( pdf_objnum o );
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:205:26: warning: 'ObjectNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  205 | pdf_objnum PdfReference::ObjectNumber() const
+      |                          ^                   
+      |                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:132:38: note: previous declaration is here
+  132 |     PODOFO_NOTHROW inline pdf_objnum ObjectNumber() const;
+      |                                      ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:213:20: warning: 'SetGenerationNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  213 | void PdfReference::SetGenerationNumber( pdf_gennum g )
+      |                    ^                                  
+      |                                                        __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:137:32: note: previous declaration is here
+  137 |     PODOFO_NOTHROW inline void SetGenerationNumber( const pdf_gennum g );
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:221:26: warning: 'GenerationNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  221 | pdf_gennum PdfReference::GenerationNumber() const
+      |                          ^                       
+      |                                                   __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:142:38: note: previous declaration is here
+  142 |     PODOFO_NOTHROW inline pdf_gennum GenerationNumber() const;
+      |                                      ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:229:20: warning: 'IsIndirect' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  229 | bool PdfReference::IsIndirect() const
+      |                    ^                 
+      |                                       __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:153:32: note: previous declaration is here
+  153 |     PODOFO_NOTHROW inline bool IsIndirect() const;
+      |                                ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:29:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfVariant.h:845:18: warning: 'DelayedLoadDone' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  845 | bool PdfVariant::DelayedLoadDone() const
+      |                  ^                      
+      |                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfVariant.h:421:32: note: previous declaration is here
+  421 |     PODOFO_NOTHROW inline bool DelayedLoadDone() const;
+      |                                ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:342:17: warning: 'DelayedStreamLoadDone' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  342 | bool PdfObject::DelayedStreamLoadDone() const
+      |                 ^                            
+      |                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:314:32: note: previous declaration is here
+  314 |     PODOFO_NOTHROW inline bool DelayedStreamLoadDone() const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:383:17: warning: 'operator<' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  383 | bool PdfObject::operator<( const PdfObject & rhs ) const
+      |                 ^                                       
+      |                                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:217:32: note: previous declaration is here
+  217 |     PODOFO_NOTHROW inline bool operator<( const PdfObject & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:391:17: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  391 | bool PdfObject::operator==( const PdfObject & rhs ) const
+      |                 ^                                        
+      |                                                           __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:222:32: note: previous declaration is here
+  222 |     PODOFO_NOTHROW inline bool operator==( const PdfObject & rhs ) const;
+      |                                ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:41:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFileStream.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfStream.h:27:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFilter.h:407:17: warning: 'FailEncodeDecode' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  407 | void PdfFilter::FailEncodeDecode()
+      |                 ^                 
+      |                                    __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFilter.h:213:32: note: previous declaration is here
+  213 |     PODOFO_NOTHROW inline void FailEncodeDecode();
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFilter.h:444:17: warning: 'auto_ptr<PoDoFo::PdfFilter>' is deprecated [-Wdeprecated-declarations]
+  444 |     static std::auto_ptr<PdfFilter> Create( const EPdfFilter eFilter );
+      |                 ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/c++/v1/__memory/auto_ptr.h:29:28: note: 'auto_ptr<PoDoFo::PdfFilter>' has been explicitly marked deprecated here
+   29 | class _LIBCPP_TEMPLATE_VIS _LIBCPP_DEPRECATED_IN_CXX11 auto_ptr {
+      |                            ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/c++/v1/__config:725:41: note: expanded from macro '_LIBCPP_DEPRECATED_IN_CXX11'
+  725 | #    define _LIBCPP_DEPRECATED_IN_CXX11 _LIBCPP_DEPRECATED
+      |                                         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/c++/v1/__config:710:49: note: expanded from macro '_LIBCPP_DEPRECATED'
+  710 | #      define _LIBCPP_DEPRECATED __attribute__((__deprecated__))
+      |                                                 ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:11:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfVerifier.h:14:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:44:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:167:22: warning: 'IsSeekable' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  167 | bool PdfInputDevice::IsSeekable() const
+      |                      ^                 
+      |                                         __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:142:32: note: previous declaration is here
+  142 |     PODOFO_NOTHROW inline bool IsSeekable() const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:172:22: warning: 'SetSeekable' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  172 | void PdfInputDevice::SetSeekable(bool bIsSeekable)
+      |                      ^                            
+      |                                                    __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:148:32: note: previous declaration is here
+  148 |     PODOFO_NOTHROW inline void SetSeekable(bool bIsSeekable);
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:177:22: warning: 'Bad' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  177 | bool PdfInputDevice::Bad() const
+      |                      ^          
+      |                                  __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:130:40: note: previous declaration is here
+  130 |     PODOFO_NOTHROW inline virtual bool Bad() const;
+      |                                        ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:182:22: warning: 'Eof' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  182 | bool PdfInputDevice::Eof() const
+      |                      ^          
+      |                                  __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:125:40: note: previous declaration is here
+  125 |     PODOFO_NOTHROW inline virtual bool Eof() const;
+      |                                        ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:187:22: warning: 'Clear' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  187 | void PdfInputDevice::Clear(std::ios_base::iostate state) const
+      |                      ^                                        
+      |                                                                __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:136:40: note: previous declaration is here
+  136 |     PODOFO_NOTHROW inline virtual void Clear( std::ios_base::iostate state = std::ios_base::goodbit) const;
+      |                                        ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:17:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/UUCProperties.h:12:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/UUCStringTable.h:10:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/UUCHashtable.h:280:3: warning: 'delete' applied to a pointer that was allocated with 'new[]'; did you mean 'delete[]'? [-Wmismatched-new-delete]
+  280 |                 delete keys;
+      |                 ^
+      |                       []
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/UUCHashtable.h:261:15: note: allocated with 'new[]' here
+  261 |                 KEY* keys = new KEY[size()];
+      |                             ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:21: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                     ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:35: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                                   ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:47: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                                               ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:59: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                                                           ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:71: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:83: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                                                                                   ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:117:95: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  117 | char* FILETYPE[] = {"PKCS7 file", "PDF file", "M7M file", "TSR file", "TST file", "TSD file", "XML file"};
+      |                                                                                               ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:155:32: warning: cast to 'void *' from smaller integer type 'int' [-Wint-to-void-pointer-cast]
+  155 |     return disigon_set(option, (void*)value);
+      |                                ^~~~~~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:191:34: warning: implicit conversion of NULL constant to 'char' [-Wnull-conversion]
+  191 |     pContext->szPdfLocation[0] = NULL;
+      |                                ~ ^~~~
+      |                                  '\0'
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:192:32: warning: implicit conversion of NULL constant to 'char' [-Wnull-conversion]
+  192 |     pContext->szPdfReason[0] = NULL;
+      |                              ~ ^~~~
+      |                                '\0'
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:193:30: warning: implicit conversion of NULL constant to 'char' [-Wnull-conversion]
+  193 |     pContext->szPdfName[0] = NULL;
+      |                            ~ ^~~~
+      |                              '\0'
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:194:26: warning: implicit conversion of NULL constant to 'char' [-Wnull-conversion]
+  194 |     pContext->szPIN[0] = NULL;
+      |                        ~ ^~~~
+      |                          '\0'
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:234:42: warning: cast to 'void *' from smaller integer type 'int' [-Wint-to-void-pointer-cast]
+  234 |     return disigon_sign_set(ctx, option, (void*)value);
+      |                                          ^~~~~~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:534:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+  534 |         sprintf(pContext->szOutputFile, "%s.p7m",  pContext->szInputFile);
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:576:5: warning: delete called on 'CBaseSigner' that is abstract but has non-virtual destructor [-Wdelete-abstract-non-virtual-dtor]
+  576 |     SAFEDELETE(pContext->pSigner);
+      |     ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/definitions.h:159:49: note: expanded from macro 'SAFEDELETE'
+  159 | #define SAFEDELETE(pointer) try { if(pointer) { delete pointer; pointer = NULL;}} catch(...) {}
+      |                                                 ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:635:44: warning: cast to 'void *' from smaller integer type 'int' [-Wint-to-void-pointer-cast]
+  635 |     return disigon_verify_set(ctx, option, (void*)value);
+      |                                            ^~~~~~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:853:17: warning: cannot delete expression with pointer-to-'void' type 'void *' [-Wdelete-incomplete]
+  853 |                 SAFEDELETE(pVerifyResult->verifyInfo.pSignerInfos->pSignerInfo[i].pTimeStamp);
+      |                 ^          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/definitions.h:159:49: note: expanded from macro 'SAFEDELETE'
+  159 | #define SAFEDELETE(pointer) try { if(pointer) { delete pointer; pointer = NULL;}} catch(...) {}
+      |                                                 ^      ~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1080:33: warning: implicit conversion of NULL constant to 'char' [-Wnull-conversion]
+ 1080 |         pSI->szSigningTime[0] = NULL;
+      |                               ~ ^~~~
+      |                                 '\0'
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1124:13: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1124 |             sprintf(szAux, "%s:%s", szoid, hexval);
+      |             ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1127:13: warning: 'delete' applied to a pointer that was allocated with 'new[]'; did you mean 'delete[]'? [-Wmismatched-new-delete]
+ 1127 |             delete szAux;
+      |             ^
+      |                   []
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1123:27: note: allocated with 'new[]' here
+ 1123 |             char* szAux = new char[strlen(szoid) + strlen(hexval) + 5];
+      |                           ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1414:17: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1414 |                 sprintf(szAux, "%s:%s", szoid, hexval);
+      |                 ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1417:17: warning: 'delete' applied to a pointer that was allocated with 'new[]'; did you mean 'delete[]'? [-Wmismatched-new-delete]
+ 1417 |                 delete szAux;
+      |                 ^
+      |                       []
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1413:31: note: allocated with 'new[]' here
+ 1413 |                 char* szAux = new char[strlen(szoid) + strlen(hexval) + 5];
+      |                               ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1664:13: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1664 |             sprintf(szAux, "%s:%s", szoid, hexval);
+      |             ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1667:13: warning: 'delete' applied to a pointer that was allocated with 'new[]'; did you mean 'delete[]'? [-Wmismatched-new-delete]
+ 1667 |             delete szAux;
+      |             ^
+      |                   []
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1663:27: note: allocated with 'new[]' here
+ 1663 |             char* szAux = new char[strlen(szoid) + strlen(hexval) + 5];
+      |                           ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1885:13: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1885 |             sprintf(pContext->szOutputFile, "signed_%s.xml", pContext->szInputFile);
+      |             ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1887:13: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1887 |             sprintf(pContext->szOutputFile, "%s.xml",  pContext->szInputFile);
+      |             ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1933:17: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1933 |                 sprintf(pContext->szPdfReason, "%s %s", giveName.c_str(), surname.c_str());
+      |                 ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:1992:9: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 1992 |         sprintf(pContext->szOutputFile, "%s.pdf",  pContext->szInputFile);
+      |         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:2131:13: warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead. [-Wdeprecated-declarations]
+ 2131 |             sprintf(szAux, "%s:%s", szoid, hexval);
+      |             ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/_stdio.h:278:1: note: 'sprintf' has been explicitly marked deprecated here
+  278 | __deprecated_msg("This function is provided for compatibility reasons only.  Due to security concerns inherent in the design of sprintf(3), it is highly recommended that you use snprintf(3) instead.")
+      | ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/sys/cdefs.h:227:48: note: expanded from macro '__deprecated_msg'
+  227 |         #define __deprecated_msg(_msg) __attribute__((__deprecated__(_msg)))
+      |                                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:2134:13: warning: 'delete' applied to a pointer that was allocated with 'new[]'; did you mean 'delete[]'? [-Wmismatched-new-delete]
+ 2134 |             delete szAux;
+      |             ^
+      |                   []
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/disigonsdk.cpp:2130:27: note: allocated with 'new[]' here
+ 2130 |             char* szAux = new char[strlen(szoid) + strlen(hexval) + 5];
+      |                           ^
+64 warnings generated.
+[  3%] Building CXX object CMakeFiles/cie_sign_sdk.dir/src/CSP/IAS.cpp.o
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/CSP/IAS.cpp:622:6: warning: format string is not a string literal (potentially insecure) [-Wformat-security]
+  622 |         ODS(dumpHexData(seq, dmp).c_str());
+      |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/CSP/IAS.cpp:622:6: note: treat the string as an argument to avoid this
+  622 |         ODS(dumpHexData(seq, dmp).c_str());
+      |             ^
+      |             "%s", 
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/CSP/IAS.cpp:626:9: warning: format string is not a string literal (potentially insecure) [-Wformat-security]
+  626 |     ODS(dumpHexData(seq, dmp).c_str());
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/CSP/IAS.cpp:626:9: note: treat the string as an argument to avoid this
+  626 |     ODS(dumpHexData(seq, dmp).c_str());
+      |         ^
+      |         "%s", 
+2 warnings generated.
+[  4%] Building CXX object CMakeFiles/cie_sign_sdk.dir/src/PCSC/APDU.cpp.o
+[  5%] Building CXX object CMakeFiles/cie_sign_sdk.dir/src/PCSC/Token.cpp.o
+[  6%] Linking CXX static library libcie_sign_sdk.a
+[ 98%] Built target cie_sign_sdk
+[ 99%] Building CXX object CMakeFiles/ciesign_core.dir/src/mobile/cie_sign_core.cpp.o
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:25:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:208:30: warning: 'GetName' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  208 | const std::string & PdfName::GetName() const
+      |                              ^              
+      |                                              __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:135:46: note: previous declaration is here
+  135 |     PODOFO_NOTHROW inline const std::string& GetName() const;
+      |                                              ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:216:17: warning: 'GetLength' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  216 | size_t PdfName::GetLength() const
+      |                 ^                
+      |                                   __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:140:34: note: previous declaration is here
+  140 |     PODOFO_NOTHROW inline size_t GetLength() const;
+      |                                  ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:224:15: warning: 'operator!=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  224 | bool PdfName::operator!=( const PdfName & rhs ) const
+      |               ^                                      
+      |                                                       __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:173:32: note: previous declaration is here
+  173 |     PODOFO_NOTHROW inline bool operator!=( const PdfName & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:237:15: warning: 'operator<' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  237 | bool PdfName::operator<( const PdfName & rhs ) const
+      |               ^                                     
+      |                                                      __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:188:32: note: previous declaration is here
+  188 |     PODOFO_NOTHROW inline bool operator<( const PdfName & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:242:15: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  242 | bool PdfName::operator==( const PdfName & rhs ) const
+      |               ^                                      
+      |                                                       __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:150:32: note: previous declaration is here
+  150 |     PODOFO_NOTHROW inline bool operator==( const PdfName & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:247:15: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  247 | bool PdfName::operator==( const std::string & rhs ) const
+      |               ^                                          
+      |                                                           __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:168:32: note: previous declaration is here
+  168 |     PODOFO_NOTHROW inline bool operator==( const std::string& rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:252:25: warning: 'operator=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  252 | const PdfName& PdfName::operator=( const PdfName & rhs )
+      |                         ^                               
+      |                                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfName.h:145:42: note: previous declaration is here
+  145 |     PODOFO_NOTHROW inline const PdfName& operator=( const PdfName & rhs );
+      |                                          ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfParser.h:25:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:26:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfRefCountedInputDevice.h:120:50: warning: 'Device' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  120 | inline PdfInputDevice* PdfRefCountedInputDevice::Device() const
+      |                                                  ^             
+      |                                                                 __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfRefCountedInputDevice.h:94:43: note: previous declaration is here
+   94 |     PODOFO_NOTHROW inline PdfInputDevice* Device() const;
+      |                                           ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfParser.h:25:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:268:27: warning: 'IsWhitespace' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  268 | inline bool PdfTokenizer::IsWhitespace(const unsigned char ch)
+      |                           ^                                   
+      |                                                                __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:122:39: note: previous declaration is here
+  122 |     PODOFO_NOTHROW inline static bool IsWhitespace(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:276:27: warning: 'IsDelimiter' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  276 | inline bool PdfTokenizer::IsDelimiter(const unsigned char ch)
+      |                           ^                                  
+      |                                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:129:39: note: previous declaration is here
+  129 |     PODOFO_NOTHROW inline static bool IsDelimiter(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:284:27: warning: 'IsRegular' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  284 | inline bool PdfTokenizer::IsRegular(const unsigned char ch)
+      |                           ^                                
+      |                                                             __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:136:39: note: previous declaration is here
+  136 |     PODOFO_NOTHROW inline static bool IsRegular(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:292:27: warning: 'IsPrintable' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  292 | inline bool PdfTokenizer::IsPrintable(const unsigned char ch)
+      |                           ^                                  
+      |                                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:142:39: note: previous declaration is here
+  142 |     PODOFO_NOTHROW inline static bool IsPrintable(const unsigned char ch);
+      |                                       ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:300:26: warning: 'GetHexValue' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  300 | inline int PdfTokenizer::GetHexValue(const unsigned char ch)
+      |                          ^                                  
+      |                                                              __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfTokenizer.h:153:38: note: previous declaration is here
+  153 |     PODOFO_NOTHROW inline static int GetHexValue(const unsigned char ch);
+      |                                      ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfParser.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfVecObjects.h:25:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:163:36: warning: 'operator=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  163 | const PdfReference & PdfReference::operator=( const PdfReference & rhs )
+      |                                    ^                                    
+      |                                                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:94:48: note: previous declaration is here
+   94 |     PODOFO_NOTHROW inline const PdfReference & operator=( const PdfReference & rhs );
+      |                                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:173:20: warning: 'operator<' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  173 | bool PdfReference::operator<( const PdfReference & rhs ) const
+      |                    ^                                          
+      |                                                                __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:122:32: note: previous declaration is here
+  122 |     PODOFO_NOTHROW inline bool operator<( const PdfReference & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:181:20: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  181 | bool PdfReference::operator==( const PdfReference & rhs ) const
+      |                    ^                                           
+      |                                                                 __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:110:32: note: previous declaration is here
+  110 |     PODOFO_NOTHROW inline bool operator==( const PdfReference & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:189:27: warning: 'operator!=' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  189 | inline bool PdfReference::operator!=( const PdfReference & rhs ) const
+      |                           ^                                           
+      |                                                                        __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:116:32: note: previous declaration is here
+  116 |     PODOFO_NOTHROW inline bool operator!=( const PdfReference & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:197:20: warning: 'SetObjectNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  197 | void PdfReference::SetObjectNumber( pdf_objnum o )
+      |                    ^                              
+      |                                                    __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:127:32: note: previous declaration is here
+  127 |     PODOFO_NOTHROW inline void SetObjectNumber( pdf_objnum o );
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:205:26: warning: 'ObjectNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  205 | pdf_objnum PdfReference::ObjectNumber() const
+      |                          ^                   
+      |                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:132:38: note: previous declaration is here
+  132 |     PODOFO_NOTHROW inline pdf_objnum ObjectNumber() const;
+      |                                      ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:213:20: warning: 'SetGenerationNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  213 | void PdfReference::SetGenerationNumber( pdf_gennum g )
+      |                    ^                                  
+      |                                                        __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:137:32: note: previous declaration is here
+  137 |     PODOFO_NOTHROW inline void SetGenerationNumber( const pdf_gennum g );
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:221:26: warning: 'GenerationNumber' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  221 | pdf_gennum PdfReference::GenerationNumber() const
+      |                          ^                       
+      |                                                   __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:142:38: note: previous declaration is here
+  142 |     PODOFO_NOTHROW inline pdf_gennum GenerationNumber() const;
+      |                                      ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:229:20: warning: 'IsIndirect' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  229 | bool PdfReference::IsIndirect() const
+      |                    ^                 
+      |                                       __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfReference.h:153:32: note: previous declaration is here
+  153 |     PODOFO_NOTHROW inline bool IsIndirect() const;
+      |                                ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:29:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfVariant.h:845:18: warning: 'DelayedLoadDone' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  845 | bool PdfVariant::DelayedLoadDone() const
+      |                  ^                      
+      |                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfVariant.h:421:32: note: previous declaration is here
+  421 |     PODOFO_NOTHROW inline bool DelayedLoadDone() const;
+      |                                ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:29:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfArray.h:33:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:342:17: warning: 'DelayedStreamLoadDone' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  342 | bool PdfObject::DelayedStreamLoadDone() const
+      |                 ^                            
+      |                                               __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:314:32: note: previous declaration is here
+  314 |     PODOFO_NOTHROW inline bool DelayedStreamLoadDone() const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:383:17: warning: 'operator<' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  383 | bool PdfObject::operator<( const PdfObject & rhs ) const
+      |                 ^                                       
+      |                                                          __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:217:32: note: previous declaration is here
+  217 |     PODOFO_NOTHROW inline bool operator<( const PdfObject & rhs ) const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:391:17: warning: 'operator==' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  391 | bool PdfObject::operator==( const PdfObject & rhs ) const
+      |                 ^                                        
+      |                                                           __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfObject.h:222:32: note: previous declaration is here
+  222 |     PODOFO_NOTHROW inline bool operator==( const PdfObject & rhs ) const;
+      |                                ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:41:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFileStream.h:26:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfStream.h:27:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFilter.h:407:17: warning: 'FailEncodeDecode' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  407 | void PdfFilter::FailEncodeDecode()
+      |                 ^                 
+      |                                    __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFilter.h:213:32: note: previous declaration is here
+  213 |     PODOFO_NOTHROW inline void FailEncodeDecode();
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfFilter.h:444:17: warning: 'auto_ptr<PoDoFo::PdfFilter>' is deprecated [-Wdeprecated-declarations]
+  444 |     static std::auto_ptr<PdfFilter> Create( const EPdfFilter eFilter );
+      |                 ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/c++/v1/__memory/auto_ptr.h:29:28: note: 'auto_ptr<PoDoFo::PdfFilter>' has been explicitly marked deprecated here
+   29 | class _LIBCPP_TEMPLATE_VIS _LIBCPP_DEPRECATED_IN_CXX11 auto_ptr {
+      |                            ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/c++/v1/__config:725:41: note: expanded from macro '_LIBCPP_DEPRECATED_IN_CXX11'
+  725 | #    define _LIBCPP_DEPRECATED_IN_CXX11 _LIBCPP_DEPRECATED
+      |                                         ^
+/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.1.sdk/usr/include/c++/v1/__config:710:49: note: expanded from macro '_LIBCPP_DEPRECATED'
+  710 | #      define _LIBCPP_DEPRECATED __attribute__((__deprecated__))
+      |                                                 ^
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:6:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/include/PdfSignatureGenerator.h:13:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo.h:34:
+In file included from /Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/podofo-base.h:44:
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:167:22: warning: 'IsSeekable' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  167 | bool PdfInputDevice::IsSeekable() const
+      |                      ^                 
+      |                                         __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:142:32: note: previous declaration is here
+  142 |     PODOFO_NOTHROW inline bool IsSeekable() const;
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:172:22: warning: 'SetSeekable' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  172 | void PdfInputDevice::SetSeekable(bool bIsSeekable)
+      |                      ^                            
+      |                                                    __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:148:32: note: previous declaration is here
+  148 |     PODOFO_NOTHROW inline void SetSeekable(bool bIsSeekable);
+      |                                ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:177:22: warning: 'Bad' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  177 | bool PdfInputDevice::Bad() const
+      |                      ^          
+      |                                  __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:130:40: note: previous declaration is here
+  130 |     PODOFO_NOTHROW inline virtual bool Bad() const;
+      |                                        ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:182:22: warning: 'Eof' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  182 | bool PdfInputDevice::Eof() const
+      |                      ^          
+      |                                  __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:125:40: note: previous declaration is here
+  125 |     PODOFO_NOTHROW inline virtual bool Eof() const;
+      |                                        ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:187:22: warning: 'Clear' is missing exception specification '__attribute__((nothrow))' [-Wmissing-exception-spec]
+  187 | void PdfInputDevice::Clear(std::ios_base::iostate state) const
+      |                      ^                                        
+      |                                                                __attribute__((nothrow))
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/Dependencies/podofo/include/podofo/base/PdfInputDevice.h:136:40: note: previous declaration is here
+  136 |     PODOFO_NOTHROW inline virtual void Clear( std::ios_base::iostate state = std::ios_base::goodbit) const;
+      |                                        ^
+/Users/politom/Documents/Workspace/personal/cie-middleware-linux/cie_sign_sdk/src/mobile/cie_sign_core.cpp:207:23: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  207 |     xades.SetFileName("document.xml");
+      |                       ^
+34 warnings generated.
+[100%] Linking CXX static library libciesign_core.a
+[100%] Built target ciesign_core

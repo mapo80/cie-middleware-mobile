@@ -3,21 +3,28 @@
 #ifdef WIN32
 #include <winscard.h>
 #else
-#include <winscard.h>
+#if defined(__has_include)
+#  if __has_include(<PCSC/winscard.h>)
+#    include <PCSC/winscard.h>
+#  elif __has_include(<winscard.h>)
+#    include <winscard.h>
+#  else
+#    include "mobile/winscard_stub.h"
+#  endif
+#else
+#  include "mobile/winscard_stub.h"
+#endif
 #endif
 
 #include "APDU.h"
 #include "../Util/SyncroMutex.h"
 
-extern SCARDCONTEXT hContext;
-	
 enum CardPSO {
 	Op_PSO_DEC,
 	Op_PSO_ENC,
 	Op_PSO_CDS
 };
 
-class CCardLocker;
 class CToken
 {
 public:

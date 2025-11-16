@@ -1,0 +1,323 @@
+[ 94%] Built target cie_sign_sdk
+[ 96%] Built target ciesign_core
+[ 97%] Linking CXX executable mock_sign_test
+Undefined symbols for architecture arm64:
+  "_Log", referenced from:
+      IAS::IAS(unsigned long (*)(void*, unsigned char*, unsigned int, unsigned char*, unsigned int*), ByteArray) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::ReadSOD(ByteDynArray&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::readfile(unsigned short, ByteDynArray&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::ReadDH(ByteDynArray&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::ReadCertCIE(ByteDynArray&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::ReadServiziPubKey(ByteDynArray&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::ReadSerialeCIE(ByteDynArray&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      ...
+  "GetPublicKeyFromCert(CryptoPP::BufferedTransformation&, CryptoPP::BufferedTransformation&, CryptoPP::BufferedTransformation&, CryptoPP::Integer&)", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+  "notifyCardNotRegistered(char const*)", referenced from:
+      IAS::GetCertificate(ByteDynArray&, bool) in libcie_sign_sdk.a[75](IAS.cpp.o)
+  "decrypt(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&, std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>&)", referenced from:
+      CacheGetCertificate(char const*, std::__1::vector<unsigned char, std::__1::allocator<unsigned char>>&) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheGetPIN(char const*, std::__1::vector<unsigned char, std::__1::allocator<unsigned char>>&) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned int, CryptoPP::HashTransformation>::TruncatedFinal(unsigned char*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true> in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned int, CryptoPP::HashTransformation>::CreateUpdateSpace(unsigned long&)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true> in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned int, CryptoPP::HashTransformation>::HashMultipleBlocks(unsigned int const*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true> in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned int, CryptoPP::HashTransformation>::Update(unsigned char const*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true> in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned int, CryptoPP::HashTransformation>::Restart()", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true> in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned long, CryptoPP::HashTransformation>::TruncatedFinal(unsigned char*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned long, CryptoPP::HashTransformation>::CreateUpdateSpace(unsigned long&)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned long, CryptoPP::HashTransformation>::HashMultipleBlocks(unsigned long const*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned long, CryptoPP::HashTransformation>::Update(unsigned char const*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::IteratedHashBase<unsigned long, CryptoPP::HashTransformation>::Restart()", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::UnalignedAllocate(unsigned long)", referenced from:
+      CryptoPP::SecBlock<unsigned int, CryptoPP::AllocatorWithCleanup<unsigned int, true>>::SecBlock(CryptoPP::SecBlock<unsigned int, CryptoPP::AllocatorWithCleanup<unsigned int, true>> const&) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::SecBlock<unsigned char, CryptoPP::AllocatorWithCleanup<unsigned char, false>>::SecBlock(CryptoPP::SecBlock<unsigned char, CryptoPP::AllocatorWithCleanup<unsigned char, false>> const&) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::SecBlock<unsigned char, CryptoPP::AllocatorWithCleanup<unsigned char, false>>::SecBlock(unsigned char const*, unsigned long) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::HashTransformation::TruncatedVerify(unsigned char const*, unsigned long)", referenced from:
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::PK_MessageAccumulatorImpl<CryptoPP::SHA512> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_MessageAccumulatorBase in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true> in libcie_sign_sdk.a[100](SHA256.cpp.o)
+      ...
+  "CryptoPP::UnalignedDeallocate(void*)", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      CryptoPP::Integer::~Integer() in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      ...
+  "CryptoPP::g_nullNameValuePairs", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::P1363_MGF1KDF2_Common(CryptoPP::HashTransformation&, unsigned char*, unsigned long, unsigned char const*, unsigned long, unsigned char const*, unsigned long, bool, unsigned int)", referenced from:
+      CryptoPP::P1363_MGF1::GenerateAndMask(CryptoPP::HashTransformation&, unsigned char*, unsigned long, unsigned char const*, unsigned long, bool) const in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::SimpleKeyingInterface::ThrowIfInvalidIV(unsigned char const*)", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::SimpleKeyingInterface::SetKey(unsigned char const*, unsigned long, CryptoPP::NameValuePairs const&)", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::SimpleKeyingInterface::GetNextIV(CryptoPP::RandomNumberGenerator&, unsigned char*)", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::StreamTransformationFilter::StreamTransformationFilter(CryptoPP::StreamTransformation&, CryptoPP::BufferedTransformation*, CryptoPP::BlockPaddingSchemeDef::BlockPaddingScheme)", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::SHA1::InitState(unsigned int*)", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false>::Init() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::SHA1::Transform(unsigned int*, unsigned int const*)", referenced from:
+      CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 20u, CryptoPP::SHA1, 0u, false>::HashEndianCorrectedBlock(unsigned int const*) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::SHA256::InitState(unsigned int*)", referenced from:
+      CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true>::IteratedHashWithStaticTransform() in libcie_sign_sdk.a[100](SHA256.cpp.o)
+      CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true>::Init() in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::SHA256::Transform(unsigned int*, unsigned int const*)", referenced from:
+      CryptoPP::IteratedHashWithStaticTransform<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, 32u, CryptoPP::SHA256, 32u, true>::HashEndianCorrectedBlock(unsigned int const*) in libcie_sign_sdk.a[100](SHA256.cpp.o)
+  "CryptoPP::SHA512::InitState(unsigned long*)", referenced from:
+      CryptoPP::PK_MessageAccumulatorImpl<CryptoPP::SHA512>::PK_MessageAccumulatorImpl() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true>::Init() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CSHA512::Digest(ByteArray&) in libcie_sign_sdk.a[101](SHA512.cpp.o)
+  "CryptoPP::SHA512::Transform(unsigned long*, unsigned long const*)", referenced from:
+      CryptoPP::IteratedHashWithStaticTransform<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, 64u, CryptoPP::SHA512, 64u, true>::HashEndianCorrectedBlock(unsigned long const*) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::Integer(unsigned char const*, unsigned long, CryptoPP::Integer::Signedness, CryptoPP::ByteOrder)", referenced from:
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::RSA_PURE(ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::Integer(CryptoPP::Integer const&)", referenced from:
+      CryptoPP::TrapdoorFunctionBounds::MaxPreimage() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::TrapdoorFunctionBounds::MaxImage() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::Integer()", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_MessageAccumulatorBase::PK_MessageAccumulatorBase() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_MessageAccumulatorBase::PK_MessageAccumulatorBase() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>>::PK_FinalTemplate(CryptoPP::CryptoMaterial const&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>>::PK_FinalTemplate(CryptoPP::CryptoMaterial const&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      ...
+  "CryptoPP::Integer::operator=(CryptoPP::Integer const&)", referenced from:
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::operator--()", referenced from:
+      CryptoPP::TrapdoorFunctionBounds::MaxPreimage() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::TrapdoorFunctionBounds::MaxImage() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Rijndael::Base::UncheckedSetKey(unsigned char const*, unsigned int, CryptoPP::NameValuePairs const&)", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::Algorithm::Algorithm(bool)", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::PK_MessageAccumulatorImpl<CryptoPP::SHA512>::PK_MessageAccumulatorImpl() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_MessageAccumulatorBase::PK_MessageAccumulatorBase() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>>::PK_FinalTemplate(CryptoPP::CryptoMaterial const&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      ...
+  "CryptoPP::ByteQueue::Get(unsigned char*, unsigned long)", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+  "CryptoPP::ByteQueue::ByteQueue(unsigned long)", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+  "CryptoPP::ByteQueue::~ByteQueue()", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      ...
+  "CryptoPP::PK_Verifier::VerifyMessage(unsigned char const*, unsigned long, unsigned char const*, unsigned long) const", referenced from:
+      CRSA::RSA_PSS(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PK_Verifier::RecoverMessage(unsigned char*, unsigned char const*, unsigned long, unsigned char const*, unsigned long) const", referenced from:
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PK_Verifier::Verify(CryptoPP::PK_MessageAccumulator*) const", referenced from:
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PK_Verifier::Recover(unsigned char*, CryptoPP::PK_MessageAccumulator*) const", referenced from:
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::RSAFunction::ApplyFunction(CryptoPP::Integer const&) const", referenced from:
+      CRSA::RSA_PURE(ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PSSR_MEM_Base::MaxRecoverableLength(unsigned long, unsigned long, unsigned long) const", referenced from:
+      vtable for CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PSSR_MEM_Base::RecoverablePartFirst() const", referenced from:
+      vtable for CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PSSR_MEM_Base::MinRepresentativeBitLength(unsigned long, unsigned long) const", referenced from:
+      vtable for CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PSSR_MEM_Base::ComputeMessageRepresentative(CryptoPP::RandomNumberGenerator&, unsigned char const*, unsigned long, CryptoPP::HashTransformation&, std::__1::pair<unsigned char const*, unsigned int>, bool, unsigned char*, unsigned long) const", referenced from:
+      vtable for CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PSSR_MEM_Base::RecoverMessageFromRepresentative(CryptoPP::HashTransformation&, std::__1::pair<unsigned char const*, unsigned int>, bool, unsigned char*, unsigned long, unsigned char*) const", referenced from:
+      vtable for CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::TF_VerifierBase::InputSignature(CryptoPP::PK_MessageAccumulator&, unsigned char const*, unsigned long) const", referenced from:
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::TF_VerifierBase::VerifyAndRestart(CryptoPP::PK_MessageAccumulator&) const", referenced from:
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::TF_VerifierBase::RecoverAndRestart(unsigned char*, CryptoPP::PK_MessageAccumulator&) const", referenced from:
+      vtable for CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::HashTransformation::OptimalDataAlignment() const", referenced from:
+      vtable for CryptoPP::PK_MessageAccumulatorImpl<CryptoPP::SHA512> in libcie_sign_sdk.a[98](RSA.cpp.o)
+      vtable for CryptoPP::PK_MessageAccumulatorBase in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::PK_RecoverableSignatureMessageEncodingMethod::VerifyMessageRepresentative(CryptoPP::HashTransformation&, std::__1::pair<unsigned char const*, unsigned int>, bool, unsigned char*, unsigned long) const", referenced from:
+      vtable for CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::MinEncodedSize(CryptoPP::Integer::Signedness) const", referenced from:
+      CRSA::RSA_PURE(ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::Encode(unsigned char*, unsigned long, CryptoPP::Integer::Signedness) const", referenced from:
+      CRSA::RSA_PURE(ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::BitCount() const", referenced from:
+      CryptoPP::TF_SignatureSchemeBase<CryptoPP::PK_Verifier, CryptoPP::TF_Base<CryptoPP::TrapdoorFunction, CryptoPP::PK_SignatureMessageEncodingMethod>>::MaxRecoverableLength() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Integer::ByteCount() const", referenced from:
+      CryptoPP::TF_SignatureSchemeBase<CryptoPP::PK_Verifier, CryptoPP::TF_Base<CryptoPP::TrapdoorFunction, CryptoPP::PK_SignatureMessageEncodingMethod>>::SignatureLength() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "CryptoPP::Rijndael::Enc::ProcessAndXorBlock(unsigned char const*, unsigned char const*, unsigned char*) const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::Rijndael::Enc::AdvancedProcessBlocks(unsigned char const*, unsigned char const*, unsigned char*, unsigned long, unsigned int) const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::Rijndael::Base::AlgorithmProvider() const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::Rijndael::Base::OptimalDataAlignment() const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "CryptoPP::ByteQueue::CurrentSize() const", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+  "typeinfo for CryptoPP::PSSR_MEM_Base", referenced from:
+      typeinfo for CryptoPP::PSSR_MEM_BaseWithHashId<false> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "typeinfo for CryptoPP::TF_VerifierBase", referenced from:
+      typeinfo for CryptoPP::AlgorithmImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "typeinfo for CryptoPP::HashTransformation", referenced from:
+      typeinfo for CryptoPP::IteratedHashBase<unsigned int, CryptoPP::HashTransformation> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      typeinfo for CryptoPP::PK_MessageAccumulator in libcie_sign_sdk.a[98](RSA.cpp.o)
+      typeinfo for CryptoPP::IteratedHashBase<unsigned long, CryptoPP::HashTransformation> in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "typeinfo for CryptoPP::Rijndael::Enc", referenced from:
+      typeinfo for CryptoPP::ClonableImpl<CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "VTT for CryptoPP::RSAFunction", referenced from:
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::RSAFunction::~RSAFunction() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::~CRSA() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::TF_ObjectImpl<CryptoPP::TF_VerifierBase, CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>, CryptoPP::RSAFunction>::~TF_ObjectImpl() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>>::PK_FinalTemplate(CryptoPP::CryptoMaterial const&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+  "vtable for CryptoPP::RSAFunction", referenced from:
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::PK_FinalTemplate<CryptoPP::TF_VerifierImpl<CryptoPP::TF_SignatureSchemeOptions<CryptoPP::TF_SS<CryptoPP::RSA, CryptoPP::PSS, CryptoPP::SHA512, int>, CryptoPP::RSA, CryptoPP::PSSR_MEM<false, CryptoPP::P1363_MGF1, -1, 0, false>, CryptoPP::SHA512>>>::PK_FinalTemplate(CryptoPP::CryptoMaterial const&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::CipherModeBase", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::CipherModeFinalTemplate_ExternalCipher<CryptoPP::CBC_Encryption>::~CipherModeFinalTemplate_ExternalCipher() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::CBC_Encryption::~CBC_Encryption() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::StringSinkTemplate<std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>>", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::SimpleKeyingInterface", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::FilterWithBufferedInput", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::StreamTransformationFilter::~StreamTransformationFilter() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::BlockOrientedCipherModeBase", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::CipherModeFinalTemplate_ExternalCipher<CryptoPP::CBC_Encryption>::~CipherModeFinalTemplate_ExternalCipher() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::CBC_Encryption::~CBC_Encryption() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::CipherModeFinalTemplate_ExternalCipher<CryptoPP::CBC_Encryption>", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::SHA1", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::ClonableImpl<CryptoPP::SHA1, CryptoPP::AlgorithmImpl<CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation>, CryptoPP::SHA1>>::Clone() const in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::Filter", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::StreamTransformationFilter::~StreamTransformationFilter() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::SHA256", referenced from:
+      CSHA256::Digest(ByteArray&) in libcie_sign_sdk.a[100](SHA256.cpp.o)
+      CryptoPP::ClonableImpl<CryptoPP::SHA256, CryptoPP::AlgorithmImpl<CryptoPP::IteratedHash<unsigned int, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 64u, CryptoPP::HashTransformation>, CryptoPP::SHA256>>::Clone() const in libcie_sign_sdk.a[100](SHA256.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::SHA512", referenced from:
+      CryptoPP::PK_MessageAccumulatorImpl<CryptoPP::SHA512>::PK_MessageAccumulatorImpl() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::ClonableImpl<CryptoPP::SHA512, CryptoPP::AlgorithmImpl<CryptoPP::IteratedHash<unsigned long, CryptoPP::EnumToType<CryptoPP::ByteOrder, 1>, 128u, CryptoPP::HashTransformation>, CryptoPP::SHA512>>::Clone() const in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CSHA512::Digest(ByteArray&) in libcie_sign_sdk.a[101](SHA512.cpp.o)
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::Integer", referenced from:
+      IAS::VerificaSODPSS(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      CryptoPP::Integer::~Integer() in libcie_sign_sdk.a[75](IAS.cpp.o)
+      IAS::VerificaSOD(ByteArray&, std::__1::map<unsigned char, ByteDynArray, std::__1::less<unsigned char>, std::__1::allocator<std::__1::pair<unsigned char const, ByteDynArray>>>&) in libcie_sign_sdk.a[75](IAS.cpp.o)
+      CRSA::CRSA(ByteArray&, ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CryptoPP::RSAFunction::~RSAFunction() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::~CRSA() in libcie_sign_sdk.a[98](RSA.cpp.o)
+      CRSA::RSA_PURE(ByteArray&) in libcie_sign_sdk.a[98](RSA.cpp.o)
+      ...
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "vtable for CryptoPP::Rijndael::Base", referenced from:
+      CacheSetData(char const*, unsigned char*, int, unsigned char*, int) in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>::~BlockCipherFinal() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      non-virtual thunk to CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>::~BlockCipherFinal() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::ClonableImpl<CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>, CryptoPP::Rijndael::Enc>::~ClonableImpl() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>::~BlockCipherFinal() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      CryptoPP::ClonableImpl<CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>, CryptoPP::Rijndael::Enc>::Clone() const in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      non-virtual thunk to CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc>::~BlockCipherFinal() in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+      ...
+   NOTE: a missing vtable usually means the first non-inline virtual member function has no definition.
+  "non-virtual thunk to CryptoPP::Rijndael::Enc::ProcessAndXorBlock(unsigned char const*, unsigned char const*, unsigned char*) const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "non-virtual thunk to CryptoPP::Rijndael::Enc::AdvancedProcessBlocks(unsigned char const*, unsigned char const*, unsigned char*, unsigned long, unsigned int) const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "non-virtual thunk to CryptoPP::Rijndael::Base::AlgorithmProvider() const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+  "non-virtual thunk to CryptoPP::Rijndael::Base::OptimalDataAlignment() const", referenced from:
+      vtable for CryptoPP::BlockCipherFinal<(CryptoPP::CipherDir)0, CryptoPP::Rijndael::Enc> in libcie_sign_sdk.a[79](CacheLib.cpp.o)
+ld: symbol(s) not found for architecture arm64
+clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+make[3]: *** [mock_sign_test] Error 1
+make[2]: *** [CMakeFiles/mock_sign_test.dir/all] Error 2
+make[1]: *** [CMakeFiles/mock_sign_test.dir/rule] Error 2
+make: *** [mock_sign_test] Error 2

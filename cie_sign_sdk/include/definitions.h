@@ -13,10 +13,22 @@
 #include <stdafx.h>
 #define STRICMP stricmp
 #else
-#include <wintypes.h>
+#if defined(__has_include)
+#  if __has_include(<PCSC/wintypes.h>)
+#    include <PCSC/wintypes.h>
+#    define CIE_HAS_PCSC_TYPES 1
+#  elif __has_include(<winscard.h>)
+#    include <winscard.h>
+#    define CIE_HAS_PCSC_TYPES 1
+#  endif
+#endif
 #define STRICMP strcasecmp
 
 #include <memory.h>
+
+#ifndef CIE_HAS_PCSC_TYPES
+typedef bool BOOL;
+#endif
 
 #define IN
 #define OUT
@@ -33,10 +45,21 @@
 #define ERROR_INVALID_DATA 0xE1
 #define ERROR_UNABLE_TO_ALLOCATE  0xE2
 
-#ifndef BYTE 
+#ifndef CIE_HAS_PCSC_TYPES
+#ifndef BYTE
 #define BYTE unsigned char
 #endif
+#ifndef WORD
+#define WORD unsigned short
+#endif
+#ifndef DWORD
+#define DWORD unsigned long
+#endif
+#ifndef LONG
+#define LONG long
+#endif
 #define S_OK  0
+#endif
 
 #define UINT unsigned int
 
@@ -46,8 +69,10 @@
 #endif
 
 #ifndef LOBYTE
-	#define LOBYTE(l) l & 0xFF
-	#define HIBYTE(l) (l >> 8) & 0xFF
+#include <stdint.h>
+
+#define LOBYTE(l) ((uint8_t)((l) & 0xFF))
+#define HIBYTE(l) ((uint8_t)(((l) >> 8) & 0xFF))
 #endif
 
 #ifdef WIN32
@@ -78,7 +103,7 @@
 	#endif
 	#define HANDLE void*
 	#define ODS printf
-#endif
+#endif // WIN32
 
 #define MAX_PATH 256
 

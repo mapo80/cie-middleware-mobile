@@ -492,3 +492,5 @@ void CLog::writeModuleInfo() {
 	write("Applicazione chiamante: %s",module.szModuleName.c_str());
 }
 
+CLog Log;
+

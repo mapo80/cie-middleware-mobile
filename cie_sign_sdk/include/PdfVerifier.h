@@ -12,8 +12,6 @@
 
 
 #include "podofo/podofo.h"
-#include "podofo/doc/PdfSignOutputDevice.h"
-#include "podofo/doc/PdfSignatureField.h"
 #include "ASN1/UUCByteArray.h"
 #include "disigonsdk.h"
 
@@ -60,12 +58,10 @@ private:
 	
 	int m_actualLen;
 	
-	char* m_szDocBuffer;
+	const char* m_szDocBuffer;
 	
 };
 
 #endif //_PDFVERIFIER_H
-
-
 
 
