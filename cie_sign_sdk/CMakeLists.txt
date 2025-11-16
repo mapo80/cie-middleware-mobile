@@ -223,7 +223,10 @@ install(TARGETS ${PROJECT_NAME} DESTINATION ${INSTALL_DIR})
 install(FILES ${INCLUDE_DIR}/disigonsdk.h ${INCLUDE_DIR}/CIEEngine.h DESTINATION ${INSTALL_DIR})
 
 install(TARGETS ciesign_core DESTINATION ${INSTALL_DIR})
-install(FILES ${INCLUDE_DIR}/mobile/cie_sign.h DESTINATION ${INSTALL_DIR}/mobile)
+install(FILES
+    ${INCLUDE_DIR}/mobile/cie_sign.h
+    ${INCLUDE_DIR}/mobile/cie_platform.h
+    DESTINATION ${INSTALL_DIR}/mobile)
 
 if(NOT CIE_SIGN_SDK_SKIP_TESTS AND NOT ANDROID)
     enable_testing()
