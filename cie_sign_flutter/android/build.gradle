@@ -1,0 +1,103 @@
+group = "it.ipzs.cie_sign_flutter"
+version = "1.0-SNAPSHOT"
+
+buildscript {
+    ext.kotlin_version = "2.2.20"
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+
+android {
+    namespace = "it.ipzs.cie_sign_flutter"
+
+    compileSdk = 36
+    ndkVersion = "26.2.11394342"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = [
+                "src/main/kotlin",
+                "../../android/cieSignSdk/src/main/java"
+            ]
+            manifest.srcFile "src/main/AndroidManifest.xml"
+        }
+        test {
+            java.srcDirs += "src/test/kotlin"
+        }
+    }
+
+    defaultConfig {
+        minSdk = 26
+
+        externalNativeBuild {
+            cmake {
+                def repoRoot = project.projectDir.toPath().resolve("..").resolve("..").normalize().toFile()
+                def depsDir = new File(repoRoot, "cie_sign_sdk/Dependencies-arm64-android").absolutePath
+                arguments(
+                    "-DANDROID_PLATFORM=android-26",
+                    "-DDEPENDENCIES_DIR=${depsDir}",
+                    "-DCIE_SIGN_SDK_SKIP_TESTS=ON"
+                )
+            }
+        }
+
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("../../android/cieSignSdk/src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    packaging {
+        jniLibs.keepDebugSymbols += "**/*.so"
+    }
+
+    testOptions {
+        unitTests.all {
+            useJUnitPlatform()
+
+            testLogging {
+               events "passed", "skipped", "failed", "standardOut", "standardError"
+               outputs.upToDateWhen {false}
+               showStandardStreams = true
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation("androidx.annotation:annotation:1.9.1")
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+    testImplementation("org.mockito:mockito-core:5.0.0")
+}

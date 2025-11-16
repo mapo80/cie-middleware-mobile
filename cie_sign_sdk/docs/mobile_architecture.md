@@ -42,6 +42,13 @@
 - Header pubblici in `include/mobile`.
 - Binding Swift (`CieSignKit.xcframework`) e Android (`com.example.ciesign` AAR) costruiti sopra la C API.
 
+## Bridge iOS (CoreNFC)
+
+- **CieNfcSession** (`ios/CieSignBridge/CieNfcSession.*`): incapsula `NFCTagReaderSession` e traduce l'API asincrona di CoreNFC in tre callback sincroni (`open/transceive/close`) richiesti da `cie_platform_nfc_adapter`. Su simulator e piattaforme prive di NFC ritorna errori strutturati (`CieSignNfcErrorDomain`) mantenendo l’interfaccia identica.
+- **CieSignMobileBridge**: espone un'API Objective-C/Swift-friendly (`sign(pdf:pin:appearance:)`) che costruisce al volo il `cie_platform_config`, crea il contesto `cie_sign_ctx` tramite `cie_sign_ctx_create_with_platform` e invoca `cie_sign_execute`. Gestisce buffer, traduzione errori e pulizia delle sessioni NFC.
+- **SwiftUI Host** (`ios/CieSignIosHost`): usa il bridge reale. L'app avvia il flusso quando l’utente preme “Firma PDF di esempio”; durante la sessione mostra un loader e, su dispositivi reali, passa il controllo a CoreNFC per rilevare la carta. Sul simulatore l'utente riceve un messaggio “CoreNFC non disponibile”.
+- I file bridge sono inseriti nel progetto Xcode principale (`CieSignIosTests.xcodeproj`) e linkano le stesse statiche `libciesign_core.a`/`libcie_sign_sdk.a` usate dagli XCTest, garantendo che il codice di produzione e quello di test condividano i medesimi binari.
+
 ## Aggiornamento PoDoFo 1.x e pipeline PDF
 
 - **Output PoDoFo full-buffer**: `PdfSignatureGenerator` mantiene una copia del PDF originale (`m_streamBuffer`) e consegna a PoDoFo un `ContainerStreamDevice<std::string>` in modalità read/write. In questo modo `StartSigning/FinishSigning` scrivono il documento completo (xref incluso) e `GetSignedPdf` restituisce direttamente `m_streamBuffer`, senza ricombinare manualmente chunk incrementali come avveniva con il vecchio PoDoFo.

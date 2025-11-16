@@ -118,6 +118,13 @@ struct LoggerState {
     cie_platform_logger logger{};
 };
 
+void log_message(const LoggerState& state, const std::string& message)
+{
+    if (state.enabled && state.logger.log) {
+        state.logger.log(state.logger.user_data, "cie_sign", message.c_str());
+    }
+}
+
 struct cie_sign_ctx_impl {
     cie_apdu_cb apdu_callback = nullptr;
     void *user_data = nullptr;
@@ -181,6 +188,7 @@ cie_status copy_to_result(cie_sign_ctx_impl *ctx,
 {
     if (data.getLength() > result->output_capacity) {
         ctx->last_error = "Output buffer too small";
+        log_message(ctx->platform_logger, ctx->last_error);
         result->output_len = 0;
         return CIE_STATUS_INVALID_INPUT;
     }
@@ -196,6 +204,7 @@ cie_status map_error(cie_sign_ctx_impl *ctx,
                      cie_status fallback = CIE_STATUS_CARD_ERROR)
 {
     ctx->last_error = std::string(stage) + " failed with code " + std::to_string(code);
+    log_message(ctx->platform_logger, ctx->last_error);
     return fallback;
 }
 
@@ -445,6 +454,7 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
         (!ctx->mock_mode && !ctx->ias)) {
         if (ctx) {
             ctx->last_error = "Invalid input arguments";
+            log_message(ctx->platform_logger, ctx->last_error);
         }
         return CIE_STATUS_INVALID_INPUT;
     }
@@ -453,6 +463,7 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
 
     if (!request->pin || request->pin_len == 0) {
         ctx->last_error = "PIN not provided";
+        log_message(ctx->platform_logger, ctx->last_error);
         return CIE_STATUS_INVALID_INPUT;
     }
 
@@ -505,6 +516,7 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
             break;
         default:
             ctx->last_error = "Unsupported document type";
+            log_message(ctx->platform_logger, ctx->last_error);
             status = CIE_STATUS_UNSUPPORTED_FEATURE;
             break;
         }

@@ -15,9 +15,11 @@ android {
 
         externalNativeBuild {
             cmake {
+                def repoRoot = project.projectDir.toPath().resolve("..").resolve("..").normalize().toFile()
+                def depsDir = new File(repoRoot, "cie_sign_sdk/Dependencies-arm64-android").absolutePath
                 arguments(
                     "-DANDROID_PLATFORM=android-26",
-                    "-DDEPENDENCIES_DIR=${project.rootDir}/../cie_sign_sdk/Dependencies-arm64-android",
+                    "-DDEPENDENCIES_DIR=${depsDir}",
                     "-DCIE_SIGN_SDK_SKIP_TESTS=ON"
                 )
             }
