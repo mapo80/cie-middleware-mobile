@@ -108,6 +108,16 @@ long MockSigner::Sign(UUCByteArray &data, UUCByteArray &, int, UUCByteArray &sig
     return CKR_OK;
 }
 
+struct AdapterState {
+    cie_platform_nfc_adapter adapter{};
+    bool opened = false;
+};
+
+struct LoggerState {
+    bool enabled = false;
+    cie_platform_logger logger{};
+};
+
 struct cie_sign_ctx_impl {
     cie_apdu_cb apdu_callback = nullptr;
     void *user_data = nullptr;
@@ -116,6 +126,8 @@ struct cie_sign_ctx_impl {
     std::unique_ptr<IAS> ias;
     bool mock_mode = false;
     std::unique_ptr<MockSigner> mock_signer;
+    std::unique_ptr<AdapterState> adapter_state;
+    LoggerState platform_logger;
 };
 
 struct SensitiveString {
@@ -144,6 +156,23 @@ HRESULT mobile_token_transmit(void *data,
     }
 
     return rc == 0 ? kTransmitOk : rc;
+}
+
+int platform_transceive_shim(void *data,
+                             const uint8_t *apdu,
+                             uint32_t apdu_len,
+                             uint8_t *resp,
+                             uint32_t *resp_len)
+{
+    auto *state = static_cast<AdapterState *>(data);
+    if (!state || !state->adapter.transceive) {
+        return -1;
+    }
+    return state->adapter.transceive(state->adapter.user_data,
+                                     apdu,
+                                     apdu_len,
+                                     resp,
+                                     resp_len);
 }
 
 cie_status copy_to_result(cie_sign_ctx_impl *ctx,
@@ -305,10 +334,12 @@ cie_status sign_xml(cie_sign_ctx_impl *ctx,
 
 } // namespace
 
-cie_sign_ctx *cie_sign_ctx_create(cie_apdu_cb cb,
+cie_sign_ctx *create_ctx_internal(cie_apdu_cb cb,
                                   void *user_data,
                                   const uint8_t *atr,
-                                  size_t atr_len)
+                                  size_t atr_len,
+                                  std::unique_ptr<AdapterState> adapter_state,
+                                  const cie_platform_logger *logger)
 {
     if (!cb || !atr || atr_len == 0) {
         return nullptr;
@@ -327,6 +358,11 @@ cie_sign_ctx *cie_sign_ctx_create(cie_apdu_cb cb,
         ByteArray atrArray(ctx->atr.data(), ctx->atr.size());
         ctx->apdu_callback = cb;
         ctx->user_data = user_data;
+        ctx->adapter_state = std::move(adapter_state);
+        if (logger) {
+            ctx->platform_logger.enabled = logger->log != nullptr;
+            ctx->platform_logger.logger = *logger;
+        }
         if (is_mock_atr(ctx->atr)) {
             ctx->mock_mode = true;
         } else {
@@ -341,9 +377,61 @@ cie_sign_ctx *cie_sign_ctx_create(cie_apdu_cb cb,
     return reinterpret_cast<cie_sign_ctx *>(ctx);
 }
 
+cie_sign_ctx *cie_sign_ctx_create(cie_apdu_cb cb,
+                                  void *user_data,
+                                  const uint8_t *atr,
+                                  size_t atr_len)
+{
+    return create_ctx_internal(cb, user_data, atr, atr_len, nullptr, nullptr);
+}
+
+cie_sign_ctx *cie_sign_ctx_create_with_platform(const cie_platform_config *config)
+{
+    if (!config) {
+        return nullptr;
+    }
+
+    const uint8_t *atr = config->atr;
+    size_t atr_len = config->atr_len;
+    cie_apdu_cb cb = config->legacy_apdu_cb;
+    void *user = config->legacy_user_data;
+    std::unique_ptr<AdapterState> adapter_state;
+
+    if (config->nfc) {
+        if (!config->nfc->transceive) {
+            return nullptr;
+        }
+        adapter_state = std::make_unique<AdapterState>();
+        adapter_state->adapter = *config->nfc;
+        cb = platform_transceive_shim;
+        user = adapter_state.get();
+
+        if (adapter_state->adapter.open) {
+            const uint8_t *adapter_atr = nullptr;
+            size_t adapter_atr_len = 0;
+            if (adapter_state->adapter.open(adapter_state->adapter.user_data,
+                                            &adapter_atr,
+                                            &adapter_atr_len) != 0) {
+                return nullptr;
+            }
+            if (!adapter_atr || adapter_atr_len == 0) {
+                return nullptr;
+            }
+            atr = adapter_atr;
+            atr_len = adapter_atr_len;
+            adapter_state->opened = true;
+        }
+    }
+
+    return create_ctx_internal(cb, user, atr, atr_len, std::move(adapter_state), config->logger);
+}
+
 void cie_sign_ctx_destroy(cie_sign_ctx *public_ctx)
 {
     auto *ctx = reinterpret_cast<cie_sign_ctx_impl *>(public_ctx);
+    if (ctx && ctx->adapter_state && ctx->adapter_state->adapter.close && ctx->adapter_state->opened) {
+        ctx->adapter_state->adapter.close(ctx->adapter_state->adapter.user_data);
+    }
     delete ctx;
 }
 

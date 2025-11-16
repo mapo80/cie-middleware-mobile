@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cie_platform.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -66,6 +68,8 @@ cie_sign_ctx *cie_sign_ctx_create(cie_apdu_cb cb,
                                   void *user_data,
                                   const uint8_t *atr,
                                   size_t atr_len);
+
+cie_sign_ctx *cie_sign_ctx_create_with_platform(const cie_platform_config *config);
 
 void cie_sign_ctx_destroy(cie_sign_ctx *ctx);
 
