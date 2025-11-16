@@ -1,0 +1,723 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+	AB0000000000000000000001 /* MockSignTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000001 /* MockSignTests.swift */; };
+	AB0000000000000000000002 /* mock_sign_ios.mm in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000002 /* mock_sign_ios.mm */; };
+	AB0000000000000000000003 /* mock_transport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000003 /* mock_transport.cpp */; };
+	AB0000000000000000000004 /* mock_apdu_sequence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000004 /* mock_apdu_sequence.cpp */; };
+	AB0000000000000000000005 /* sample.pdf in Resources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000008 /* sample.pdf */; };
+	AB0000000000000000000006 /* libciesign_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000009 /* libciesign_core.a */; };
+	AB0000000000000000000007 /* libcie_sign_sdk.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000A /* libcie_sign_sdk.a */; };
+	AB0000000000000000000008 /* libcrypto.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000B /* libcrypto.a */; };
+	AB0000000000000000000009 /* libssl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000C /* libssl.a */; };
+	AB000000000000000000000A /* libcurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000D /* libcurl.a */; };
+	AB000000000000000000000B /* libxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000E /* libxml2.a */; };
+	AB000000000000000000000C /* libz.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000F /* libz.a */; };
+	AB000000000000000000000D /* libpng16.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000010 /* libpng16.a */; };
+	AB000000000000000000000E /* libfreetype.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000011 /* libfreetype.a */; };
+	AB000000000000000000000F /* libfontconfig.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000012 /* libfontconfig.a */; };
+	AB0000000000000000000010 /* libpodofo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000013 /* libpodofo.a */; };
+	AB0000000000000000000011 /* libpodofo_private.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000014 /* libpodofo_private.a */; };
+	AB0000000000000000000012 /* libpodofo_3rdparty.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000015 /* libpodofo_3rdparty.a */; };
+	AB0000000000000000000013 /* libbz2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000016 /* libbz2.a */; };
+	AB0000000000000000000014 /* libbrotlienc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000017 /* libbrotlienc.a */; };
+	AB0000000000000000000015 /* libbrotlidec.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000018 /* libbrotlidec.a */; };
+	AB0000000000000000000016 /* libbrotlicommon.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000019 /* libbrotlicommon.a */; };
+	AB0000000000000000000017 /* libjpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001A /* libjpeg.a */; };
+	AB0000000000000000000018 /* libturbojpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001B /* libturbojpeg.a */; };
+	AB0000000000000000000019 /* libtiff.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001C /* libtiff.a */; };
+	AB000000000000000000001A /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001D /* liblzma.a */; };
+	AB000000000000000000001B /* libutf8proc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001E /* libutf8proc.a */; };
+	AB000000000000000000001C /* libexpat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001F /* libexpat.a */; };
+	AB000000000000000000001D /* libcryptopp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000020 /* libcryptopp.a */; };
+	AB000000000000000000001E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000021 /* CoreFoundation.framework */; };
+	AB000000000000000000001F /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000022 /* SystemConfiguration.framework */; };
+	AB0000000000000000000020 /* libiconv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000023 /* libiconv.a */; };
+	AB0000000000000000000024 /* libcharset.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000028 /* libcharset.a */; };
+	AB0000000000000000000021 /* CieSignIosHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000024 /* CieSignIosHostApp.swift */; };
+	AB0000000000000000000022 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000025 /* ContentView.swift */; };
+	AB0000000000000000000023 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000026 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+	AA000000000000000000001D /* PBXContainerItemProxy */ = {
+		isa = PBXContainerItemProxy;
+		containerPortal = AA0000000000000000000001 /* Project object */;
+		proxyType = 1;
+		remoteGlobalIDString = AA0000000000000000000009;
+		remoteInfo = CieSignIosHost;
+	};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+	A12000000000000000000001 /* MockSignTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CieSignIosTests/MockSignTests.swift; sourceTree = "<group>"; };
+	A12000000000000000000002 /* mock_sign_ios.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ../cie_sign_sdk/tests/ios/mock_sign_ios.mm; sourceTree = "<group>"; };
+	A12000000000000000000003 /* mock_transport.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../cie_sign_sdk/tests/mock/mock_transport.cpp; sourceTree = "<group>"; };
+	A12000000000000000000004 /* mock_apdu_sequence.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ../cie_sign_sdk/tests/mock/mock_apdu_sequence.cpp; sourceTree = "<group>"; };
+	A12000000000000000000005 /* CieSignTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ../cie_sign_sdk/tests/ios/CieSignTests-Bridging-Header.h; sourceTree = "<group>"; };
+	A12000000000000000000006 /* CieSignTestBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ../cie_sign_sdk/tests/ios/CieSignTestBridge.h; sourceTree = "<group>"; };
+	A12000000000000000000007 /* Tests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Tests-Info.plist"; path = CieSignIosTests/Info.plist; sourceTree = "<group>"; };
+	A12000000000000000000008 /* sample.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = ../cie_sign_sdk/data/fixtures/sample.pdf; sourceTree = "<group>"; };
+	A12000000000000000000009 /* libciesign_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/build/ios-sim/Release-iphonesimulator/libciesign_core.a; sourceTree = "<group>"; };
+	A1200000000000000000000A /* libcie_sign_sdk.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/build/ios-sim/Release-iphonesimulator/libcie_sign_sdk.a; sourceTree = "<group>"; };
+	A1200000000000000000000B /* libcrypto.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/openssl/lib/libcrypto.a; sourceTree = "<group>"; };
+	A1200000000000000000000C /* libssl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/openssl/lib/libssl.a; sourceTree = "<group>"; };
+	A1200000000000000000000D /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libcurl/lib/libcurl.a; sourceTree = "<group>"; };
+	A1200000000000000000000E /* libxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libxml2/lib/libxml2.a; sourceTree = "<group>"; };
+	A1200000000000000000000F /* libz.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/zlib/lib/libz.a; sourceTree = "<group>"; };
+	A12000000000000000000010 /* libpng16.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libpng/lib/libpng16.a; sourceTree = "<group>"; };
+	A12000000000000000000011 /* libfreetype.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/freetype/lib/libfreetype.a; sourceTree = "<group>"; };
+	A12000000000000000000012 /* libfontconfig.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/fontconfig/lib/libfontconfig.a; sourceTree = "<group>"; };
+	A12000000000000000000013 /* libpodofo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/podofo/lib/libpodofo.a; sourceTree = "<group>"; };
+	A12000000000000000000014 /* libpodofo_private.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/podofo/lib/libpodofo_private.a; sourceTree = "<group>"; };
+	A12000000000000000000015 /* libpodofo_3rdparty.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/podofo/lib/libpodofo_3rdparty.a; sourceTree = "<group>"; };
+	A12000000000000000000016 /* libbz2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/bzip2/lib/libbz2.a; sourceTree = "<group>"; };
+	A12000000000000000000017 /* libbrotlienc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/brotli/lib/libbrotlienc.a; sourceTree = "<group>"; };
+	A12000000000000000000018 /* libbrotlidec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/brotli/lib/libbrotlidec.a; sourceTree = "<group>"; };
+	A12000000000000000000019 /* libbrotlicommon.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/brotli/lib/libbrotlicommon.a; sourceTree = "<group>"; };
+	A1200000000000000000001A /* libjpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libjpeg/lib/libjpeg.a; sourceTree = "<group>"; };
+	A1200000000000000000001B /* libturbojpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libjpeg/lib/libturbojpeg.a; sourceTree = "<group>"; };
+	A1200000000000000000001C /* libtiff.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libtiff/lib/libtiff.a; sourceTree = "<group>"; };
+	A1200000000000000000001D /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/liblzma/lib/liblzma.a; sourceTree = "<group>"; };
+	A1200000000000000000001E /* libutf8proc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/utf8proc/lib/libutf8proc.a; sourceTree = "<group>"; };
+	A1200000000000000000001F /* libexpat.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/expat/lib/libexpat.a; sourceTree = "<group>"; };
+	A12000000000000000000020 /* libcryptopp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/cryptopp/lib/libcryptopp.a; sourceTree = "<group>"; };
+	A12000000000000000000021 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+	A12000000000000000000022 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+	A12000000000000000000023 /* libiconv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib/libiconv.a; sourceTree = "<group>"; };
+	A12000000000000000000024 /* CieSignIosHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CieSignIosHost/CieSignIosHostApp.swift; sourceTree = "<group>"; };
+	A12000000000000000000025 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CieSignIosHost/ContentView.swift; sourceTree = "<group>"; };
+	A12000000000000000000026 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = CieSignIosHost/Assets.xcassets; sourceTree = "<group>"; };
+	A12000000000000000000027 /* Host-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Host-Info.plist"; path = CieSignIosHost/Info.plist; sourceTree = "<group>"; };
+	A12000000000000000000028 /* libcharset.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib/libcharset.a; sourceTree = "<group>"; };
+	AA000000000000000000001B /* CieSignIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CieSignIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+	AA000000000000000000001C /* CieSignIosHost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CieSignIosHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+	AA0000000000000000000016 /* Frameworks */ = {
+		isa = PBXFrameworksBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			AB0000000000000000000006 /* libciesign_core.a in Frameworks */,
+			AB0000000000000000000007 /* libcie_sign_sdk.a in Frameworks */,
+			AB0000000000000000000008 /* libcrypto.a in Frameworks */,
+			AB0000000000000000000009 /* libssl.a in Frameworks */,
+			AB000000000000000000000A /* libcurl.a in Frameworks */,
+			AB000000000000000000000B /* libxml2.a in Frameworks */,
+			AB000000000000000000000C /* libz.a in Frameworks */,
+			AB000000000000000000000D /* libpng16.a in Frameworks */,
+			AB000000000000000000000E /* libfreetype.a in Frameworks */,
+			AB000000000000000000000F /* libfontconfig.a in Frameworks */,
+			AB0000000000000000000010 /* libpodofo.a in Frameworks */,
+			AB0000000000000000000011 /* libpodofo_private.a in Frameworks */,
+			AB0000000000000000000012 /* libpodofo_3rdparty.a in Frameworks */,
+			AB0000000000000000000013 /* libbz2.a in Frameworks */,
+			AB0000000000000000000014 /* libbrotlienc.a in Frameworks */,
+			AB0000000000000000000015 /* libbrotlidec.a in Frameworks */,
+			AB0000000000000000000016 /* libbrotlicommon.a in Frameworks */,
+			AB0000000000000000000017 /* libjpeg.a in Frameworks */,
+			AB0000000000000000000018 /* libturbojpeg.a in Frameworks */,
+			AB0000000000000000000019 /* libtiff.a in Frameworks */,
+			AB000000000000000000001A /* liblzma.a in Frameworks */,
+			AB000000000000000000001B /* libutf8proc.a in Frameworks */,
+			AB000000000000000000001C /* libexpat.a in Frameworks */,
+			AB000000000000000000001D /* libcryptopp.a in Frameworks */,
+			AB000000000000000000001E /* CoreFoundation.framework in Frameworks */,
+			AB000000000000000000001F /* SystemConfiguration.framework in Frameworks */,
+			AB0000000000000000000020 /* libiconv.a in Frameworks */,
+			AB0000000000000000000024 /* libcharset.a in Frameworks */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+	AA0000000000000000000019 /* Frameworks */ = {
+		isa = PBXFrameworksBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+	AA000000000000000000000D = {
+		isa = PBXGroup;
+		children = (
+			AA0000000000000000000014 /* CieSignIosHost */,
+			AA000000000000000000000F /* Tests */,
+			AA0000000000000000000010 /* Resources */,
+			AA0000000000000000000011 /* Support */,
+			AA0000000000000000000012 /* Libraries */,
+			AA0000000000000000000013 /* Frameworks */,
+			AA000000000000000000000E /* Products */,
+		);
+		sourceTree = "<group>";
+	};
+	AA000000000000000000000E /* Products */ = {
+		isa = PBXGroup;
+		children = (
+			AA000000000000000000001C /* CieSignIosHost.app */,
+			AA000000000000000000001B /* CieSignIosTests.xctest */,
+		);
+		name = Products;
+		sourceTree = "<group>";
+	};
+	AA000000000000000000000F /* Tests */ = {
+		isa = PBXGroup;
+		children = (
+			A12000000000000000000001 /* MockSignTests.swift */,
+			A12000000000000000000002 /* mock_sign_ios.mm */,
+			A12000000000000000000003 /* mock_transport.cpp */,
+			A12000000000000000000004 /* mock_apdu_sequence.cpp */,
+			A12000000000000000000005 /* CieSignTests-Bridging-Header.h */,
+			A12000000000000000000006 /* CieSignTestBridge.h */,
+		);
+		name = Tests;
+		sourceTree = "<group>";
+	};
+	AA0000000000000000000010 /* Resources */ = {
+		isa = PBXGroup;
+		children = (
+			A12000000000000000000008 /* sample.pdf */,
+		);
+		name = Resources;
+		sourceTree = "<group>";
+	};
+	AA0000000000000000000011 /* Support */ = {
+		isa = PBXGroup;
+		children = (
+			A12000000000000000000007 /* Tests-Info.plist */,
+			A12000000000000000000027 /* Host-Info.plist */,
+		);
+		name = Support;
+		sourceTree = "<group>";
+	};
+	AA0000000000000000000012 /* Libraries */ = {
+		isa = PBXGroup;
+		children = (
+			A12000000000000000000009 /* libciesign_core.a */,
+			A1200000000000000000000A /* libcie_sign_sdk.a */,
+			A1200000000000000000000B /* libcrypto.a */,
+			A1200000000000000000000C /* libssl.a */,
+			A1200000000000000000000D /* libcurl.a */,
+			A1200000000000000000000E /* libxml2.a */,
+			A1200000000000000000000F /* libz.a */,
+			A12000000000000000000010 /* libpng16.a */,
+			A12000000000000000000011 /* libfreetype.a */,
+			A12000000000000000000012 /* libfontconfig.a */,
+			A12000000000000000000013 /* libpodofo.a */,
+			A12000000000000000000014 /* libpodofo_private.a */,
+			A12000000000000000000015 /* libpodofo_3rdparty.a */,
+			A12000000000000000000016 /* libbz2.a */,
+			A12000000000000000000017 /* libbrotlienc.a */,
+			A12000000000000000000018 /* libbrotlidec.a */,
+			A12000000000000000000019 /* libbrotlicommon.a */,
+			A1200000000000000000001A /* libjpeg.a */,
+			A1200000000000000000001B /* libturbojpeg.a */,
+			A1200000000000000000001C /* libtiff.a */,
+			A1200000000000000000001D /* liblzma.a */,
+			A1200000000000000000001E /* libutf8proc.a */,
+			A1200000000000000000001F /* libexpat.a */,
+			A12000000000000000000020 /* libcryptopp.a */,
+			A12000000000000000000023 /* libiconv.a */,
+			A12000000000000000000028 /* libcharset.a */,
+		);
+		name = Libraries;
+		sourceTree = "<group>";
+	};
+	AA0000000000000000000013 /* Frameworks */ = {
+		isa = PBXGroup;
+		children = (
+			A12000000000000000000021 /* CoreFoundation.framework */,
+			A12000000000000000000022 /* SystemConfiguration.framework */,
+		);
+		name = Frameworks;
+		sourceTree = "<group>";
+	};
+	AA0000000000000000000014 /* CieSignIosHost */ = {
+		isa = PBXGroup;
+		children = (
+			A12000000000000000000024 /* CieSignIosHostApp.swift */,
+			A12000000000000000000025 /* ContentView.swift */,
+			A12000000000000000000026 /* Assets.xcassets */,
+		);
+		name = CieSignIosHost;
+		sourceTree = "<group>";
+	};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+	AA0000000000000000000005 /* CieSignIosTests */ = {
+		isa = PBXNativeTarget;
+		buildConfigurationList = AA0000000000000000000006 /* Build configuration list for PBXNativeTarget "CieSignIosTests" */;
+		buildPhases = (
+			AA0000000000000000000015 /* Sources */,
+			AA0000000000000000000016 /* Frameworks */,
+			AA0000000000000000000017 /* Resources */,
+		);
+		buildRules = (
+		);
+		dependencies = (
+			AA000000000000000000001E /* PBXTargetDependency */,
+		);
+		name = CieSignIosTests;
+		productName = CieSignIosTests;
+		productReference = AA000000000000000000001B /* CieSignIosTests.xctest */;
+		productType = "com.apple.product-type.bundle.unit-test";
+	};
+	AA0000000000000000000009 /* CieSignIosHost */ = {
+		isa = PBXNativeTarget;
+		buildConfigurationList = AA000000000000000000000A /* Build configuration list for PBXNativeTarget "CieSignIosHost" */;
+		buildPhases = (
+			AA0000000000000000000018 /* Sources */,
+			AA0000000000000000000019 /* Frameworks */,
+			AA000000000000000000001A /* Resources */,
+		);
+		buildRules = (
+		);
+		dependencies = (
+		);
+		name = CieSignIosHost;
+		productName = CieSignIosHost;
+		productReference = AA000000000000000000001C /* CieSignIosHost.app */;
+		productType = "com.apple.product-type.application";
+	};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+	AA0000000000000000000001 /* Project object */ = {
+		isa = PBXProject;
+		attributes = {
+			LastSwiftUpdateCheck = 1500;
+			LastUpgradeCheck = 1500;
+			TargetAttributes = {
+				AA0000000000000000000005 = {
+					CreatedOnToolsVersion = 15.0;
+					ProvisioningStyle = Automatic;
+				};
+				AA0000000000000000000009 = {
+					CreatedOnToolsVersion = 15.0;
+					ProvisioningStyle = Automatic;
+				};
+			};
+		};
+		buildConfigurationList = AA0000000000000000000002 /* Build configuration list for PBXProject "CieSignIosTests" */;
+		compatibilityVersion = "Xcode 15.0";
+		developmentRegion = en;
+		hasScannedForEncodings = 0;
+		knownRegions = (
+			en,
+			Base,
+		);
+		mainGroup = AA000000000000000000000D;
+		productRefGroup = AA000000000000000000000E /* Products */;
+		projectDirPath = "";
+		projectRoot = "";
+		targets = (
+			AA0000000000000000000009 /* CieSignIosHost */,
+			AA0000000000000000000005 /* CieSignIosTests */,
+		);
+	};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+	AA0000000000000000000017 /* Resources */ = {
+		isa = PBXResourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			AB0000000000000000000005 /* sample.pdf in Resources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+	AA000000000000000000001A /* Resources */ = {
+		isa = PBXResourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			AB0000000000000000000023 /* Assets.xcassets in Resources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+	AA0000000000000000000015 /* Sources */ = {
+		isa = PBXSourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			AB0000000000000000000001 /* MockSignTests.swift in Sources */,
+			AB0000000000000000000002 /* mock_sign_ios.mm in Sources */,
+			AB0000000000000000000003 /* mock_transport.cpp in Sources */,
+			AB0000000000000000000004 /* mock_apdu_sequence.cpp in Sources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+	AA0000000000000000000018 /* Sources */ = {
+		isa = PBXSourcesBuildPhase;
+		buildActionMask = 2147483647;
+		files = (
+			AB0000000000000000000021 /* CieSignIosHostApp.swift in Sources */,
+			AB0000000000000000000022 /* ContentView.swift in Sources */,
+		);
+		runOnlyForDeploymentPostprocessing = 0;
+	};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+	AA000000000000000000001E /* PBXTargetDependency */ = {
+		isa = PBXTargetDependency;
+		target = AA0000000000000000000009 /* CieSignIosHost */;
+		targetProxy = AA000000000000000000001D /* PBXContainerItemProxy */;
+	};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+	AA0000000000000000000003 /* Debug */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ALWAYS_SEARCH_USER_PATHS = NO;
+			CLANG_ANALYZER_NONNULL = YES;
+			CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+			CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+			CLANG_ENABLE_MODULES = YES;
+			CLANG_ENABLE_OBJC_ARC = YES;
+			CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+			CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+			CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+			COPY_PHASE_STRIP = NO;
+			DEBUG_INFORMATION_FORMAT = dwarf;
+			ENABLE_NS_ASSERTIONS = YES;
+			ENABLE_STRICT_OBJC_MSGSEND = YES;
+			ENABLE_TESTABILITY = YES;
+			GCC_C_LANGUAGE_STANDARD = gnu11;
+			GCC_DYNAMIC_NO_PIC = NO;
+			GCC_NO_COMMON_BLOCKS = YES;
+			GCC_OPTIMIZATION_LEVEL = 0;
+			GCC_PREPROCESSOR_DEFINITIONS = (
+				"DEBUG=1",
+				"$(inherited)",
+			);
+			GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+			GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+			GCC_WARN_UNDECLARED_SELECTOR = YES;
+			GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+			GCC_WARN_UNUSED_FUNCTION = YES;
+			GCC_WARN_UNUSED_VARIABLE = YES;
+			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+			MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+			ONLY_ACTIVE_ARCH = YES;
+			SDKROOT = iphonesimulator;
+			SUPPORTS_MACCATALYST = NO;
+			VALIDATE_PRODUCT = NO;
+		};
+		name = Debug;
+	};
+	AA0000000000000000000004 /* Release */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ALWAYS_SEARCH_USER_PATHS = NO;
+			CLANG_ANALYZER_NONNULL = YES;
+			CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+			CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+			CLANG_ENABLE_MODULES = YES;
+			CLANG_ENABLE_OBJC_ARC = YES;
+			CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+			CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+			CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+			COPY_PHASE_STRIP = NO;
+			DEBUG_INFORMATION_FORMAT = dwarf;
+			ENABLE_NS_ASSERTIONS = NO;
+			ENABLE_STRICT_OBJC_MSGSEND = YES;
+			GCC_C_LANGUAGE_STANDARD = gnu11;
+			GCC_NO_COMMON_BLOCKS = YES;
+			GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+			GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+			GCC_WARN_UNDECLARED_SELECTOR = YES;
+			GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+			GCC_WARN_UNUSED_FUNCTION = YES;
+			GCC_WARN_UNUSED_VARIABLE = YES;
+			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+			MTL_ENABLE_DEBUG_INFO = NO;
+			SDKROOT = iphonesimulator;
+			SUPPORTS_MACCATALYST = NO;
+			VALIDATE_PRODUCT = YES;
+		};
+		name = Release;
+	};
+	AA0000000000000000000007 /* Debug */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+			ALWAYS_SEARCH_USER_PATHS = NO;
+			ARCHS = arm64;
+			CLANG_ENABLE_MODULES = YES;
+			CLANG_ENABLE_OBJC_ARC = YES;
+			CODE_SIGN_IDENTITY = "-";
+			CODE_SIGN_STYLE = Automatic;
+			CODE_SIGNING_ALLOWED = NO;
+			CODE_SIGNING_REQUIRED = NO;
+			CURRENT_PROJECT_VERSION = 1;
+			DEVELOPMENT_TEAM = "";
+			DYLIB_INSTALL_NAME_BASE = "@rpath";
+			ENABLE_BITCODE = YES;
+			ENABLE_TESTABILITY = YES;
+			FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+			GCC_PREPROCESSOR_DEFINITIONS = (
+				"DEBUG=1",
+				"PODOFO_STATIC",
+				"$(inherited)",
+			);
+			HEADER_SEARCH_PATHS = (
+				"$(PROJECT_DIR)/../cie_sign_sdk/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/src",
+				"$(PROJECT_DIR)/../cie_sign_sdk/tests",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/openssl/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libcurl/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libxml2/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/zlib/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libpng/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/freetype/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/fontconfig/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/podofo/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/bzip2/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/brotli/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libjpeg/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libtiff/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/liblzma/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/utf8proc/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/expat/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/cryptopp/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libiconv/include",
+			);
+			INFOPLIST_FILE = CieSignIosTests/Info.plist;
+			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+			LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+			LIBRARY_SEARCH_PATHS = (
+				"$(PROJECT_DIR)/../cie_sign_sdk/build/ios-sim/Release-iphonesimulator",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/openssl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libcurl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libxml2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/zlib/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libpng/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/freetype/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/fontconfig/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/podofo/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/bzip2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/brotli/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libjpeg/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libtiff/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/liblzma/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/utf8proc/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/expat/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/cryptopp/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib",
+			);
+			MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+			OTHER_CFLAGS = ("$(inherited)", "-fembed-bitcode");
+			OTHER_CPLUSPLUSFLAGS = (
+				"-fembed-bitcode",
+				"-std=gnu++17",
+			);
+			OTHER_LDFLAGS = (
+				"-ObjC",
+				"-lc++",
+			);
+			PRODUCT_BUNDLE_IDENTIFIER = com.example.CieSignIosTests;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SKIP_INSTALL = YES;
+			SWIFT_OBJC_BRIDGING_HEADER = ../cie_sign_sdk/tests/ios/CieSignTests-Bridging-Header.h;
+			SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			SWIFT_VERSION = 5.0;
+			TARGETED_DEVICE_FAMILY = 1;
+			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CieSignIosHost.app/CieSignIosHost";
+			BUNDLE_LOADER = "$(TEST_HOST)";
+			SUPPORTED_PLATFORMS = iphonesimulator;
+		};
+		name = Debug;
+	};
+	AA0000000000000000000008 /* Release */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+			ALWAYS_SEARCH_USER_PATHS = NO;
+			ARCHS = arm64;
+			CLANG_ENABLE_MODULES = YES;
+			CLANG_ENABLE_OBJC_ARC = YES;
+			CODE_SIGN_IDENTITY = "-";
+			CODE_SIGN_STYLE = Automatic;
+			CODE_SIGNING_ALLOWED = NO;
+			CODE_SIGNING_REQUIRED = NO;
+			CURRENT_PROJECT_VERSION = 1;
+			DEVELOPMENT_TEAM = "";
+			DYLIB_INSTALL_NAME_BASE = "@rpath";
+			ENABLE_BITCODE = YES;
+			FRAMEWORK_SEARCH_PATHS = "$(inherited)";
+			GCC_PREPROCESSOR_DEFINITIONS = (
+				"PODOFO_STATIC",
+				"$(inherited)",
+			);
+			HEADER_SEARCH_PATHS = (
+				"$(PROJECT_DIR)/../cie_sign_sdk/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/src",
+				"$(PROJECT_DIR)/../cie_sign_sdk/tests",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/openssl/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libcurl/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libxml2/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/zlib/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libpng/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/freetype/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/fontconfig/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/podofo/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/bzip2/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/brotli/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libjpeg/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libtiff/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/liblzma/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/utf8proc/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/expat/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/cryptopp/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libiconv/include",
+			);
+			INFOPLIST_FILE = CieSignIosTests/Info.plist;
+			IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+			LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+			LIBRARY_SEARCH_PATHS = (
+				"$(PROJECT_DIR)/../cie_sign_sdk/build/ios-sim/Release-iphonesimulator",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/openssl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libcurl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libxml2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/zlib/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libpng/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/freetype/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/fontconfig/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/podofo/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/bzip2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/brotli/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libjpeg/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libtiff/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/liblzma/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/utf8proc/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/expat/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/cryptopp/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib",
+			);
+			MTL_ENABLE_DEBUG_INFO = NO;
+			OTHER_CFLAGS = ("$(inherited)", "-fembed-bitcode");
+			OTHER_CPLUSPLUSFLAGS = (
+				"-fembed-bitcode",
+				"-std=gnu++17",
+			);
+			OTHER_LDFLAGS = (
+				"-ObjC",
+				"-lc++",
+			);
+			PRODUCT_BUNDLE_IDENTIFIER = com.example.CieSignIosTests;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SKIP_INSTALL = YES;
+			SWIFT_OBJC_BRIDGING_HEADER = ../cie_sign_sdk/tests/ios/CieSignTests-Bridging-Header.h;
+			SWIFT_VERSION = 5.0;
+			TARGETED_DEVICE_FAMILY = 1;
+			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CieSignIosHost.app/CieSignIosHost";
+			BUNDLE_LOADER = "$(TEST_HOST)";
+			SUPPORTED_PLATFORMS = iphonesimulator;
+		};
+		name = Release;
+	};
+	AA000000000000000000000B /* Debug */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+			ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+			CLANG_ENABLE_MODULES = YES;
+			CODE_SIGN_IDENTITY = "-";
+			CODE_SIGN_STYLE = Automatic;
+			CODE_SIGNING_ALLOWED = NO;
+			CODE_SIGNING_REQUIRED = NO;
+			CURRENT_PROJECT_VERSION = 1;
+			DEVELOPMENT_TEAM = "";
+			ENABLE_PREVIEWS = YES;
+			GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = CieSignIosHost/Info.plist;
+			IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+			LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+			MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+			PRODUCT_BUNDLE_IDENTIFIER = com.example.CieSignIosHost;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SDKROOT = iphonesimulator;
+			SUPPORTED_PLATFORMS = iphonesimulator;
+			SWIFT_EMIT_LOC_STRINGS = NO;
+			SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			SWIFT_VERSION = 5.0;
+			TARGETED_DEVICE_FAMILY = 1;
+			ARCHS = arm64;
+		};
+		name = Debug;
+	};
+	AA000000000000000000000C /* Release */ = {
+		isa = XCBuildConfiguration;
+		buildSettings = {
+			ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+			ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+			CLANG_ENABLE_MODULES = YES;
+			CODE_SIGN_IDENTITY = "-";
+			CODE_SIGN_STYLE = Automatic;
+			CODE_SIGNING_ALLOWED = NO;
+			CODE_SIGNING_REQUIRED = NO;
+			CURRENT_PROJECT_VERSION = 1;
+			DEVELOPMENT_TEAM = "";
+			ENABLE_PREVIEWS = YES;
+			GENERATE_INFOPLIST_FILE = NO;
+			INFOPLIST_FILE = CieSignIosHost/Info.plist;
+			IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+			LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+			MTL_ENABLE_DEBUG_INFO = NO;
+			PRODUCT_BUNDLE_IDENTIFIER = com.example.CieSignIosHost;
+			PRODUCT_NAME = "$(TARGET_NAME)";
+			SDKROOT = iphonesimulator;
+			SUPPORTED_PLATFORMS = iphonesimulator;
+			SWIFT_EMIT_LOC_STRINGS = NO;
+			SWIFT_VERSION = 5.0;
+			TARGETED_DEVICE_FAMILY = 1;
+			ARCHS = arm64;
+		};
+		name = Release;
+	};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+	AA0000000000000000000002 /* Build configuration list for PBXProject "CieSignIosTests" */ = {
+		isa = XCConfigurationList;
+		buildConfigurations = (
+			AA0000000000000000000003 /* Debug */,
+			AA0000000000000000000004 /* Release */,
+		);
+		defaultConfigurationIsVisible = 0;
+		defaultConfigurationName = Release;
+	};
+	AA0000000000000000000006 /* Build configuration list for PBXNativeTarget "CieSignIosTests" */ = {
+		isa = XCConfigurationList;
+		buildConfigurations = (
+			AA0000000000000000000007 /* Debug */,
+			AA0000000000000000000008 /* Release */,
+		);
+		defaultConfigurationIsVisible = 0;
+		defaultConfigurationName = Release;
+	};
+	AA000000000000000000000A /* Build configuration list for PBXNativeTarget "CieSignIosHost" */ = {
+		isa = XCConfigurationList;
+		buildConfigurations = (
+			AA000000000000000000000B /* Debug */,
+			AA000000000000000000000C /* Release */,
+		);
+		defaultConfigurationIsVisible = 0;
+		defaultConfigurationName = Release;
+	};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AA0000000000000000000001 /* Project object */;
+}
