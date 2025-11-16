@@ -59,3 +59,12 @@ Il test `MockSignTests.testMockPdfSignature` esegue il workflow completo:
 3. Estrae il CMS dal PDF e verifica che il certificato corrisponda esattamente al mock signer (`mock_signer_material.h`).
 
 Il test fallisce se qualsiasi step del core restituisce un errore oppure se il CMS non combacia con il materiale del mock, garantendo che l’SDK funzioni in modalità “senza NFC” direttamente su iOS.
+
+## 5. Test del bridge Swift/CoreNFC in modalità mock
+
+Per mimare il comportamento dell’app mobile (ma senza richiedere un lettore NFC reale), lo scheme include anche `CieSignBridgeTests`. Il test `testMockBridgeProducesPdf` istanzia `CieSignMobileBridge(mockTransportWithLogger:)`, sfrutta la stessa `MockApduTransport` dei test nativi e verifica che:
+
+- Il PDF firmato inizi con `%PDF` e contenga il dizionario `/Type/Sig`.
+- Il file venga salvato nella sandbox del simulatore (`Documents/mock_signed_ios_bridge.pdf`).
+
+In questo modo possiamo esercitare il layer Swift/Objective‑C++ esattamente come farà l’app Flutter/iOS, pur mantenendo l’I/O NFC completamente mockato nelle fasi iniziali di sviluppo.

@@ -41,6 +41,42 @@
 	AB0000000000000000000024 /* libcharset.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A12000000000000000000028 /* libcharset.a */; };
 	AB0000000000000000000021 /* CieSignIosHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000024 /* CieSignIosHostApp.swift */; };
 	AB0000000000000000000022 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000025 /* ContentView.swift */; };
+	AB0000000000000000000025 /* SigningViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000029 /* SigningViewModel.swift */; };
+	AB0000000000000000000026 /* CieNfcSession.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1200000000000000000002C /* CieNfcSession.mm */; };
+	AB0000000000000000000027 /* CieSignMobileBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = A1200000000000000000002E /* CieSignMobileBridge.mm */; };
+	AB0000000000000000000028 /* CoreNFC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1200000000000000000002F /* CoreNFC.framework */; };
+	AB0000000000000000000029 /* sample.pdf in Resources (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000008 /* sample.pdf */; };
+	AB0000000000000000000046 /* mock_transport.cpp in Sources (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000003 /* mock_transport.cpp */; };
+	AB0000000000000000000047 /* mock_apdu_sequence.cpp in Sources (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000004 /* mock_apdu_sequence.cpp */; };
+	AB0000000000000000000048 /* CieSignBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000030 /* CieSignBridgeTests.swift */; };
+	AB000000000000000000002A /* libciesign_core.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000009 /* libciesign_core.a */; };
+	AB000000000000000000002B /* libcie_sign_sdk.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000A /* libcie_sign_sdk.a */; };
+	AB000000000000000000002C /* libcrypto.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000B /* libcrypto.a */; };
+	AB000000000000000000002D /* libssl.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000C /* libssl.a */; };
+	AB000000000000000000002E /* libcurl.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000D /* libcurl.a */; };
+	AB000000000000000000002F /* libxml2.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000E /* libxml2.a */; };
+	AB0000000000000000000030 /* libz.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000000F /* libz.a */; };
+	AB0000000000000000000031 /* libpng16.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000010 /* libpng16.a */; };
+	AB0000000000000000000032 /* libfreetype.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000011 /* libfreetype.a */; };
+	AB0000000000000000000033 /* libfontconfig.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000012 /* libfontconfig.a */; };
+	AB0000000000000000000034 /* libpodofo.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000013 /* libpodofo.a */; };
+	AB0000000000000000000035 /* libpodofo_private.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000014 /* libpodofo_private.a */; };
+	AB0000000000000000000036 /* libpodofo_3rdparty.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000015 /* libpodofo_3rdparty.a */; };
+	AB0000000000000000000037 /* libbz2.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000016 /* libbz2.a */; };
+	AB0000000000000000000038 /* libbrotlienc.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000017 /* libbrotlienc.a */; };
+	AB0000000000000000000039 /* libbrotlidec.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000018 /* libbrotlidec.a */; };
+	AB000000000000000000003A /* libbrotlicommon.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000019 /* libbrotlicommon.a */; };
+	AB000000000000000000003B /* libjpeg.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001A /* libjpeg.a */; };
+	AB000000000000000000003C /* libturbojpeg.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001B /* libturbojpeg.a */; };
+	AB000000000000000000003D /* libtiff.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001C /* libtiff.a */; };
+	AB000000000000000000003E /* liblzma.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001D /* liblzma.a */; };
+	AB000000000000000000003F /* libutf8proc.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001E /* libutf8proc.a */; };
+	AB0000000000000000000040 /* libexpat.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A1200000000000000000001F /* libexpat.a */; };
+	AB0000000000000000000041 /* libcryptopp.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000020 /* libcryptopp.a */; };
+	AB0000000000000000000042 /* libiconv.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000023 /* libiconv.a */; };
+	AB0000000000000000000043 /* libcharset.a in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000028 /* libcharset.a */; };
+	AB0000000000000000000044 /* CoreFoundation.framework in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000021 /* CoreFoundation.framework */; };
+	AB0000000000000000000045 /* SystemConfiguration.framework in Frameworks (Host) */ = {isa = PBXBuildFile; fileRef = A12000000000000000000022 /* SystemConfiguration.framework */; };
 	AB0000000000000000000023 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A12000000000000000000026 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -95,6 +131,14 @@
 	A12000000000000000000026 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = CieSignIosHost/Assets.xcassets; sourceTree = "<group>"; };
 	A12000000000000000000027 /* Host-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Host-Info.plist"; path = CieSignIosHost/Info.plist; sourceTree = "<group>"; };
 	A12000000000000000000028 /* libcharset.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = ../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib/libcharset.a; sourceTree = "<group>"; };
+	A12000000000000000000029 /* SigningViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CieSignIosHost/SigningViewModel.swift; sourceTree = "<group>"; };
+	A1200000000000000000002A /* CieSignIosHost-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CieSignIosHost/CieSignIosHost-Bridging-Header.h; sourceTree = "<group>"; };
+	A1200000000000000000002B /* CieNfcSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ../cie_sign_flutter/ios/Classes/Bridge/CieNfcSession.h; sourceTree = "<group>"; };
+	A1200000000000000000002C /* CieNfcSession.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ../cie_sign_flutter/ios/Classes/Bridge/CieNfcSession.mm; sourceTree = "<group>"; };
+	A1200000000000000000002D /* CieSignMobileBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ../cie_sign_flutter/ios/Classes/Bridge/CieSignMobileBridge.h; sourceTree = "<group>"; };
+	A1200000000000000000002E /* CieSignMobileBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ../cie_sign_flutter/ios/Classes/Bridge/CieSignMobileBridge.mm; sourceTree = "<group>"; };
+	A1200000000000000000002F /* CoreNFC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreNFC.framework; path = System/Library/Frameworks/CoreNFC.framework; sourceTree = SDKROOT; };
+	A12000000000000000000030 /* CieSignBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CieSignIosTests/CieSignBridgeTests.swift; sourceTree = "<group>"; };
 	AA000000000000000000001B /* CieSignIosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CieSignIosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 	AA000000000000000000001C /* CieSignIosHost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CieSignIosHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -139,6 +183,35 @@
 		isa = PBXFrameworksBuildPhase;
 		buildActionMask = 2147483647;
 		files = (
+			AB0000000000000000000028 /* CoreNFC.framework in Frameworks */,
+			AB000000000000000000002A /* libciesign_core.a in Frameworks (Host) */,
+			AB000000000000000000002B /* libcie_sign_sdk.a in Frameworks (Host) */,
+			AB000000000000000000002C /* libcrypto.a in Frameworks (Host) */,
+			AB000000000000000000002D /* libssl.a in Frameworks (Host) */,
+			AB000000000000000000002E /* libcurl.a in Frameworks (Host) */,
+			AB000000000000000000002F /* libxml2.a in Frameworks (Host) */,
+			AB0000000000000000000030 /* libz.a in Frameworks (Host) */,
+			AB0000000000000000000031 /* libpng16.a in Frameworks (Host) */,
+			AB0000000000000000000032 /* libfreetype.a in Frameworks (Host) */,
+			AB0000000000000000000033 /* libfontconfig.a in Frameworks (Host) */,
+			AB0000000000000000000034 /* libpodofo.a in Frameworks (Host) */,
+			AB0000000000000000000035 /* libpodofo_private.a in Frameworks (Host) */,
+			AB0000000000000000000036 /* libpodofo_3rdparty.a in Frameworks (Host) */,
+			AB0000000000000000000037 /* libbz2.a in Frameworks (Host) */,
+			AB0000000000000000000038 /* libbrotlienc.a in Frameworks (Host) */,
+			AB0000000000000000000039 /* libbrotlidec.a in Frameworks (Host) */,
+			AB000000000000000000003A /* libbrotlicommon.a in Frameworks (Host) */,
+			AB000000000000000000003B /* libjpeg.a in Frameworks (Host) */,
+			AB000000000000000000003C /* libturbojpeg.a in Frameworks (Host) */,
+			AB000000000000000000003D /* libtiff.a in Frameworks (Host) */,
+			AB000000000000000000003E /* liblzma.a in Frameworks (Host) */,
+			AB000000000000000000003F /* libutf8proc.a in Frameworks (Host) */,
+			AB0000000000000000000040 /* libexpat.a in Frameworks (Host) */,
+			AB0000000000000000000041 /* libcryptopp.a in Frameworks (Host) */,
+			AB0000000000000000000042 /* libiconv.a in Frameworks (Host) */,
+			AB0000000000000000000043 /* libcharset.a in Frameworks (Host) */,
+			AB0000000000000000000044 /* CoreFoundation.framework in Frameworks (Host) */,
+			AB0000000000000000000045 /* SystemConfiguration.framework in Frameworks (Host) */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -152,6 +225,7 @@
 			AA000000000000000000000F /* Tests */,
 			AA0000000000000000000010 /* Resources */,
 			AA0000000000000000000011 /* Support */,
+			A13000000000000000000001 /* CieSignBridge */,
 			AA0000000000000000000012 /* Libraries */,
 			AA0000000000000000000013 /* Frameworks */,
 			AA000000000000000000000E /* Products */,
@@ -171,6 +245,7 @@
 		isa = PBXGroup;
 		children = (
 			A12000000000000000000001 /* MockSignTests.swift */,
+			A12000000000000000000030 /* CieSignBridgeTests.swift */,
 			A12000000000000000000002 /* mock_sign_ios.mm */,
 			A12000000000000000000003 /* mock_transport.cpp */,
 			A12000000000000000000004 /* mock_apdu_sequence.cpp */,
@@ -235,6 +310,7 @@
 		children = (
 			A12000000000000000000021 /* CoreFoundation.framework */,
 			A12000000000000000000022 /* SystemConfiguration.framework */,
+			A1200000000000000000002F /* CoreNFC.framework */,
 		);
 		name = Frameworks;
 		sourceTree = "<group>";
@@ -244,9 +320,22 @@
 		children = (
 			A12000000000000000000024 /* CieSignIosHostApp.swift */,
 			A12000000000000000000025 /* ContentView.swift */,
+			A12000000000000000000029 /* SigningViewModel.swift */,
 			A12000000000000000000026 /* Assets.xcassets */,
+			A1200000000000000000002A /* CieSignIosHost-Bridging-Header.h */,
 		);
 		name = CieSignIosHost;
+		sourceTree = "<group>";
+	};
+	A13000000000000000000001 /* CieSignBridge */ = {
+		isa = PBXGroup;
+		children = (
+			A1200000000000000000002B /* CieNfcSession.h */,
+			A1200000000000000000002C /* CieNfcSession.mm */,
+			A1200000000000000000002D /* CieSignMobileBridge.h */,
+			A1200000000000000000002E /* CieSignMobileBridge.mm */,
+		);
+		name = CieSignBridge;
 		sourceTree = "<group>";
 	};
 /* End PBXGroup section */
@@ -338,6 +427,7 @@
 		isa = PBXResourcesBuildPhase;
 		buildActionMask = 2147483647;
 		files = (
+			AB0000000000000000000029 /* sample.pdf in Resources (Host) */,
 			AB0000000000000000000023 /* Assets.xcassets in Resources */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
@@ -350,6 +440,7 @@
 		buildActionMask = 2147483647;
 		files = (
 			AB0000000000000000000001 /* MockSignTests.swift in Sources */,
+			AB0000000000000000000048 /* CieSignBridgeTests.swift in Sources */,
 			AB0000000000000000000002 /* mock_sign_ios.mm in Sources */,
 			AB0000000000000000000003 /* mock_transport.cpp in Sources */,
 			AB0000000000000000000004 /* mock_apdu_sequence.cpp in Sources */,
@@ -362,6 +453,11 @@
 		files = (
 			AB0000000000000000000021 /* CieSignIosHostApp.swift in Sources */,
 			AB0000000000000000000022 /* ContentView.swift in Sources */,
+			AB0000000000000000000025 /* SigningViewModel.swift in Sources */,
+			AB0000000000000000000026 /* CieNfcSession.mm in Sources */,
+			AB0000000000000000000027 /* CieSignMobileBridge.mm in Sources */,
+			AB0000000000000000000046 /* mock_transport.cpp in Sources (Host) */,
+			AB0000000000000000000047 /* mock_apdu_sequence.cpp in Sources (Host) */,
 		);
 		runOnlyForDeploymentPostprocessing = 0;
 	};
@@ -535,7 +631,7 @@
 			TARGETED_DEVICE_FAMILY = 1;
 			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CieSignIosHost.app/CieSignIosHost";
 			BUNDLE_LOADER = "$(TEST_HOST)";
-			SUPPORTED_PLATFORMS = iphonesimulator;
+			SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 		};
 		name = Debug;
 	};
@@ -623,7 +719,7 @@
 			TARGETED_DEVICE_FAMILY = 1;
 			TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CieSignIosHost.app/CieSignIosHost";
 			BUNDLE_LOADER = "$(TEST_HOST)";
-			SUPPORTED_PLATFORMS = iphonesimulator;
+			SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 		};
 		name = Release;
 	};
@@ -641,14 +737,41 @@
 			DEVELOPMENT_TEAM = "";
 			ENABLE_PREVIEWS = YES;
 			GENERATE_INFOPLIST_FILE = NO;
+			HEADER_SEARCH_PATHS = (
+				"$(inherited)",
+				"$(PROJECT_DIR)/../cie_sign_sdk/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/src",
+				"$(PROJECT_DIR)/../cie_sign_sdk/tests",
+			);
 			INFOPLIST_FILE = CieSignIosHost/Info.plist;
 			IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 			LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+			LIBRARY_SEARCH_PATHS = (
+				"$(PROJECT_DIR)/../cie_sign_sdk/build/ios-sim/Release-iphonesimulator",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/openssl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libcurl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libxml2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/zlib/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libpng/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/freetype/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/fontconfig/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/podofo/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/bzip2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/brotli/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libjpeg/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libtiff/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/liblzma/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/utf8proc/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/expat/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/cryptopp/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib",
+			);
 			MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 			PRODUCT_BUNDLE_IDENTIFIER = com.example.CieSignIosHost;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SDKROOT = iphonesimulator;
 			SUPPORTED_PLATFORMS = iphonesimulator;
+			SWIFT_OBJC_BRIDGING_HEADER = CieSignIosHost/CieSignIosHost-Bridging-Header.h;
 			SWIFT_EMIT_LOC_STRINGS = NO;
 			SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			SWIFT_VERSION = 5.0;
@@ -671,14 +794,41 @@
 			DEVELOPMENT_TEAM = "";
 			ENABLE_PREVIEWS = YES;
 			GENERATE_INFOPLIST_FILE = NO;
+			HEADER_SEARCH_PATHS = (
+				"$(inherited)",
+				"$(PROJECT_DIR)/../cie_sign_sdk/include",
+				"$(PROJECT_DIR)/../cie_sign_sdk/src",
+				"$(PROJECT_DIR)/../cie_sign_sdk/tests",
+			);
 			INFOPLIST_FILE = CieSignIosHost/Info.plist;
 			IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 			LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+			LIBRARY_SEARCH_PATHS = (
+				"$(PROJECT_DIR)/../cie_sign_sdk/build/ios-sim/Release-iphonesimulator",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/openssl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libcurl/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libxml2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/zlib/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libpng/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/freetype/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/fontconfig/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/podofo/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/bzip2/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/brotli/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libjpeg/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libtiff/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/liblzma/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/utf8proc/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/expat/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/cryptopp/lib",
+				"$(PROJECT_DIR)/../cie_sign_sdk/Dependencies-ios-sim/libiconv/lib",
+			);
 			MTL_ENABLE_DEBUG_INFO = NO;
 			PRODUCT_BUNDLE_IDENTIFIER = com.example.CieSignIosHost;
 			PRODUCT_NAME = "$(TARGET_NAME)";
 			SDKROOT = iphonesimulator;
 			SUPPORTED_PLATFORMS = iphonesimulator;
+			SWIFT_OBJC_BRIDGING_HEADER = CieSignIosHost/CieSignIosHost-Bridging-Header.h;
 			SWIFT_EMIT_LOC_STRINGS = NO;
 			SWIFT_VERSION = 5.0;
 			TARGETED_DEVICE_FAMILY = 1;

@@ -24,3 +24,58 @@
 - Utilizzare il logger nella catena di FIRMA (strumentazione errori / tracing).
 - Implementare gli adapter NFC reali su Android (Kotlin) e iOS (Swift) sfruttando le nuove strutture.
 - Aggiornare i test mock per creare il contesto tramite `cie_sign_ctx_create_with_platform`.
+
+## 2025-11-16 (Aggiornamento)
+
+### 4. Logger di piattaforma e reporting errori
+- Aggiornato `cie_sign_sdk/src/mobile/cie_sign_core.cpp` con helper `log_message` e storage `LoggerState`.
+- Tutte le condizioni di errore (buffer pieno, input invalido, doc type non supportato, map_error) ora invocano il logger se presente.
+
+### 5. Adapter mock basato su `cie_platform_config`
+- `cie_sign_sdk/tests/mock/mock_transport.cpp` usa il nuovo `cie_platform_nfc_adapter` per creare i contesti dei test.
+- Garantisce che i percorsi mock (strumentazione Android/iOS) sfruttino la stessa API delle implementazioni reali.
+
+## 2025-11-17
+
+### 6. Toolchain Android + Flutter
+- Installati Android Build-Tools 28.0.3 e piattaforma SDK 36 necessari per `flutter doctor`.
+- Accettate tutte le licenze Android con `JAVA_HOME` impostata su JDK17.
+- Verificato setup Flutter 3.38.1 (`flutter doctor -v`), rimane aperto solo l’allineamento CocoaPods per i test iOS.
+
+### 7. Plugin Flutter condiviso (`cie_sign_flutter/`)
+- Creato plugin multipiattaforma (`flutter create --template=plugin`) e collegato il modulo nativo Android `android/cieSignSdk` tramite `settings.gradle` + dipendenza Gradle dedicata.
+- Aggiornata `CieSignSdk` native lib per localizzare automaticamente `cie_sign_sdk/Dependencies-arm64-android` anche quando inclusa via plugin.
+- Implementata API Dart `CieSignFlutter.mockSignPdf(...)` con supporto opzionale a un percorso di output.
+- Metodo channel Android (`CieSignFlutterPlugin.kt`) richiama `CieSignSdk.mockSignPdf`, effettua validazioni input e propaga eventuali errori strutturati.
+- Lato iOS lasciato un placeholder che emette `FlutterError` in attesa del binding reale.
+
+### 8. App di esempio e test Dart
+- L’app di esempio (`cie_sign_flutter/example/lib/main.dart`) carica l’asset `assets/sample.pdf`, invoca il plugin e salva `mock_signed_flutter.pdf` in Documenti mostrando stato e percorso.
+- Configurato `path_provider` + asset nel `pubspec.yaml` e vincolato `minSdk` Android a 26.
+- Aggiunto integration test (`integration_test/mock_sign_integration_test.dart`) che esercita la firma mock su device/emulatore e valida header PDF + presenza `/Type/Sig`.
+- Aggiornata suite di unit test Dart per il nuovo contract MethodChannel; `flutter test` passa localmente.
+
+### 9. Test end-to-end Flutter su Android (AVD)
+- Configurato l’emulatore arm64 `CieSignArm64` e avviato tramite `emulator -avd CieSignArm64 -no-snapshot`.
+- Adeguati i build script Android per usare NDK 26.2, includere direttamente i sorgenti `android/cieSignSdk` (CMake + sorgenti Kotlin) dentro il plugin e rimuovere la dipendenza Gradle separata.
+- Eseguito `flutter test integration_test/mock_sign_integration_test.dart -d emulator-5554` che compila l’intera pipeline nativa, firma il PDF di esempio e salva `mock_signed_flutter_integration.pdf` nella sandbox dell’app (`/storage/emulated/0/Android/data/it.ipzs.cie_sign_flutter_example/files/`).
+
+### 10. Visualizzazione PDF nell’app Flutter di esempio
+- Aggiunta la dipendenza `flutter_pdfview` e integrato un visualizzatore embedded che carica automaticamente `mock_signed_flutter.pdf` dopo la firma.
+- L’interfaccia ora mostra il percorso del file e consente di vedere immediatamente la pagina del PDF firmato o eventuali errori del viewer.
+
+### 11. Esperienza utente migliorata durante la firma
+- Lo stato `_busy` ora pilota una vista dedicata con `CircularProgressIndicator` per mostrare chiaramente il loader finché la firma mock è in corso.
+- Il viewer viene renderizzato solo dopo il completamento con successo e con `_outputPath` valorizzato, evitando che venga mostrato un PDF precedente mentre la nuova firma è in esecuzione.
+
+### 12. Bridge iOS reale (CoreNFC)
+- Creato il modulo `ios/CieSignBridge` con `CieNfcSession` (Objective-C++) che incapsula `NFCTagReaderSession` e fornisce le callback richieste da `cie_platform_nfc_adapter`. Su simulatore e dispositivi senza NFC restituisce errori controllati.
+- Implementato `CieSignMobileBridge` che costruisce il `cie_platform_config`, richiama `cie_sign_ctx_create_with_platform` e mappa l’output/errore verso API Swift. Include helper `CieSignPdfParameters` per configurare la firma PDF.
+- Aggiornato `ios/CieSignIosHost` con `SigningViewModel`/`ContentView` per avviare la pipeline reale: caricamento del PDF di esempio, richiesta della sessione NFC, gestione stato UI.
+- Allineato `CieSignIosTests.xcodeproj` (frameworks, search paths, bridging header) e ricompilate le statiche `libciesign_core.a`/`libcie_sign_sdk.a` per `ios-sim` così da includere la nuova API C e poter linkare il bridge direttamente dal target host.
+
+### 13. Test iOS con NFC mock (parità con Android)
+- `CieSignMobileBridge` espone ora l’inizializzatore `init(mockTransportWithLogger:)` che utilizza `MockApduTransport` al posto di CoreNFC; il metodo `sign(pdf:pin:appearance:)` viene eseguito con gli stessi parametri del bridge reale ma senza hardware.
+- `SigningViewModel` viene eseguito integralmente in modalità mock così da poter usare l’app sull’emulatore iOS e ottenere immediatamente il PDF firmato.
+- Aggiunto lo XCTest `CieSignBridgeTests` che replica le asserzioni dell’instrumented test Android (header `%PDF`, presenza `/Type/Sig`, persistenza del file in Documents) utilizzando il nuovo bridge.
+- Il target host linka ora `mock_transport.cpp`/`mock_apdu_sequence.cpp`, permettendo di riutilizzare la fixture APDU già presente nei test C++.
