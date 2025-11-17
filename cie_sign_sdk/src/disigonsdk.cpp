@@ -24,6 +24,8 @@
 #include <libxml/tree.h>
 #include "podofo/podofo.h"
 #include <string.h>
+#include <vector>
+#include <cstdio>
 
 #ifdef WIN32
 #include <shlwapi.h>
@@ -33,6 +35,45 @@ DECLARE_LOG;
 
 #define DEFAULT_VERIFY_REVOCATION 0
 #define DEFAULT_VERIFY_USER_CERT 0
+
+namespace {
+
+bool ReadFileBytes(const char* path, std::vector<uint8_t>& out)
+{
+    out.clear();
+    if (!path || !path[0])
+        return false;
+    FILE* fp = fopen(path, "rb");
+    if (!fp)
+        return false;
+    if (fseek(fp, 0, SEEK_END) != 0)
+    {
+        fclose(fp);
+        return false;
+    }
+    long len = ftell(fp);
+    if (len <= 0)
+    {
+        fclose(fp);
+        return false;
+    }
+    if (fseek(fp, 0, SEEK_SET) != 0)
+    {
+        fclose(fp);
+        return false;
+    }
+    out.resize(static_cast<size_t>(len));
+    size_t read = fread(out.data(), 1, out.size(), fp);
+    fclose(fp);
+    if (read != out.size())
+    {
+        out.clear();
+        return false;
+    }
+    return true;
+}
+
+} // namespace
 
 typedef struct _DISIGON_SIGN_CONTEXT
 {
@@ -1919,6 +1960,16 @@ long sign_pdf(DISIGON_SIGN_CONTEXT* pContext, UUCByteArray& data)
     LOG_DBG((0, "sign_pdf", "Context: %p, InitSignature %d, %f, %f, %f, %f, %s, %s, %s, %s, %s, %s", pContext, pContext->nPdfPage, pContext->fPdfLeft, pContext->fPdfBottom, pContext->fPdfWidth, pContext->fPdfHeight, pContext->szPdfReason, pContext->szPdfName, pContext->szPdfLocation, sigName.c_str(), pContext->szPdfSubfilter, pContext->szPdfImagePath));
 
 
+    std::vector<uint8_t> signatureImageBytes;
+    if (ReadFileBytes(pContext->szPdfImagePath, signatureImageBytes))
+    {
+        sigGen.SetSignatureImage(signatureImageBytes.data(), signatureImageBytes.size(), 0, 0);
+    }
+    else
+    {
+        sigGen.SetSignatureImage(nullptr, 0, 0, 0);
+    }
+
     if(pContext->szPdfImagePath[0] != 0 || pContext->szPdfDescription[0] != 0 || (pContext->fPdfLeft + pContext->fPdfBottom + pContext->fPdfWidth + pContext->fPdfHeight) != 0)
     {
         if(!pContext->szPdfReason[0])
@@ -1950,7 +2001,7 @@ long sign_pdf(DISIGON_SIGN_CONTEXT* pContext, UUCByteArray& data)
             }
             
         }
-        sigGen.InitSignature(pContext->nPdfPage, pContext->fPdfLeft, pContext->fPdfBottom, pContext->fPdfWidth, pContext->fPdfHeight, pContext->szPdfReason, pContext->szPdfReasonLabel, pContext->szPdfName,pContext->szPdfNameLabel, pContext->szPdfLocation, pContext->szPdfLocationLabel, sigName.c_str(), pContext->szPdfSubfilter, pContext->szPdfImagePath, pContext->szPdfDescription, NULL, NULL);
+        sigGen.InitSignature(pContext->nPdfPage, pContext->fPdfLeft, pContext->fPdfBottom, pContext->fPdfWidth, pContext->fPdfHeight, pContext->szPdfReason, pContext->szPdfReasonLabel, pContext->szPdfName,pContext->szPdfNameLabel, pContext->szPdfLocation, pContext->szPdfLocationLabel, sigName.c_str(), pContext->szPdfSubfilter);
     }
     else
     {

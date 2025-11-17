@@ -263,6 +263,12 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
     const char *reason = request->pdf.reason ? request->pdf.reason : "";
     const char *location = request->pdf.location ? request->pdf.location : "";
     const char *name = request->pdf.name ? request->pdf.name : "";
+    const uint8_t *signatureImage = request->pdf.signature_image;
+    size_t signatureImageLen = request->pdf.signature_image_len;
+    pdfGenerator.SetSignatureImage(signatureImage,
+                                   signatureImageLen,
+                                   request->pdf.signature_image_width,
+                                   request->pdf.signature_image_height);
 
     if (request->pdf.width > 0 && request->pdf.height > 0) {
         pdfGenerator.InitSignature(
@@ -278,11 +284,7 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
             location,
             "",
             fieldName.c_str(),
-            DISIGON_PDF_SUBFILTER_PKCS_DETACHED,
-            nullptr,
-            nullptr,
-            nullptr,
-            nullptr);
+            DISIGON_PDF_SUBFILTER_PKCS_DETACHED);
     } else {
         pdfGenerator.InitSignature(
             static_cast<int>(request->pdf.page_index),

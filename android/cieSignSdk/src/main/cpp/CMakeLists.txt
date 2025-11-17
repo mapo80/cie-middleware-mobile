@@ -24,6 +24,7 @@ find_library(android-lib android)
 
 add_library(ciesign_mobile SHARED
     mock_sign_android.cpp
+    nfc_sign_android.cpp
     ${CIE_SIGN_SDK_ROOT}/tests/mock/mock_apdu_sequence.cpp
     ${CIE_SIGN_SDK_ROOT}/tests/mock/mock_transport.cpp
 )

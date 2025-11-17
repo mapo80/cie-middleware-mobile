@@ -7,5 +7,39 @@ internal object NativeBridge {
     }
 
     @JvmStatic
-    external fun mockSignPdf(pdfBytes: ByteArray, outputPath: String?): ByteArray
+    external fun mockSignPdf(
+        pdfBytes: ByteArray,
+        outputPath: String?,
+        pageIndex: Int,
+        left: Float,
+        bottom: Float,
+        width: Float,
+        height: Float,
+        reason: String?,
+        location: String?,
+        name: String?,
+        signatureImage: ByteArray?,
+        signatureImageWidth: Int,
+        signatureImageHeight: Int
+    ): ByteArray
+
+    @JvmStatic
+    external fun signPdfWithNfc(
+        pdfBytes: ByteArray,
+        pin: String,
+        pageIndex: Int,
+        left: Float,
+        bottom: Float,
+        width: Float,
+        height: Float,
+        reason: String?,
+        location: String?,
+        name: String?,
+        signatureImage: ByteArray?,
+        signatureImageWidth: Int,
+        signatureImageHeight: Int,
+        isoDep: android.nfc.tech.IsoDep,
+        atr: ByteArray,
+        outputPath: String?
+    ): ByteArray
 }

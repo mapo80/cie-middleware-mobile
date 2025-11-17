@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'cie_sign_flutter_platform_interface.dart';
+import 'src/pdf_signature_appearance.dart';
 
 class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
   @visibleForTesting
@@ -13,17 +14,48 @@ class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
   Future<Uint8List> mockSignPdf(
     Uint8List pdfBytes, {
     String? outputPath,
+    PdfSignatureAppearance? appearance,
   }) async {
     final Uint8List? response = await methodChannel.invokeMethod<Uint8List>(
       'mockSignPdf',
       <String, dynamic>{
         'pdf': pdfBytes,
         if (outputPath != null) 'outputPath': outputPath,
+        if (appearance != null) 'appearance': appearance.toMap(),
       },
     );
     if (response == null) {
       throw StateError('mockSignPdf returned null');
     }
     return response;
+  }
+
+  @override
+  Future<Uint8List> signPdfWithNfc(
+    Uint8List pdfBytes, {
+    required String pin,
+    PdfSignatureAppearance appearance = const PdfSignatureAppearance(),
+    String? outputPath,
+  }) async {
+    final Uint8List? response = await methodChannel.invokeMethod<Uint8List>(
+      'signPdfWithNfc',
+      <String, dynamic>{
+        'pdf': pdfBytes,
+      'pin': pin,
+      'appearance': appearance.toMap(),
+      if (outputPath != null) 'outputPath': outputPath,
+      },
+    );
+    if (response == null) {
+      throw StateError('signPdfWithNfc returned null');
+    }
+    return response;
+  }
+
+  @override
+  Future<bool> cancelNfcSigning() async {
+    final bool? canceled =
+        await methodChannel.invokeMethod<bool>('cancelNfcSigning');
+    return canceled ?? false;
   }
 }

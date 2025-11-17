@@ -5,23 +5,19 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cie_sign_flutter_example/main.dart';
 
 void main() {
-  testWidgets('Verify Platform version', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that platform version is retrieved.
-    expect(
-      find.byWidgetPredicate(
-        (Widget widget) => widget is Text &&
-                           widget.data!.startsWith('Running on:'),
-      ),
-      findsOneWidget,
-    );
+  testWidgets('Initial status text is visible', (WidgetTester tester) async {
+    await tester.pumpWidget(MyApp(
+      enablePdfView: false,
+      loadSamplePdf: () async => Uint8List.fromList('%PDF'.codeUnits),
+      loadSignatureImage: () async => Uint8List.fromList([0x00, 0x01]),
+    ));
+    expect(find.textContaining('Premi il pulsante'), findsOneWidget);
   });
 }

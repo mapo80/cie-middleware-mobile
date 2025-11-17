@@ -79,3 +79,16 @@
 - `SigningViewModel` viene eseguito integralmente in modalità mock così da poter usare l’app sull’emulatore iOS e ottenere immediatamente il PDF firmato.
 - Aggiunto lo XCTest `CieSignBridgeTests` che replica le asserzioni dell’instrumented test Android (header `%PDF`, presenza `/Type/Sig`, persistenza del file in Documents) utilizzando il nuovo bridge.
 - Il target host linka ora `mock_transport.cpp`/`mock_apdu_sequence.cpp`, permettendo di riutilizzare la fixture APDU già presente nei test C++.
+
+### 14. Plugin Flutter: flusso NFC reale (Android) e test UI mock
+- Estesa la piattaforma Dart (`CieSignFlutterPlatform`) con `signPdfWithNfc`, `cancelNfcSigning` e la classe `PdfSignatureAppearance`, esportata pubblicamente da `cie_sign_flutter.dart`.
+- Aggiornato il channel Android (`CieSignFlutterPlugin.kt`) riutilizzando l’implementazione realizzata in precedenza per `signPdfWithNfc`; il MethodChannel ora accetta mappe `appearance/pin/outputPath` e può annullare sessioni NFC.
+- L’app di esempio Flutter è stata riscritta per essere l’unica UI cross-platform: campo PIN condiviso, loader comune, pulsanti separati per “mock” e “NFC” e viewer PDF integrato. Aggiunto pulsante di annullo che richiama `cancelNfcSigning`.
+- Creato un widget test (`example/test/mock_nfc_ui_test.dart`) che sostituisce sia il plugin sia `PathProvider` con mock e simula l’intero flusso UI, validando loader e stato finale senza hardware NFC.
+- Aggiornati i test di pacchetto (`flutter test`) per coprire i nuovi metodi MethodChannel e garantire che l’API Flutter rimanga coerente con Android/iOS.
+
+### 15. Plugin headless e immagine firma come byte array
+- Il plugin Flutter non fornisce più componenti UI: `mockSignPdf` e `signPdfWithNfc` accettano un oggetto `PdfSignatureAppearance` (con coordinate normalizzate, metadati e `signatureImageBytes`). Le app Flutter host gestiscono PIN, loader e viewer; l’esempio rimane come demo esterna.
+- `cie_pdf_options` include `signature_image`/`signature_image_len`; `PdfSignatureGenerator` carica il buffer con PoDoFo (`PdfImage`) e imposta l’appearance del widget tramite `PdfPainter`, così l’immagine compare nei PDF firmati (mock e NFC).
+- JNI/SDK Android aggiornati: `CieSignSdk.mockSignPdf` supporta `PdfAppearanceOptions`, `NativeBridge` inoltra i nuovi parametri e sia `mock_sign_android.cpp` sia `nfc_sign_android.cpp` compilano `cie_sign_request` con l’immagine.
+- Flutter tests (package + example) aggiornati per i nuovi parametri; gli asset necessari (PDF e PNG) sono iniettati nei test tramite callback per evitare dipendenze dalla toolchain.
