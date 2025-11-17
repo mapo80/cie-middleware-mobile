@@ -49,6 +49,7 @@ class MockSignInstrumentedTest {
             reason = "Android instrumentation",
             location = "Lab",
             name = "Instrumentation Tester",
+            fieldIds = listOf("SignatureField1"),
             signatureImage = rgba,
             signatureImageWidth = width,
             signatureImageHeight = height

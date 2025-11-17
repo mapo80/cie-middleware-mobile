@@ -58,6 +58,27 @@ std::vector<uint8_t> to_vector(JNIEnv* env, jbyteArray array)
     return buffer;
 }
 
+std::vector<std::string> to_string_list(JNIEnv* env, jobjectArray array)
+{
+    std::vector<std::string> values;
+    if (!array)
+        return values;
+    jsize len = env->GetArrayLength(array);
+    values.reserve(static_cast<size_t>(len));
+    for (jsize i = 0; i < len; ++i)
+    {
+        jstring element = static_cast<jstring>(env->GetObjectArrayElement(array, i));
+        if (!element)
+        {
+            values.emplace_back();
+            continue;
+        }
+        values.emplace_back(to_std_string(env, element));
+        env->DeleteLocalRef(element);
+    }
+    return values;
+}
+
 int hexValue(char c)
 {
     if (c >= '0' && c <= '9')
@@ -198,6 +219,7 @@ struct AppearanceOptions {
     std::vector<uint8_t> signatureImage;
     int imageWidth = 0;
     int imageHeight = 0;
+    std::vector<std::string> fieldIds;
 };
 
 std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
@@ -232,6 +254,13 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
         throw std::runtime_error("Mock transport did not complete APDUs");
 
     std::vector<uint8_t> pdf(pdf_data, pdf_data + pdf_len);
+    std::vector<const char*> fieldPointers;
+    fieldPointers.reserve(appearance.fieldIds.size());
+    for (const auto& value : appearance.fieldIds) {
+        if (!value.empty()) {
+            fieldPointers.push_back(value.c_str());
+        }
+    }
     req.input = pdf.data();
     req.input_len = pdf.size();
     req.doc_type = CIE_DOCUMENT_PDF;
@@ -248,6 +277,10 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
     req.pdf.signature_image_len = appearance.signatureImage.size();
     req.pdf.signature_image_width = static_cast<uint32_t>(appearance.imageWidth);
     req.pdf.signature_image_height = static_cast<uint32_t>(appearance.imageHeight);
+    if (!fieldPointers.empty()) {
+        req.pdf.field_ids = fieldPointers.data();
+        req.pdf.field_ids_len = fieldPointers.size();
+    }
     result.output_len = 0;
 
     if (cie_sign_execute(ctx.get(), &req, &result) != CIE_STATUS_OK)
@@ -276,6 +309,7 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_mockSignPdf(
     jstring reason,
     jstring location,
     jstring name,
+    jobjectArray fieldIds,
     jbyteArray signatureImage,
     jint imageWidth,
     jint imageHeight)
@@ -310,6 +344,7 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_mockSignPdf(
     appearance.reason = to_std_string(env, reason);
     appearance.location = to_std_string(env, location);
     appearance.name = to_std_string(env, name);
+    appearance.fieldIds = to_string_list(env, fieldIds);
     appearance.signatureImage = to_vector(env, signatureImage);
     appearance.imageWidth = static_cast<int>(imageWidth);
     appearance.imageHeight = static_cast<int>(imageHeight);

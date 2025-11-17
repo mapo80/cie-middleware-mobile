@@ -26,6 +26,7 @@ void main() {
       reason: 'Integration test',
       location: 'Mobile SDK',
       name: 'CIETest',
+      fieldIds: const ['SignatureField1'],
       signatureImageBytes: signature.buffer.asUint8List(),
     );
     final docs = await getApplicationDocumentsDirectory();

@@ -37,6 +37,8 @@ typedef struct {
     float bottom;
     float width;
     float height;
+    const char *const *field_ids;
+    size_t field_ids_len;
 } cie_pdf_options;
 
 typedef struct {

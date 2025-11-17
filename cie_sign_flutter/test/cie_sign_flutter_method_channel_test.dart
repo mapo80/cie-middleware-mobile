@@ -25,6 +25,7 @@ void main() {
         final appearance = args['appearance'] as Map?;
         expect(appearance?['pageIndex'], 2);
         expect((appearance?['signatureImage'] as Uint8List?)?.length, 2);
+        expect(appearance?['fieldIds'], ['FieldA']);
         return Uint8List.fromList([4, 5, 6]);
           case 'signPdfWithNfc':
             final args = methodCall.arguments as Map;
@@ -33,6 +34,7 @@ void main() {
             expect(appearance['pageIndex'], 1);
             expect(appearance['left'], 20);
             expect(appearance['reason'], 'Motivo');
+            expect(appearance['fieldIds'], ['FieldB']);
             return Uint8List.fromList([7, 8, 9]);
           case 'cancelNfcSigning':
             return true;
@@ -54,6 +56,7 @@ void main() {
       outputPath: '/tmp/out.pdf',
       appearance: PdfSignatureAppearance(
         pageIndex: 2,
+        fieldIds: const ['FieldA'],
         signatureImageBytes: Uint8List.fromList([1, 2]),
       ),
     );
@@ -68,6 +71,7 @@ void main() {
         pageIndex: 1,
         left: 20,
         reason: 'Motivo',
+        fieldIds: ['FieldB'],
       ),
       outputPath: '/tmp/nfc.pdf',
     );

@@ -92,3 +92,10 @@
 - `cie_pdf_options` include `signature_image`/`signature_image_len`; `PdfSignatureGenerator` carica il buffer con PoDoFo (`PdfImage`) e imposta l’appearance del widget tramite `PdfPainter`, così l’immagine compare nei PDF firmati (mock e NFC).
 - JNI/SDK Android aggiornati: `CieSignSdk.mockSignPdf` supporta `PdfAppearanceOptions`, `NativeBridge` inoltra i nuovi parametri e sia `mock_sign_android.cpp` sia `nfc_sign_android.cpp` compilano `cie_sign_request` con l’immagine.
 - Flutter tests (package + example) aggiornati per i nuovi parametri; gli asset necessari (PDF e PNG) sono iniettati nei test tramite callback per evitare dipendenze dalla toolchain.
+
+### 16. Gestione campi firma preesistenti (AcroForm)
+- Creato lo script `scripts/generate_sample_pdf.py` (ReportLab + pypdf) che rigenera `cie_sign_flutter/example/assets/sample.pdf` e `cie_sign_sdk/data/fixtures/sample.pdf` con il campo firma AcroForm `SignatureField1`, evidenziato dal rettangolo rosso iniziale.
+- Esteso `cie_pdf_options` con `field_ids`/`field_ids_len`; `PdfSignatureGenerator` può ora: enumerare i campi non firmati, inizializzare un campo esistente per nome, iterare su tutti i campi disponibili e, se necessario, creare un nuovo campo fallback (come prima).
+- `cie_sign_core::sign_pdf` esegue la firma in sequenza: se viene passato un elenco di ID firma li processa nell’ordine indicato; altrimenti firma tutti i campi disponibili e, solo se nessuno è presente, ne crea uno nuovo usando le coordinate normalizzate.
+- Aggiornati JNI/SDK Android, plugin Flutter (Dart/Kotlin) e bridge mock/strumentali per ricevere e propagare `fieldIds`. `PdfSignatureAppearance`/`PdfAppearanceOptions` espongono la nuova lista; i test Dart/Kotlin verificano che il MethodChannel inoltri correttamente i valori.
+- `mock_sign_test.cpp` ora copre i tre scenari (campo nominato, auto-detection e creazione forzata) verificando con PoDoFo che l’apparenza `/AP` venga applicata e che i certificati coincidano con il mock signer.

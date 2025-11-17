@@ -9,6 +9,7 @@ class PdfSignatureAppearance {
   final String? reason;
   final String? location;
   final String? name;
+  final List<String>? fieldIds;
   final Uint8List? signatureImageBytes;
 
   const PdfSignatureAppearance({
@@ -20,6 +21,7 @@ class PdfSignatureAppearance {
     this.reason,
     this.location,
     this.name,
+    this.fieldIds,
     this.signatureImageBytes,
   });
 
@@ -33,6 +35,7 @@ class PdfSignatureAppearance {
       if (reason != null) 'reason': reason,
       if (location != null) 'location': location,
       if (name != null) 'name': name,
+      if (fieldIds != null && fieldIds!.isNotEmpty) 'fieldIds': fieldIds,
       if (signatureImageBytes != null) 'signatureImage': signatureImageBytes,
     };
   }

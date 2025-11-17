@@ -41,6 +41,19 @@ public:
 	void InitSignature(int pageIndex, float left, float bottom, float width, float height, const char* szReason, const char* szReasonLabel, const char* szName, const char* szNameLabel, const char* szLocation, const char* szLocationLabel, const char* szFieldName, const char* szSubFilter);
 	
 	void InitSignature(int pageIndex, float left, float bottom, float width, float height, const char* szReason, const char* szReasonLabel, const char* szName, const char* szNameLabel, const char* szLocation, const char* szLocationLabel, const char* szFieldName, const char* szSubFilter, const char* szImagePath, const char* szDescription, const char* szGraphometricData, const char* szVersion);
+
+    bool InitExistingSignatureField(const char* szFieldName,
+        const char* szReason,
+        const char* szName,
+        const char* szLocation,
+        const char* szSubFilter);
+
+    bool InitFirstUnsignedSignatureField(const char* szReason,
+        const char* szName,
+        const char* szLocation,
+        const char* szSubFilter);
+
+    std::vector<std::string> ListUnsignedSignatureFieldNames() const;
 	
 	void SetSignatureImage(const uint8_t* signatureImageData, size_t signatureImageLen, uint32_t width, uint32_t height);
 	
@@ -57,6 +70,15 @@ public:
 	const double getHeight(int pageIndex);
 	
 private:
+    PoDoFo::PdfSignature* FindSignatureField(const std::string& fieldName,
+        bool requireUnsigned);
+    bool IsFieldSigned(const PoDoFo::PdfSignature& signature) const;
+    bool PrepareSignatureField(PoDoFo::PdfSignature& signature,
+        const PoDoFo::Rect* customRect,
+        const char* szReason,
+        const char* szName,
+        const char* szLocation,
+        const char* szSubFilter);
 	std::unique_ptr<PoDoFo::PdfMemDocument> m_pPdfDocument;
 	PoDoFo::PdfSignature* m_pSignatureField;
 	std::unique_ptr<PoDoFo::PdfSigningContext> m_pSigningContext;

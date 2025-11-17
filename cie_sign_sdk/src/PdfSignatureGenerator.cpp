@@ -3,8 +3,12 @@
 #include "PdfVerifier.h"
 #include "UUCLogger.h"
 
+#include "podofo/main/PdfAnnotation.h"
+#include "podofo/main/PdfAnnotationWidget.h"
+#include "podofo/main/PdfField.h"
 #include "podofo/main/PdfImage.h"
 #include "podofo/main/PdfPainter.h"
+#include "podofo/main/PdfSignature.h"
 #include "podofo/main/PdfXObjectForm.h"
 
 #include <stdexcept>
@@ -19,6 +23,19 @@ namespace {
 
 constexpr const char* kDefaultFilter = "Adobe.PPKLite";
 constexpr const char* kDefaultSubFilter = "ETSI.CAdES.detached";
+
+static std::string getFieldName(PdfField* field)
+{
+    if (!field)
+        return {};
+    auto name = field->GetName();
+    if (!name.has_value())
+        return {};
+    auto view = name->GetString();
+    if (view.empty())
+        return {};
+    return std::string(view.data(), view.size());
+}
 
 class ExternalPdfSigner : public PdfSigner
 {
@@ -277,28 +294,7 @@ void PdfSignatureGenerator::InitSignature(int pageIndex, float left, float botto
     if (!signature)
         throw std::runtime_error("Failed to create signature field");
 
-    if (szReason && szReason[0])
-        signature->SetSignatureReason(makeString(szReason));
-    if (szLocation && szLocation[0])
-        signature->SetSignatureLocation(makeString(szLocation));
-    if (szName && szName[0])
-        signature->SetSignerName(makeString(szName));
-
-    PdfDate now;
-    signature->SetSignatureDate(now);
-
-    m_pSignatureField = signature;
-    if (!m_signatureImage.empty())
-    {
-        ApplyAppearanceImage(*signature,
-                              *m_pPdfDocument,
-                              rect,
-                              m_signatureImage.data(),
-                              m_signatureImage.size(),
-                              m_signatureImageWidth,
-                              m_signatureImageHeight);
-    }
-    m_subFilter = szSubFilter && szSubFilter[0] ? szSubFilter : kDefaultSubFilter;
+    PrepareSignatureField(*signature, &rect, szReason, szName, szLocation, szSubFilter);
 }
 
 void PdfSignatureGenerator::GetBufferForSignature(UUCByteArray& toSign)
@@ -357,6 +353,193 @@ void PdfSignatureGenerator::GetSignedPdf(UUCByteArray& signature)
     signature.removeAll();
     signature.append(reinterpret_cast<const BYTE*>(data.data()),
         static_cast<unsigned int>(data.size()));
+}
+
+bool PdfSignatureGenerator::InitExistingSignatureField(const char* szFieldName,
+    const char* szReason,
+    const char* szName,
+    const char* szLocation,
+    const char* szSubFilter)
+{
+    if (!szFieldName || !m_pPdfDocument)
+        return false;
+    PdfSignature* signature = FindSignatureField(szFieldName, true);
+    if (!signature)
+        return false;
+    return PrepareSignatureField(*signature, nullptr, szReason, szName, szLocation, szSubFilter);
+}
+
+bool PdfSignatureGenerator::InitFirstUnsignedSignatureField(const char* szReason,
+    const char* szName,
+    const char* szLocation,
+    const char* szSubFilter)
+{
+    if (!m_pPdfDocument)
+        return false;
+    try
+    {
+        auto iterable = m_pPdfDocument->GetFieldsIterator();
+        for (auto it = iterable.begin(); it != iterable.end(); ++it)
+        {
+            PdfField* field = *it;
+            if (!field || field->GetType() != PdfFieldType::Signature)
+                continue;
+            auto* signature = dynamic_cast<PdfSignature*>(field);
+            if (!signature)
+                continue;
+            if (IsFieldSigned(*signature))
+                continue;
+            return PrepareSignatureField(*signature, nullptr, szReason, szName, szLocation, szSubFilter);
+        }
+    }
+    catch (const PdfError&)
+    {
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+    return false;
+}
+
+std::vector<std::string> PdfSignatureGenerator::ListUnsignedSignatureFieldNames() const
+{
+    std::vector<std::string> names;
+    if (!m_pPdfDocument)
+        return names;
+    try
+    {
+        auto iterable = m_pPdfDocument->GetFieldsIterator();
+        for (auto it = iterable.begin(); it != iterable.end(); ++it)
+        {
+            PdfField* field = *it;
+            if (!field || field->GetType() != PdfFieldType::Signature)
+                continue;
+            auto* signature = dynamic_cast<PdfSignature*>(field);
+            if (!signature)
+                continue;
+            if (IsFieldSigned(*signature))
+                continue;
+            auto fieldName = getFieldName(field);
+            if (!fieldName.empty())
+                names.push_back(std::move(fieldName));
+        }
+    }
+    catch (const PdfError&)
+    {
+        names.clear();
+    }
+    catch (...)
+    {
+        names.clear();
+    }
+    return names;
+}
+
+PdfSignature* PdfSignatureGenerator::FindSignatureField(const std::string& fieldName,
+    bool requireUnsigned)
+{
+    if (!m_pPdfDocument)
+        return nullptr;
+    try
+    {
+        auto iterable = m_pPdfDocument->GetFieldsIterator();
+        for (auto it = iterable.begin(); it != iterable.end(); ++it)
+        {
+            PdfField* field = *it;
+            if (!field || field->GetType() != PdfFieldType::Signature)
+                continue;
+            auto* signature = dynamic_cast<PdfSignature*>(field);
+            if (!signature)
+                continue;
+            if (!fieldName.empty())
+            {
+                auto currentName = getFieldName(field);
+                if (currentName != fieldName)
+                    continue;
+            }
+            if (requireUnsigned && IsFieldSigned(*signature))
+                continue;
+            return signature;
+        }
+    }
+    catch (const PdfError&)
+    {
+        return nullptr;
+    }
+    catch (...)
+    {
+        return nullptr;
+    }
+    return nullptr;
+}
+
+bool PdfSignatureGenerator::IsFieldSigned(const PdfSignature& signature) const
+{
+    const PdfObject* value = signature.GetValueObject();
+    if (!value || !value->IsDictionary())
+        return false;
+    const PdfObject* contents = value->GetDictionary().GetKey("Contents");
+    if (!contents)
+        return false;
+    if (contents->IsNull())
+        return false;
+    return true;
+}
+
+bool PdfSignatureGenerator::PrepareSignatureField(PdfSignature& signature,
+    const Rect* customRect,
+    const char* szReason,
+    const char* szName,
+    const char* szLocation,
+    const char* szSubFilter)
+{
+    if (szReason && szReason[0])
+        signature.SetSignatureReason(makeString(szReason));
+    if (szLocation && szLocation[0])
+        signature.SetSignatureLocation(makeString(szLocation));
+    if (szName && szName[0])
+        signature.SetSignerName(makeString(szName));
+
+    PdfDate now;
+    signature.SetSignatureDate(now);
+
+    Rect rect;
+    if (customRect)
+    {
+        rect = *customRect;
+    }
+    else
+    {
+        try
+        {
+            PdfAnnotationWidget& widget = signature.MustGetWidget();
+            rect = widget.GetRect();
+        }
+        catch (const PdfError&)
+        {
+            rect = Rect();
+        }
+        catch (...)
+        {
+            rect = Rect();
+        }
+    }
+
+    m_pSignatureField = &signature;
+    if (!m_signatureImage.empty() && rect.Width > 0.0 && rect.Height > 0.0)
+    {
+        ApplyAppearanceImage(signature,
+            *m_pPdfDocument,
+            rect,
+            m_signatureImage.data(),
+            m_signatureImage.size(),
+            m_signatureImageWidth,
+            m_signatureImageHeight);
+    }
+    m_subFilter = szSubFilter && szSubFilter[0] ? szSubFilter : kDefaultSubFilter;
+    return true;
 }
 
 const double PdfSignatureGenerator::getWidth(int pageIndex)

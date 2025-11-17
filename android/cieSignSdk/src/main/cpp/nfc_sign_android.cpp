@@ -140,6 +140,7 @@ public:
                        jstring reasonValue,
                        jstring locationValue,
                        jstring nameValue,
+                       jobjectArray fieldIds,
                        jbyteArray signatureImage,
                        jint imageWidth,
                        jint imageHeight,
@@ -152,6 +153,7 @@ public:
         reason_ = readString(reasonValue);
         location_ = readString(locationValue);
         name_ = readString(nameValue);
+        readStringArray(fieldIds, field_ids_);
         image_width_ = static_cast<int>(imageWidth);
         image_height_ = static_cast<int>(imageHeight);
     }
@@ -162,6 +164,7 @@ public:
     const std::string& reason() const { return reason_; }
     const std::string& location() const { return location_; }
     const std::string& name() const { return name_; }
+    const std::vector<std::string>& field_ids() const { return field_ids_; }
     const std::vector<uint8_t>& signature_image() const { return signature_image_; }
     int image_width() const { return image_width_; }
     int image_height() const { return image_height_; }
@@ -190,6 +193,24 @@ private:
         return result;
     }
 
+    void readStringArray(jobjectArray array, std::vector<std::string>& out) {
+        if (!array) {
+            out.clear();
+            return;
+        }
+        jsize len = env_->GetArrayLength(array);
+        out.reserve(static_cast<size_t>(len));
+        for (jsize i = 0; i < len; ++i) {
+            jstring element = static_cast<jstring>(env_->GetObjectArrayElement(array, i));
+            if (!element) {
+                out.emplace_back();
+                continue;
+            }
+            out.emplace_back(readString(element));
+            env_->DeleteLocalRef(element);
+        }
+    }
+
     JNIEnv* env_ = nullptr;
     std::vector<uint8_t> pdf_;
     std::vector<uint8_t> atr_;
@@ -198,6 +219,7 @@ private:
     std::string reason_;
     std::string location_;
     std::string name_;
+    std::vector<std::string> field_ids_;
     int image_width_ = 0;
     int image_height_ = 0;
 };
@@ -240,6 +262,7 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_signPdfWithNfc(
     jstring reason,
     jstring location,
     jstring name,
+    jobjectArray fieldIds,
     jbyteArray signatureImage,
     jint imageWidth,
     jint imageHeight,
@@ -252,7 +275,7 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_signPdfWithNfc(
         return nullptr;
     }
 
-    NativeRequestGuard request(env, pdfBytes, pin, reason, location, name, signatureImage, imageWidth, imageHeight, atrBytes);
+    NativeRequestGuard request(env, pdfBytes, pin, reason, location, name, fieldIds, signatureImage, imageWidth, imageHeight, atrBytes);
     if (request.pdf().empty()) {
         throw_java_exception(env, "PDF buffer is empty");
         return nullptr;
@@ -320,6 +343,17 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_signPdfWithNfc(
     signRequest.pdf.signature_image_len = request.signature_image().size();
     signRequest.pdf.signature_image_width = static_cast<uint32_t>(request.image_width());
     signRequest.pdf.signature_image_height = static_cast<uint32_t>(request.image_height());
+    std::vector<const char*> fieldPointers;
+    fieldPointers.reserve(request.field_ids().size());
+    for (const auto& id : request.field_ids()) {
+        if (!id.empty()) {
+            fieldPointers.push_back(id.c_str());
+        }
+    }
+    if (!fieldPointers.empty()) {
+        signRequest.pdf.field_ids = fieldPointers.data();
+        signRequest.pdf.field_ids_len = fieldPointers.size();
+    }
 
     std::vector<uint8_t> output(request.pdf().size() + 65536);
     cie_sign_result result{};

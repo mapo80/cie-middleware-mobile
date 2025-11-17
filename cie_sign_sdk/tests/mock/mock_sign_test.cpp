@@ -263,6 +263,9 @@ int main() {
     req.pdf.reason = "Mock reason";
     req.pdf.name = "Mock user";
     req.pdf.location = "Mock city";
+    const char* fieldId = "SignatureField1";
+    req.pdf.field_ids = &fieldId;
+    req.pdf.field_ids_len = 1;
     req.pdf.left = 0.1f;
     req.pdf.bottom = 0.1f;
     req.pdf.width = 0.4f;
@@ -307,6 +310,37 @@ int main() {
                                       verifierCertBytes.getContent() + verifierCertBytes.getLength(),
                                       cie::mobile::mock_signer::kMockCertificateDer);
     assert(verifierMatches);
+
+    // Automatic detection without specifying field identifiers
+    auto pdfAuto = loadFixture("data/fixtures/sample.pdf");
+    req.input = pdfAuto.data();
+    req.input_len = pdfAuto.size();
+    req.pdf.field_ids = nullptr;
+    req.pdf.field_ids_len = 0;
+    req.pdf.left = 0.0f;
+    req.pdf.bottom = 0.0f;
+    req.pdf.width = 0.0f;
+    req.pdf.height = 0.0f;
+    result.output_len = 0;
+    status = cie_sign_execute(ctx, &req, &result);
+    assert(status == CIE_STATUS_OK);
+    std::vector<uint8_t> autoSigned(result.output, result.output + result.output_len);
+    verify_signed_pdf(autoSigned);
+
+    // Previously signed PDF should trigger creation of a new signature field
+    req.input = signedPdf.data();
+    req.input_len = signedPdf.size();
+    req.pdf.left = 0.5f;
+    req.pdf.bottom = 0.15f;
+    req.pdf.width = 0.25f;
+    req.pdf.height = 0.1f;
+    req.pdf.field_ids = nullptr;
+    req.pdf.field_ids_len = 0;
+    result.output_len = 0;
+    status = cie_sign_execute(ctx, &req, &result);
+    assert(status == CIE_STATUS_OK);
+    std::vector<uint8_t> createdField(result.output, result.output + result.output_len);
+    verify_signed_pdf(createdField);
 
     cie_sign_ctx_destroy(ctx);
     return 0;

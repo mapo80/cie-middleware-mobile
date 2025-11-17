@@ -9,6 +9,7 @@ data class PdfAppearanceOptions(
     val reason: String? = null,
     val location: String? = null,
     val name: String? = null,
+    val fieldIds: List<String>? = null,
     val signatureImage: ByteArray? = null,
     val signatureImageWidth: Int = 0,
     val signatureImageHeight: Int = 0

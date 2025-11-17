@@ -78,6 +78,7 @@ class _MyAppState extends State<MyApp> {
       reason: 'Flutter demo',
       location: 'Mobile SDK',
       name: 'CIE Sign',
+      fieldIds: const ['SignatureField1'],
       signatureImageBytes: image,
     );
   }

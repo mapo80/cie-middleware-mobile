@@ -35,6 +35,7 @@ class CieSignSdk {
             app?.reason,
             app?.location,
             app?.name,
+            app?.fieldIds?.toTypedArray(),
             app?.signatureImage,
             app?.signatureImageWidth ?: 0,
             app?.signatureImageHeight ?: 0
@@ -67,6 +68,7 @@ class CieSignSdk {
             appearance.reason,
             appearance.location,
             appearance.name,
+            appearance.fieldIds?.toTypedArray(),
             appearance.signatureImage,
             appearance.signatureImageWidth,
             appearance.signatureImageHeight,

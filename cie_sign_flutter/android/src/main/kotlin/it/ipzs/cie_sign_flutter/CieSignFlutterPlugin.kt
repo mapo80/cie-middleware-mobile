@@ -154,6 +154,7 @@ class CieSignFlutterPlugin :
         val reason = (map["reason"] as? String)?.takeIf { it.isNotBlank() }
         val location = (map["location"] as? String)?.takeIf { it.isNotBlank() }
         val name = (map["name"] as? String)?.takeIf { it.isNotBlank() }
+        val fieldIds = (map["fieldIds"] as? List<*>)?.mapNotNull { (it as? String)?.takeIf { it.isNotBlank() } }
         val decoded = decodeSignatureImage(map["signatureImage"] as? ByteArray)
         return PdfAppearanceOptions(
             pageIndex,
@@ -164,6 +165,7 @@ class CieSignFlutterPlugin :
             reason,
             location,
             name,
+            fieldIds,
             decoded?.data,
             decoded?.width ?: 0,
             decoded?.height ?: 0

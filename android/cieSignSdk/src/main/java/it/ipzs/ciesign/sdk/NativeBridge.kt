@@ -18,6 +18,7 @@ internal object NativeBridge {
         reason: String?,
         location: String?,
         name: String?,
+        fieldIds: Array<String>?,
         signatureImage: ByteArray?,
         signatureImageWidth: Int,
         signatureImageHeight: Int
@@ -35,6 +36,7 @@ internal object NativeBridge {
         reason: String?,
         location: String?,
         name: String?,
+        fieldIds: Array<String>?,
         signatureImage: ByteArray?,
         signatureImageWidth: Int,
         signatureImageHeight: Int,

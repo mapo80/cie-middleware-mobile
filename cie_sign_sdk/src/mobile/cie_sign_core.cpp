@@ -218,6 +218,22 @@ bool append_input(UUCByteArray &dest, const cie_sign_request *request)
     return true;
 }
 
+std::vector<std::string> collect_field_ids(const cie_pdf_options *options)
+{
+    std::vector<std::string> ids;
+    if (!options || !options->field_ids || options->field_ids_len == 0) {
+        return ids;
+    }
+    ids.reserve(options->field_ids_len);
+    for (size_t i = 0; i < options->field_ids_len; ++i) {
+        const char *value = options->field_ids[i];
+        if (value && value[0] != '\0') {
+            ids.emplace_back(value);
+        }
+    }
+    return ids;
+}
+
 cie_status sign_pkcs7(cie_sign_ctx_impl *ctx,
                       CSignatureGenerator &generator,
                       const cie_sign_request *request,
@@ -270,52 +286,123 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
                                    request->pdf.signature_image_width,
                                    request->pdf.signature_image_height);
 
-    if (request->pdf.width > 0 && request->pdf.height > 0) {
-        pdfGenerator.InitSignature(
-            static_cast<int>(request->pdf.page_index),
-            request->pdf.left,
-            request->pdf.bottom,
-            request->pdf.width,
-            request->pdf.height,
-            reason,
-            "",
-            name,
-            "",
-            location,
-            "",
-            fieldName.c_str(),
-            DISIGON_PDF_SUBFILTER_PKCS_DETACHED);
+    std::vector<std::string> requestedFields = collect_field_ids(&request->pdf);
+    UUCByteArray latestSignedPdf;
+
+    auto finalizeSignature = [&](bool reloadAfter) -> cie_status {
+        UUCByteArray bufferToSign;
+        pdfGenerator.GetBufferForSignature(bufferToSign);
+        generator.SetData(bufferToSign);
+        generator.SetHashAlgo(CKM_SHA256_RSA_PKCS);
+
+        UUCByteArray pkcs7;
+        long rc = generator.Generate(pkcs7, 1, 0);
+        if (rc != CKR_OK) {
+            return map_error(ctx, "PDF signature generation", rc);
+        }
+
+        pdfGenerator.SetSignature(reinterpret_cast<const char *>(pkcs7.getContent()),
+                                  static_cast<int>(pkcs7.getLength()));
+
+        latestSignedPdf.removeAll();
+        pdfGenerator.GetSignedPdf(latestSignedPdf);
+
+        if (reloadAfter) {
+            int reloadResult = pdfGenerator.Load(
+                reinterpret_cast<const char *>(latestSignedPdf.getContent()),
+                static_cast<int>(latestSignedPdf.getLength()));
+            if (reloadResult < 0) {
+                ctx->last_error = "Unable to reload PDF after signing";
+                return CIE_STATUS_INVALID_INPUT;
+            }
+            pdfGenerator.SetSignatureImage(signatureImage,
+                                           signatureImageLen,
+                                           request->pdf.signature_image_width,
+                                           request->pdf.signature_image_height);
+        }
+
+        return CIE_STATUS_OK;
+    };
+
+    auto prepareNewField = [&]() -> bool {
+        if (request->pdf.width > 0 && request->pdf.height > 0) {
+            pdfGenerator.InitSignature(
+                static_cast<int>(request->pdf.page_index),
+                request->pdf.left,
+                request->pdf.bottom,
+                request->pdf.width,
+                request->pdf.height,
+                reason,
+                "",
+                name,
+                "",
+                location,
+                "",
+                fieldName.c_str(),
+                DISIGON_PDF_SUBFILTER_PKCS_DETACHED);
+        } else {
+            pdfGenerator.InitSignature(
+                static_cast<int>(request->pdf.page_index),
+                reason,
+                "",
+                name,
+                "",
+                location,
+                "",
+                fieldName.c_str(),
+                DISIGON_PDF_SUBFILTER_PKCS_DETACHED);
+        }
+        return true;
+    };
+
+    if (!requestedFields.empty()) {
+        for (size_t i = 0; i < requestedFields.size(); ++i) {
+            if (!pdfGenerator.InitExistingSignatureField(
+                    requestedFields[i].c_str(),
+                    reason,
+                    name,
+                    location,
+                    DISIGON_PDF_SUBFILTER_PKCS_DETACHED)) {
+                ctx->last_error = "Signature field not available or already signed: " + requestedFields[i];
+                return CIE_STATUS_INVALID_INPUT;
+            }
+            cie_status rcStatus = finalizeSignature(i + 1 < requestedFields.size());
+            if (rcStatus != CIE_STATUS_OK) {
+                return rcStatus;
+            }
+        }
     } else {
-        pdfGenerator.InitSignature(
-            static_cast<int>(request->pdf.page_index),
+        size_t signedExisting = 0;
+        while (pdfGenerator.InitFirstUnsignedSignatureField(
             reason,
-            "",
             name,
-            "",
             location,
-            "",
-            fieldName.c_str(),
-            DISIGON_PDF_SUBFILTER_PKCS_DETACHED);
+            DISIGON_PDF_SUBFILTER_PKCS_DETACHED)) {
+            ++signedExisting;
+            cie_status rcStatus = finalizeSignature(true);
+            if (rcStatus != CIE_STATUS_OK) {
+                return rcStatus;
+            }
+        }
+
+        if (signedExisting == 0) {
+            if (!prepareNewField()) {
+                ctx->last_error = "Failed to initialize signature field";
+                return CIE_STATUS_INTERNAL_ERROR;
+            }
+            cie_status rcStatus = finalizeSignature(false);
+            if (rcStatus != CIE_STATUS_OK) {
+                return rcStatus;
+            }
+        }
     }
 
-    UUCByteArray bufferToSign;
-    pdfGenerator.GetBufferForSignature(bufferToSign);
-
-    generator.SetData(bufferToSign);
-    generator.SetHashAlgo(CKM_SHA256_RSA_PKCS);
-
-    UUCByteArray pkcs7;
-    long rc = generator.Generate(pkcs7, 1, 0);
-    if (rc != CKR_OK) {
-        return map_error(ctx, "PDF signature generation", rc);
+    if (latestSignedPdf.getLength() == 0) {
+        ctx->last_error = "Signature output is empty";
+        return CIE_STATUS_INTERNAL_ERROR;
     }
 
-    pdfGenerator.SetSignature(reinterpret_cast<const char *>(pkcs7.getContent()),
-                               static_cast<int>(pkcs7.getLength()));
-
-    UUCByteArray signedPdf;
-    pdfGenerator.GetSignedPdf(signedPdf);
-    return copy_to_result(ctx, signedPdf, result);
+    return copy_to_result(ctx, latestSignedPdf, result);
 }
 
 cie_status sign_xml(cie_sign_ctx_impl *ctx,
