@@ -13,9 +13,11 @@
 #include "podofo/podofo.h"
 #include "ASN1/UUCByteArray.h"
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace PoDoFo {
 class PdfSigningContext;
@@ -39,6 +41,8 @@ public:
 	void InitSignature(int pageIndex, float left, float bottom, float width, float height, const char* szReason, const char* szReasonLabel, const char* szName, const char* szNameLabel, const char* szLocation, const char* szLocationLabel, const char* szFieldName, const char* szSubFilter);
 	
 	void InitSignature(int pageIndex, float left, float bottom, float width, float height, const char* szReason, const char* szReasonLabel, const char* szName, const char* szNameLabel, const char* szLocation, const char* szLocationLabel, const char* szFieldName, const char* szSubFilter, const char* szImagePath, const char* szDescription, const char* szGraphometricData, const char* szVersion);
+	
+	void SetSignatureImage(const uint8_t* signatureImageData, size_t signatureImageLen, uint32_t width, uint32_t height);
 	
 	void GetBufferForSignature(UUCByteArray& toSign);
 	
@@ -65,6 +69,9 @@ private:
     size_t m_placeholderSize;
     std::string m_originalPdfData;
     std::string m_streamBuffer;
+    std::vector<uint8_t> m_signatureImage;
+    uint32_t m_signatureImageWidth;
+    uint32_t m_signatureImageHeight;
 	
 	static bool IsSignatureField(const PoDoFo::PdfMemDocument* pDoc, const PoDoFo::PdfObject *const pObj);
 };

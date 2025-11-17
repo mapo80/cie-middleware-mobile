@@ -34,6 +34,30 @@ void throw_java_exception(JNIEnv* env, const std::string& message)
     }
 }
 
+std::string to_std_string(JNIEnv* env, jstring value)
+{
+    if (!value)
+        return {};
+    const char* chars = env->GetStringUTFChars(value, nullptr);
+    if (!chars)
+        return {};
+    std::string result(chars);
+    env->ReleaseStringUTFChars(value, chars);
+    return result;
+}
+
+std::vector<uint8_t> to_vector(JNIEnv* env, jbyteArray array)
+{
+    if (!array)
+        return {};
+    jsize len = env->GetArrayLength(array);
+    if (len <= 0)
+        return {};
+    std::vector<uint8_t> buffer(static_cast<size_t>(len));
+    env->GetByteArrayRegion(array, 0, len, reinterpret_cast<jbyte*>(buffer.data()));
+    return buffer;
+}
+
 int hexValue(char c)
 {
     if (c >= '0' && c <= '9')
@@ -162,7 +186,23 @@ void persist_signed_pdf(const std::vector<uint8_t>& pdf, const std::string& outp
         throw std::runtime_error("Failed to write complete signed PDF");
 }
 
-std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data, size_t pdf_len)
+struct AppearanceOptions {
+    int pageIndex = 0;
+    float left = 0.f;
+    float bottom = 0.f;
+    float width = 0.f;
+    float height = 0.f;
+    std::string reason;
+    std::string location;
+    std::string name;
+    std::vector<uint8_t> signatureImage;
+    int imageWidth = 0;
+    int imageHeight = 0;
+};
+
+std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
+                                   size_t pdf_len,
+                                   const AppearanceOptions& appearance)
 {
     MockApduTransport transport;
     std::unique_ptr<cie_sign_ctx, decltype(&cie_sign_ctx_destroy)> ctx(
@@ -196,10 +236,18 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data, size_t pdf_len)
     req.input_len = pdf.size();
     req.doc_type = CIE_DOCUMENT_PDF;
     req.pdf = {};
-    req.pdf.page_index = 0;
-    req.pdf.reason = "Mock reason";
-    req.pdf.name = "Mock user";
-    req.pdf.location = "Mock city";
+    req.pdf.page_index = static_cast<uint32_t>(appearance.pageIndex);
+    req.pdf.left = appearance.left;
+    req.pdf.bottom = appearance.bottom;
+    req.pdf.width = appearance.width;
+    req.pdf.height = appearance.height;
+    req.pdf.reason = appearance.reason.empty() ? nullptr : appearance.reason.c_str();
+    req.pdf.name = appearance.name.empty() ? nullptr : appearance.name.c_str();
+    req.pdf.location = appearance.location.empty() ? nullptr : appearance.location.c_str();
+    req.pdf.signature_image = appearance.signatureImage.empty() ? nullptr : appearance.signatureImage.data();
+    req.pdf.signature_image_len = appearance.signatureImage.size();
+    req.pdf.signature_image_width = static_cast<uint32_t>(appearance.imageWidth);
+    req.pdf.signature_image_height = static_cast<uint32_t>(appearance.imageHeight);
     result.output_len = 0;
 
     if (cie_sign_execute(ctx.get(), &req, &result) != CIE_STATUS_OK)
@@ -215,7 +263,22 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data, size_t pdf_len)
 
 extern "C"
 JNIEXPORT jbyteArray JNICALL
-Java_it_ipzs_ciesign_sdk_NativeBridge_mockSignPdf(JNIEnv* env, jclass, jbyteArray inputPdf, jstring outputPath)
+Java_it_ipzs_ciesign_sdk_NativeBridge_mockSignPdf(
+    JNIEnv* env,
+    jclass,
+    jbyteArray inputPdf,
+    jstring outputPath,
+    jint pageIndex,
+    jfloat left,
+    jfloat bottom,
+    jfloat width,
+    jfloat height,
+    jstring reason,
+    jstring location,
+    jstring name,
+    jbyteArray signatureImage,
+    jint imageWidth,
+    jint imageHeight)
 {
     if (inputPdf == nullptr)
     {
@@ -238,9 +301,22 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_mockSignPdf(JNIEnv* env, jclass, jbyteArra
         }
     }
 
+    AppearanceOptions appearance;
+    appearance.pageIndex = static_cast<int>(pageIndex);
+    appearance.left = left;
+    appearance.bottom = bottom;
+    appearance.width = width;
+    appearance.height = height;
+    appearance.reason = to_std_string(env, reason);
+    appearance.location = to_std_string(env, location);
+    appearance.name = to_std_string(env, name);
+    appearance.signatureImage = to_vector(env, signatureImage);
+    appearance.imageWidth = static_cast<int>(imageWidth);
+    appearance.imageHeight = static_cast<int>(imageHeight);
+
     try
     {
-        auto signedPdf = run_mock_flow(pdf_bytes.data(), pdf_bytes.size());
+        auto signedPdf = run_mock_flow(pdf_bytes.data(), pdf_bytes.size(), appearance);
         persist_signed_pdf(signedPdf, output_path);
         verify_signed_pdf(signedPdf);
 

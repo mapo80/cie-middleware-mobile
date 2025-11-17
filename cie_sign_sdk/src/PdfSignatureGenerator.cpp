@@ -3,6 +3,10 @@
 #include "PdfVerifier.h"
 #include "UUCLogger.h"
 
+#include "podofo/main/PdfImage.h"
+#include "podofo/main/PdfPainter.h"
+#include "podofo/main/PdfXObjectForm.h"
+
 #include <stdexcept>
 #include <vector>
 #include <cstdio>
@@ -91,13 +95,79 @@ static PdfSignature* CreateSignatureField(PdfMemDocument& doc,
     return dynamic_cast<PdfSignature*>(&field);
 }
 
+void ApplyAppearanceImage(PdfSignature& signature,
+                          PdfMemDocument& document,
+                          const Rect& rect,
+                          const uint8_t* imageData,
+                          size_t imageLen,
+                          uint32_t imageWidth,
+                          uint32_t imageHeight)
+{
+    const double rectWidth = rect.Width;
+    const double rectHeight = rect.Height;
+    if (!imageData || imageLen == 0 || rectWidth <= 0 || rectHeight <= 0)
+        return;
+
+    const bool hasRawDimensions = imageWidth > 0 && imageHeight > 0;
+    if (hasRawDimensions && imageLen < static_cast<size_t>(imageWidth) * static_cast<size_t>(imageHeight) * 4)
+        return;
+
+    try
+    {
+        Rect appearanceRect(0.0, 0.0, rectWidth, rectHeight);
+        auto appearance = document.CreateXObjectForm(appearanceRect);
+        PdfPainter painter;
+        painter.SetCanvas(*appearance);
+
+        if (hasRawDimensions)
+        {
+            auto image = document.CreateImage();
+            bufferview buffer(reinterpret_cast<const char*>(imageData), imageLen);
+            image->SetData(buffer, imageWidth, imageHeight, PdfPixelFormat::RGBA);
+            double scaleX = rectWidth / static_cast<double>(imageWidth);
+            double scaleY = rectHeight / static_cast<double>(imageHeight);
+            if (scaleX <= 0.0)
+                scaleX = 1.0;
+            if (scaleY <= 0.0)
+                scaleY = 1.0;
+            painter.DrawImage(*image, 0.0, 0.0, scaleX, scaleY);
+        }
+        else
+        {
+            auto image = document.CreateImage();
+            bufferview buffer(reinterpret_cast<const char*>(imageData), imageLen);
+            image->LoadFromBuffer(buffer);
+            double scaleX = rectWidth / static_cast<double>(image->GetWidth());
+            double scaleY = rectHeight / static_cast<double>(image->GetHeight());
+            if (scaleX <= 0.0)
+                scaleX = 1.0;
+            if (scaleY <= 0.0)
+                scaleY = 1.0;
+            painter.DrawImage(*image, 0.0, 0.0, scaleX, scaleY);
+        }
+
+        painter.FinishDrawing();
+        signature.MustGetWidget().SetAppearanceStream(*appearance);
+    }
+    catch (const PdfError& err)
+    {
+        std::fprintf(stderr, "PdfSignatureGenerator: Unable to embed signature image: %s\n", err.what());
+    }
+    catch (...)
+    {
+        std::fprintf(stderr, "PdfSignatureGenerator: Unable to embed signature image (unknown error)\n");
+    }
+}
+
 } // namespace
 
 PdfSignatureGenerator::PdfSignatureGenerator()
     : m_pPdfDocument(nullptr),
       m_pSignatureField(nullptr),
       m_actualLen(0),
-      m_placeholderSize(0)
+      m_placeholderSize(0),
+      m_signatureImageWidth(0),
+      m_signatureImageHeight(0)
 {
 }
 
@@ -159,6 +229,25 @@ void PdfSignatureGenerator::InitSignature(int pageIndex, float left, float botto
         nullptr, szLocation, nullptr, szFieldName, szSubFilter, nullptr, nullptr, nullptr, nullptr);
 }
 
+void PdfSignatureGenerator::SetSignatureImage(const uint8_t* signatureImageData,
+    size_t signatureImageLen,
+    uint32_t width,
+    uint32_t height)
+{
+    if (signatureImageData && signatureImageLen > 0)
+    {
+        m_signatureImage.assign(signatureImageData, signatureImageData + signatureImageLen);
+        m_signatureImageWidth = width;
+        m_signatureImageHeight = height;
+    }
+    else
+    {
+        m_signatureImage.clear();
+        m_signatureImageWidth = 0;
+        m_signatureImageHeight = 0;
+    }
+}
+
 void PdfSignatureGenerator::InitSignature(int pageIndex, float left, float bottom,
     float width, float height, const char* szReason,
     const char* /*szReasonLabel*/, const char* szName,
@@ -174,8 +263,10 @@ void PdfSignatureGenerator::InitSignature(int pageIndex, float left, float botto
     PdfPage& page = m_pPdfDocument->GetPages().GetPageAt(pageIndex);
     Rect cropBox = page.GetCropBox();
 
-    const double left0 = left * cropBox.Width;
-    const double bottom0 = cropBox.Height - (bottom * cropBox.Height);
+    const double pageLeft = cropBox.GetLeft();
+    const double pageBottom = cropBox.GetBottom();
+    const double left0 = pageLeft + (left * cropBox.Width);
+    const double bottom0 = pageBottom + (bottom * cropBox.Height);
     const double width0 = width * cropBox.Width;
     const double height0 = height * cropBox.Height;
 
@@ -197,6 +288,16 @@ void PdfSignatureGenerator::InitSignature(int pageIndex, float left, float botto
     signature->SetSignatureDate(now);
 
     m_pSignatureField = signature;
+    if (!m_signatureImage.empty())
+    {
+        ApplyAppearanceImage(*signature,
+                              *m_pPdfDocument,
+                              rect,
+                              m_signatureImage.data(),
+                              m_signatureImage.size(),
+                              m_signatureImageWidth,
+                              m_signatureImageHeight);
+    }
     m_subFilter = szSubFilter && szSubFilter[0] ? szSubFilter : kDefaultSubFilter;
 }
 

@@ -10,7 +10,7 @@ plugins {
 android {
     namespace = "it.ipzs.cie_sign_flutter_example"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "26.2.11394342"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

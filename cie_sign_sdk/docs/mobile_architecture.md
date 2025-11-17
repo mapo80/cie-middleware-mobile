@@ -49,6 +49,18 @@
 - **SwiftUI Host** (`ios/CieSignIosHost`): usa il bridge reale. L'app avvia il flusso quando l’utente preme “Firma PDF di esempio”; durante la sessione mostra un loader e, su dispositivi reali, passa il controllo a CoreNFC per rilevare la carta. Sul simulatore l'utente riceve un messaggio “CoreNFC non disponibile”.
 - I file bridge sono inseriti nel progetto Xcode principale (`CieSignIosTests.xcodeproj`) e linkano le stesse statiche `libciesign_core.a`/`libcie_sign_sdk.a` usate dagli XCTest, garantendo che il codice di produzione e quello di test condividano i medesimi binari.
 
+## Riuso IAS e interfaccia NFC comune
+
+- Il codice C++ riutilizza integralmente i moduli storici `IAS`, `CCIESigner`, `CSignatureGenerator` e `PdfSignatureGenerator`. La classe `IAS` (`cie_sign_sdk/src/CSP/IAS.cpp`) contiene già l’intera sequenza richiesta dalla CIE: selezione AID IAS/CIE, scambio Diffie-Hellman, gestione del secure messaging (3DES + MAC3), device authentication (“dApp”), verifica PIN e comandi `PSO: COMPUTE DIGITAL SIGNATURE`. Non è più necessario duplicare questa logica lato Kotlin/Swift.
+- L’unico requisito per le piattaforme è fornire al core un adapter NFC tramite `cie_platform_nfc_adapter`:
+  - `open`: restituisce ATR e lunghezza (derivati da `IsoDep.getHistoricalBytes()` su Android o `NFCTag.atrDescription` su iOS).
+  - `transceive`: inoltra raw APDU/risposte, rispettando i timeout richiesti dal chip (tipicamente 60 s per la firma).
+  - `close`: chiude la sessione fisica (`IsoDep.close()`, `invalidateSession()`).
+- Le opzioni PDF (`cie_pdf_options`) contengono ora anche l'immagine della firma (`signature_image` + `len`), ricevuta come byte array direttamente dalle app (Flutter/host). `PdfSignatureGenerator` carica il buffer come immagine PoDoFo e costruisce la stream di appearance del widget, garantendo un rendering omogeneo tra piattaforme.
+- `cie_sign_ctx_create_with_platform` usa l’adapter per popolare `IAS` e reimposta automaticamente il callback `TokenTransmitCallback`. Qualsiasi errore dallo strato NFC viene propagato tramite `cie_sign_get_last_error` e trasformato in eccezioni platform-specific (es. `RuntimeException` in JNI).
+- Questo approccio replica esattamente il funzionamento del vecchio `Ias.kt` Android (FEASDK), ma delega la logica crittografica al core condiviso. In pratica: Android/iOS devono solo occuparsi di sessione reader-mode, raccolta PIN, progress UI e storage del PDF; tutto il protocollo IAS rimane invariato e comune.
+- Per verificare la retrocompatibilità basta confrontare gli APDU inviati: sia l’SDK precedente sia il core attuale emettono gli stessi comandi (SELECT AID, READ FILE 0x100x, VERIFY PIN, ecc.). In caso di futuri adattamenti (nuovi SW, aggiornamenti CIE) è sufficiente modificare `IAS.cpp` e ricompilare; le app mobile ne beneficeranno automaticamente.
+
 ## Aggiornamento PoDoFo 1.x e pipeline PDF
 
 - **Output PoDoFo full-buffer**: `PdfSignatureGenerator` mantiene una copia del PDF originale (`m_streamBuffer`) e consegna a PoDoFo un `ContainerStreamDevice<std::string>` in modalità read/write. In questo modo `StartSigning/FinishSigning` scrivono il documento completo (xref incluso) e `GetSignedPdf` restituisce direttamente `m_streamBuffer`, senza ricombinare manualmente chunk incrementali come avveniva con il vecchio PoDoFo.

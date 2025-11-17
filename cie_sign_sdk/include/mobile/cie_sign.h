@@ -28,6 +28,10 @@ typedef struct {
     const char *reason;
     const char *location;
     const char *name;
+    const uint8_t *signature_image;
+    size_t signature_image_len;
+    uint32_t signature_image_width;
+    uint32_t signature_image_height;
     uint32_t page_index;
     float left;
     float bottom;

@@ -126,6 +126,7 @@ void assert_signature_field_present_on_disk(const char* path)
     }
 
     size_t signatureCount = 0;
+    bool appearanceFound = false;
     try
     {
         auto iterable = document.GetFieldsIterator();
@@ -133,7 +134,16 @@ void assert_signature_field_present_on_disk(const char* path)
         {
             PdfField* field = *it;
             if (field && field->GetType() == PdfFieldType::Signature)
+            {
                 ++signatureCount;
+                PdfAnnotationWidget* widget = field->GetWidget();
+                if (widget)
+                {
+                    auto* appearanceDict = widget->GetAppearanceDictionaryObject();
+                    if (appearanceDict)
+                        appearanceFound = true;
+                }
+            }
         }
     }
     catch (const PdfError& err)
@@ -143,6 +153,7 @@ void assert_signature_field_present_on_disk(const char* path)
     }
 
     assert(signatureCount > 0);
+    assert(appearanceFound);
 }
 
 void verify_signed_pdf(const std::vector<uint8_t>& pdf)
@@ -172,6 +183,16 @@ void verify_signed_pdf(const std::vector<uint8_t>& pdf)
                               certBytes.getContent() + certBytes.getLength(),
                               cie::mobile::mock_signer::kMockCertificateDer);
     assert(matches);
+}
+
+bool has_appearance_entry(const std::vector<uint8_t>& pdf)
+{
+    for (size_t i = 0; i + 2 < pdf.size(); ++i)
+    {
+        if (pdf[i] == '/' && pdf[i + 1] == 'A' && pdf[i + 2] == 'P')
+            return true;
+    }
+    return false;
 }
 
 static std::vector<uint8_t> loadFixture(const char* path)
@@ -232,6 +253,7 @@ int main() {
 
     // PDF signing workflow through cie_sign_execute
     auto pdf = loadFixture("data/fixtures/sample.pdf");
+    auto signatureImage = loadFixture("data/fixtures/signature.png");
     std::printf("Loaded sample PDF (%zu bytes)\n", pdf.size());
     req.input = pdf.data();
     req.input_len = pdf.size();
@@ -241,6 +263,14 @@ int main() {
     req.pdf.reason = "Mock reason";
     req.pdf.name = "Mock user";
     req.pdf.location = "Mock city";
+    req.pdf.left = 0.1f;
+    req.pdf.bottom = 0.1f;
+    req.pdf.width = 0.4f;
+    req.pdf.height = 0.12f;
+    req.pdf.signature_image = signatureImage.data();
+    req.pdf.signature_image_len = signatureImage.size();
+    req.pdf.signature_image_width = 0;
+    req.pdf.signature_image_height = 0;
     result.output_len = 0;
     status = cie_sign_execute(ctx, &req, &result);
     if (status != CIE_STATUS_OK) {
@@ -250,6 +280,7 @@ int main() {
     }
     std::vector<uint8_t> signedPdf(result.output, result.output + result.output_len);
     verify_signed_pdf(signedPdf);
+    assert(has_appearance_entry(signedPdf));
     if (signedPdf.size() <= pdf.size()) {
         std::fprintf(stderr, "Signed PDF not larger than original\n");
         cie_sign_ctx_destroy(ctx);

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'cie_sign_flutter_method_channel.dart';
+import 'src/pdf_signature_appearance.dart';
+import 'src/pdf_signature_appearance.dart';
 
 abstract class CieSignFlutterPlatform extends PlatformInterface {
   CieSignFlutterPlatform() : super(token: _token);
@@ -21,7 +23,21 @@ abstract class CieSignFlutterPlatform extends PlatformInterface {
   Future<Uint8List> mockSignPdf(
     Uint8List pdfBytes, {
     String? outputPath,
+    PdfSignatureAppearance? appearance,
   }) {
     throw UnimplementedError('mockSignPdf() has not been implemented.');
+  }
+
+  Future<Uint8List> signPdfWithNfc(
+    Uint8List pdfBytes, {
+    required String pin,
+    PdfSignatureAppearance appearance = const PdfSignatureAppearance(),
+    String? outputPath,
+  }) {
+    throw UnimplementedError('signPdfWithNfc() has not been implemented.');
+  }
+
+  Future<bool> cancelNfcSigning() {
+    throw UnimplementedError('cancelNfcSigning() has not been implemented.');
   }
 }
