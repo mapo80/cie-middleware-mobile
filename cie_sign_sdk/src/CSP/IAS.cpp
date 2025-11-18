@@ -13,6 +13,8 @@
 #include "cryptopp/cryptlib.h"
 #include "cryptopp/asn.h"
 #include "cryptopp/queue.h"
+#include "mobile/cie_sign_version.h"
+#include "mobile/cie_mobile_log.h"
 
 //#include "../res/resource.h"
 #include "../Util/CacheLib.h"
@@ -306,6 +308,7 @@ void IAS::ReadCIEType() {
 	std::vector<uint8_t> atr_vector((ATR.data()), ATR.data() + ATR.size());
 
 	type = get_type(atr_vector);
+    cie_mobile_logf("[CIE %s] ReadCIEType -> %d (ATR len=%zu)", CIE_SIGN_BUILD_ID, static_cast<int>(type), atr_vector.size());
 	if (type == CIE_Type::CIE_Unknown) {
 		throw logged_error("ReadCIEType - CIE not recognized");
 	}
@@ -313,41 +316,55 @@ void IAS::ReadCIEType() {
 }
 
 void IAS::SelectAID_IAS(bool SM) {
-	init_func
-	if (type == CIE_Type::CIE_Unknown) {
-		ReadCIEType();
-	}
-	ByteDynArray resp;
-	StatusWord sw;
-	if ((type >= CIE_Type::CIE_NXP)) {
+    init_func
+    if (type == CIE_Type::CIE_Unknown) {
+        ReadCIEType();
+    }
+    cie_mobile_logf("[CIE %s] SelectAID_IAS (type=%d)", CIE_SIGN_BUILD_ID, static_cast<int>(type));
+    ByteDynArray resp;
+    StatusWord sw;
+    if ((type >= CIE_Type::CIE_NXP)) {
         uint8_t selectMF[] = { 0x00, 0xa4, 0x00, 0x00 };
         if (SM)
         {
             if ((sw = SendAPDU_SM(VarToByteArray(selectMF), ByteArray(), resp)) != 0x9000)
+            {
+                cie_mobile_logf("[CIE %s] Select MF (SM) failed: 0x%04X", CIE_SIGN_BUILD_ID, sw);
                 throw scard_error(sw);
+            }
         }
         else
         {
             if ((sw = SendAPDU(VarToByteArray(selectMF), ByteArray(), resp)) != 0x9000)
+            {
+                cie_mobile_logf("[CIE %s] Select MF failed: 0x%04X", CIE_SIGN_BUILD_ID, sw);
                 throw scard_error(sw);
+            }
         }
     }
-	else
-		if ((type < CIE_Type::CIE_NXP) && (type != CIE_Type::CIE_Unknown)) {
+        else
+            if ((type < CIE_Type::CIE_NXP) && (type != CIE_Type::CIE_Unknown)) {
         uint8_t selectIAS[] = { 0x00, 0xa4, 0x04, 0x0c };
         if (SM)
         {
             if ((sw = SendAPDU_SM(VarToByteArray(selectIAS), IAS_AID, resp)) != 0x9000)
+            {
+                cie_mobile_logf("[CIE %s] Select IAS (SM) failed: 0x%04X", CIE_SIGN_BUILD_ID, sw);
                 throw scard_error(sw);
+            }
         }
         else
         {
             if ((sw = SendAPDU(VarToByteArray(selectIAS), IAS_AID, resp)) != 0x9000)
+            {
+                cie_mobile_logf("[CIE %s] Select IAS failed: 0x%04X", CIE_SIGN_BUILD_ID, sw);
                 throw scard_error(sw);
+            }
         }
     }
     else
     {
+            cie_mobile_logf("[CIE %s] SelectAID_IAS - unsupported type %d", CIE_SIGN_BUILD_ID, static_cast<int>(type));
 			throw logged_error("SelectAID_IAS - CIE not recognized");
     }
 
@@ -827,6 +844,7 @@ StatusWord IAS::getResp(ByteDynArray &resp, StatusWord sw,ByteDynArray &elabresp
 			}
 		}
 		else {
+			cie_mobile_logf("[CIE %s] getResp final sw=0x%04X", CIE_SIGN_BUILD_ID, sw);
 			return sw;
 		}
 	}
@@ -970,7 +988,7 @@ StatusWord IAS::SendAPDU(ByteArray head, ByteArray data, ByteDynArray &resp, uin
 			StatusWord sw=token.Transmit(apdu, &curresp);
 			if (i == data.size()) {
 				sw = getResp(curresp, sw, resp);
-
+				cie_mobile_logf("[CIE %s] SendAPDU sw=0x%04X", CIE_SIGN_BUILD_ID, sw);
 				return sw;
 			}
 		}
@@ -984,10 +1002,12 @@ StatusWord IAS::SendAPDU(ByteArray head, ByteArray data, ByteDynArray &resp, uin
 //        //Log.writePure("%s", std::string().append("\nAPDU:").append(dumpHexData(apdu)).append("\n").c_str());
 
 		StatusWord sw = token.Transmit(apdu, &curresp);
+	cie_mobile_logf("[CIE %s] SendAPDU raw sw=0x%04X", CIE_SIGN_BUILD_ID, sw);
 
 //        //Log.writePure("%s",std::string().append("RESP:").append(dumpHexData(curresp)).append("\n").c_str());
 
 		sw=getResp(curresp, sw, resp);
+		cie_mobile_logf("[CIE %s] SendAPDU sw=0x%04X", CIE_SIGN_BUILD_ID, sw);
 
 		return sw;
 	}
@@ -1449,7 +1469,7 @@ void IAS::VerificaSODPSS(ByteArray &SOD, std::map<uint8_t, ByteDynArray> &hashSe
     CASNTag &CertIssuer = *issuerParser.tags[0];
     if (issuerName.tags.size() != CertIssuer.tags.size())
 //        throw logged_error("Issuer name non corrispondente");
-        printf("Issuer name non corrispondente");
+        cie_mobile_debug("Issuer name non corrispondente");
 
     uint8_t val = 1;
     signedData.Child(0, 02).Verify(VarToByteArray(val));
@@ -1639,7 +1659,7 @@ void IAS::VerificaSOD(ByteArray &SOD, std::map<BYTE, ByteDynArray> &hashSet) {
     CASNTag &CertIssuer = *issuerParser.tags[0];
 	if (issuerName.tags.size() != CertIssuer.tags.size())
 //        throw logged_error("Issuer name non corrispondente");
-        printf("Issuer name non corrispondente");
+        cie_mobile_debug("Issuer name non corrispondente");
 
 	uint8_t val0=0;
 	signedData.Child(0, 02).Verify(VarToByteArray(val0));
@@ -1654,12 +1674,12 @@ void IAS::VerificaSOD(ByteArray &SOD, std::map<BYTE, ByteDynArray> &hashSet) {
 
 		if (hashSet.find(num) == hashSet.end() || hashSet[num].size() == 0)
 //            throw logged_error(stdPrintf("Digest non trovato per il DG %02X", num));
-            printf("%s", stdPrintf("Digest non trovato per il DG %02X", num).c_str());
+            cie_mobile_debug(stdPrintf("Digest non trovato per il DG %02X", num).c_str());
 
 
 		if (hashSet[num] != dgHash.content)
 //            throw logged_error(stdPrintf("Digest non corrispondente per il DG %02X", num));
-                printf("%s", stdPrintf("Digest non corrispondente per il DG %02X", num).c_str());
+                cie_mobile_debug(stdPrintf("Digest non corrispondente per il DG %02X", num).c_str());
 	}
 
 	/*if (CSCA != null && CSCA.Count > 0)

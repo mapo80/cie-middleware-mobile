@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cie_sign_flutter/cie_sign_flutter_platform_interface.dart';
+import 'package:cie_sign_flutter/src/nfc_session_event.dart';
 import 'package:cie_sign_flutter/src/pdf_signature_appearance.dart';
 import 'package:cie_sign_flutter_example/main.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +17,8 @@ class _FakePathProvider extends PathProviderPlatform {
 
 class _FakePlatform extends CieSignFlutterPlatform {
   bool nfcCalled = false;
+  final StreamController<NfcSessionEvent> _controller =
+      StreamController<NfcSessionEvent>.broadcast();
 
   @override
   Future<Uint8List> mockSignPdf(
@@ -39,6 +43,17 @@ class _FakePlatform extends CieSignFlutterPlatform {
 
   @override
   Future<bool> cancelNfcSigning() async => true;
+
+  @override
+  Stream<NfcSessionEvent> watchNfcEvents() => _controller.stream;
+
+  void emit(Map<String, dynamic> payload) {
+    _controller.add(NfcSessionEvent.fromMap(payload));
+  }
+
+  void dispose() {
+    _controller.close();
+  }
 }
 
 void main() {
@@ -49,14 +64,17 @@ void main() {
     CieSignFlutterPlatform.instance = fakePlatform;
     PathProviderPlatform.instance = _FakePathProvider();
 
-    await tester.pumpWidget(MyApp(
-      enablePdfView: false,
-      loadSamplePdf: () async => Uint8List.fromList('%PDF-TEST'.codeUnits),
-      loadSignatureImage: () async =>
-          Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47]),
-    ));
+    await tester.pumpWidget(
+      MyApp(
+        enablePdfView: false,
+        loadSamplePdf: () async => Uint8List.fromList('%PDF-TEST'.codeUnits),
+        loadSignatureImage: () async =>
+            Uint8List.fromList(const [0x89, 0x50, 0x4e, 0x47]),
+      ),
+    );
 
-    await tester.enterText(find.byKey(const Key('pinField')), '12345678');
+    await tester.enterText(find.byKey(const Key('pinField')), '25051980');
+    fakePlatform.emit({'type': 'state', 'status': 'ready'});
     await tester.tap(find.text('Firma con NFC'));
     await tester.pump();
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -68,5 +86,6 @@ void main() {
     expect(fakePlatform.nfcCalled, isTrue);
     final output = File('/tmp/mock_signed_flutter_nfc.pdf');
     expect(output.existsSync(), isTrue);
+    fakePlatform.dispose();
   });
 }

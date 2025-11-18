@@ -228,6 +228,21 @@ install(FILES
     ${INCLUDE_DIR}/mobile/cie_platform.h
     DESTINATION ${INSTALL_DIR}/mobile)
 
+if(NOT ANDROID)
+    add_library(cie_sign_host_bridge SHARED
+        ${SOURCE_DIR}/mobile/cie_sign_host_bridge.cpp
+        tests/mock/mock_transport.cpp
+        tests/mock/mock_apdu_sequence.cpp
+    )
+    target_include_directories(cie_sign_host_bridge PRIVATE
+        ${INCLUDE_LIST}
+        ${INCLUDE_DIR}/mobile
+        ${CMAKE_CURRENT_LIST_DIR}/tests
+    )
+    target_link_libraries(cie_sign_host_bridge PRIVATE ciesign_core)
+    set_target_properties(cie_sign_host_bridge PROPERTIES OUTPUT_NAME "cie_sign_host_bridge")
+endif()
+
 if(NOT CIE_SIGN_SDK_SKIP_TESTS AND NOT ANDROID)
     enable_testing()
 
@@ -244,4 +259,13 @@ if(NOT CIE_SIGN_SDK_SKIP_TESTS AND NOT ANDROID)
     target_compile_definitions(mock_sign_test PRIVATE CIE_SIGN_SDK_SOURCE_DIR="${CIE_SIGN_SDK_ROOT}")
 
     add_test(NAME mock_sign_test COMMAND mock_sign_test)
+
+    add_executable(pdf_signature_check
+        tests/tools/pdf_signature_check.cpp
+    )
+    target_include_directories(pdf_signature_check PRIVATE
+        ${INCLUDE_LIST}
+    )
+    target_link_libraries(pdf_signature_check PRIVATE ciesign_core)
+    target_compile_definitions(pdf_signature_check PRIVATE CIE_SIGN_SDK_SOURCE_DIR="${CIE_SIGN_SDK_ROOT}")
 endif()

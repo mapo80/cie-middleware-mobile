@@ -66,6 +66,57 @@ bool decodeHexString(const std::string_view& hex, UUCByteArray& out)
     return hi < 0 && out.getLength() > 0;
 }
 
+size_t computeDerLength(const BYTE* data, size_t length)
+{
+    if (!data || length < 2 || data[0] != 0x30)
+        return 0;
+    size_t idx = 1;
+    uint8_t lenByte = data[idx++];
+    size_t valueLen = 0;
+    if ((lenByte & 0x80) == 0)
+    {
+        valueLen = lenByte;
+    }
+    else
+    {
+        uint8_t lenLen = lenByte & 0x7F;
+        if (lenLen == 0 || lenLen > sizeof(size_t) || idx + lenLen > length)
+            return 0;
+        for (uint8_t i = 0; i < lenLen; ++i)
+        {
+            valueLen = (valueLen << 8) | data[idx++];
+        }
+    }
+    size_t totalLen = idx + valueLen;
+    if (totalLen > length)
+        return 0;
+    return totalLen;
+}
+
+void trimCmsPadding(UUCByteArray& data)
+{
+    const BYTE* buffer = data.getContent();
+    size_t length = data.getLength();
+    if (!buffer || length == 0)
+        return;
+    size_t derLen = computeDerLength(buffer, length);
+    size_t target = derLen > 0 ? derLen : length;
+    if (derLen == 0)
+    {
+        while (target > 0 && buffer[target - 1] == 0x00)
+            --target;
+    }
+    if (target < length)
+    {
+        std::vector<BYTE> trimmed(buffer, buffer + target);
+        data.removeAll();
+        if (!trimmed.empty())
+        {
+            data.append(trimmed.data(), static_cast<unsigned int>(trimmed.size()));
+        }
+    }
+}
+
 bool extractContentsData(const PdfObject* obj, UUCByteArray& dest)
 {
     if (!obj)
@@ -75,7 +126,73 @@ bool extractContentsData(const PdfObject* obj, UUCByteArray& dest)
     {
         const PdfString& str = obj->GetString();
         auto raw = str.GetRawData();
-        return decodeHexString(std::string_view(raw.data(), raw.size()), dest);
+        if (raw.data() == nullptr || raw.empty())
+            return false;
+        dest.append(reinterpret_cast<const BYTE*>(raw.data()),
+            static_cast<unsigned int>(raw.size()));
+        trimCmsPadding(dest);
+        return dest.getLength() > 0;
+    }
+    return false;
+}
+
+const PdfObject* findSignatureValueObject(const PdfMemDocument* doc, const PdfObject* field)
+{
+    if (!field || !field->IsDictionary())
+        return nullptr;
+    const auto resolveValue = [&](const PdfObject* value) -> const PdfObject* {
+        if (!value)
+            return nullptr;
+        return resolveObject(doc, value);
+    };
+
+    const PdfObject* directValue = resolveValue(field->GetDictionary().GetKey(PdfName("V")));
+    if (directValue && directValue->IsDictionary())
+        return directValue;
+
+    const PdfObject* kids = resolveValue(field->GetDictionary().GetKey(PdfName("Kids")));
+    if (kids && kids->IsArray())
+    {
+        const PdfArray& arr = kids->GetArray();
+        for (unsigned int i = 0; i < arr.GetSize(); ++i)
+        {
+            const PdfObject* kid = resolveObject(doc, &arr[i]);
+            if (!kid || !kid->IsDictionary())
+                continue;
+            const PdfObject* kidValue = resolveValue(kid->GetDictionary().GetKey(PdfName("V")));
+            if (kidValue && kidValue->IsDictionary())
+                return kidValue;
+        }
+    }
+    return nullptr;
+}
+
+bool extractFieldRect(const PdfMemDocument* doc, const PdfObject* field, Rect& rect)
+{
+    if (!field || !field->IsDictionary())
+        return false;
+    const PdfObject* rectObj = field->GetDictionary().GetKey(PdfName("Rect"));
+    if (rectObj && rectObj->IsArray())
+    {
+        rect = Rect::FromArray(rectObj->GetArray());
+        return true;
+    }
+    const PdfObject* kids = resolveObject(doc, field->GetDictionary().GetKey(PdfName("Kids")));
+    if (kids && kids->IsArray())
+    {
+        const PdfArray& arr = kids->GetArray();
+        for (unsigned int i = 0; i < arr.GetSize(); ++i)
+        {
+            const PdfObject* kid = resolveObject(doc, &arr[i]);
+            if (!kid || !kid->IsDictionary())
+                continue;
+            const PdfObject* kidRect = kid->GetDictionary().GetKey(PdfName("Rect"));
+            if (kidRect && kidRect->IsArray())
+            {
+                rect = Rect::FromArray(kidRect->GetArray());
+                return true;
+            }
+        }
     }
     return false;
 }
@@ -88,14 +205,11 @@ bool isSignatureFieldObject(const PdfMemDocument* doc, const PdfObject* obj)
     const PdfObject* keyFTValue = field->GetDictionary().GetKey(PdfName("FT"));
     if (!keyFTValue)
         return false;
-    std::string value;
-    keyFTValue->ToString(value);
-    if (value != "/Sig")
+    if (!keyFTValue->IsName())
         return false;
-    const PdfObject* keyVValue = field->GetDictionary().GetKey(PdfName("V"));
-    if (!keyVValue)
+    if (keyFTValue->GetName() != PdfName("Sig"))
         return false;
-    const PdfObject* signature = resolveObject(doc, keyVValue);
+    const PdfObject* signature = findSignatureValueObject(doc, field);
     return signature && signature->IsDictionary();
 }
 
@@ -375,7 +489,7 @@ int PDFVerifier::GetSignature(int index, UUCByteArray& signedDocument, Signature
     std::vector<const PdfObject*> signatureVector;
     if (!collectSignatureFields(m_pPdfDocument, signatureVector))
         return -1;
-	if(index < 0 || static_cast<size_t>(index) >= signatureVector.size())
+    if(index < 0 || static_cast<size_t>(index) >= signatureVector.size())
 		return -8;
 	return GetSignature(m_pPdfDocument, signatureVector[index], signedDocument, signatureInfo);
 }
@@ -386,18 +500,14 @@ int PDFVerifier::GetSignature(const PdfMemDocument* pDoc, const PdfObject *const
 	const PdfObject* field = resolveObject(pDoc, pObj);
 	if (!field || !field->IsDictionary())
 		return -1;
-	const PdfObject* keyRect = field->GetDictionary().GetKey(PdfName("Rect"));
-	if (!keyRect)
+    Rect rect;
+    if (!extractFieldRect(pDoc, field, rect))
 		return -4;
-	Rect rect = Rect::FromArray(keyRect->GetArray());
 	appearanceInfo.left = static_cast<int>(rect.GetLeft());
 	appearanceInfo.bottom = static_cast<int>(rect.GetBottom());
 	appearanceInfo.width = static_cast<int>(rect.Width);
 	appearanceInfo.heigth = static_cast<int>(rect.Height);
-	const PdfObject* keyVValue = field->GetDictionary().GetKey(PdfName("V"));
-	if (!keyVValue)
-		return -4;
-	const PdfObject* signature = resolveObject(pDoc, keyVValue);
+	const PdfObject* signature = findSignatureValueObject(pDoc, field);
 	if (!signature || !signature->IsDictionary())
 		return -6;
 	UUCByteArray tempContents;

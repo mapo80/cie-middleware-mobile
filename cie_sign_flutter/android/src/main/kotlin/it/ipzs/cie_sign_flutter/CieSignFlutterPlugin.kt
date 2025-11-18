@@ -1,32 +1,38 @@
 package it.ipzs.cie_sign_flutter
 
 import android.app.Activity
-import android.graphics.BitmapFactory
 import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.nfc.tech.IsoDep
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import it.ipzs.ciesign.sdk.CieSignSdk
 import it.ipzs.ciesign.sdk.PdfAppearanceOptions
 import java.io.File
+import java.util.HashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
+
+private const val TAG = "CieSignFlutterPlugin"
 
 class CieSignFlutterPlugin :
     FlutterPlugin,
     MethodChannel.MethodCallHandler,
     ActivityAware,
-    NfcAdapter.ReaderCallback {
+    NfcAdapter.ReaderCallback,
+    EventChannel.StreamHandler {
 
     private lateinit var channel: MethodChannel
+    private lateinit var eventChannel: EventChannel
     private val sdk = CieSignSdk()
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -34,14 +40,18 @@ class CieSignFlutterPlugin :
     private var activity: Activity? = null
     private var nfcAdapter: NfcAdapter? = null
     private val pending = AtomicReference<PendingRequest?>()
+    private val eventSink = AtomicReference<EventChannel.EventSink?>()
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(binding.binaryMessenger, "cie_sign_flutter")
         channel.setMethodCallHandler(this)
+        eventChannel = EventChannel(binding.binaryMessenger, "cie_sign_flutter/nfc_events")
+        eventChannel.setStreamHandler(this)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        eventChannel.setStreamHandler(null)
         executor.shutdown()
     }
 
@@ -90,18 +100,22 @@ class CieSignFlutterPlugin :
             return
         }
         val adapter = nfcAdapter ?: run {
+            emitError("nfc_unavailable", "NFC adapter not available")
             result.error("nfc_unavailable", "NFC adapter not available", null)
             return
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            emitError("nfc_unsupported", "Reader mode requires API 19 or later")
             result.error("nfc_unsupported", "Reader mode requires API 19 or later", null)
             return
         }
         if (!adapter.isEnabled) {
+            emitNfcState()
             result.error("nfc_disabled", "NFC adapter is disabled", null)
             return
         }
         if (pending.get() != null) {
+            emitError("busy", "A signing request is already running")
             result.error("busy", "A signing request is already running", null)
             return
         }
@@ -123,10 +137,13 @@ class CieSignFlutterPlugin :
 
         val pendingRequest = PendingRequest(pdf, pin, appearance, outputPath, result)
         pending.set(pendingRequest)
+        emitEvent("listening", emptyMap())
         adapter.enableReaderMode(
             activity,
             this,
-            NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
+            NfcAdapter.FLAG_READER_NFC_A or
+                NfcAdapter.FLAG_READER_NFC_B or
+                NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
             null
         )
     }
@@ -141,7 +158,32 @@ class CieSignFlutterPlugin :
         mainHandler.post {
             current.result.error("canceled", "NFC signing cancelled", null)
         }
+        emitEvent("canceled", emptyMap())
         result.success(true)
+    }
+
+    private fun currentNfcStatus(): String {
+        val adapter = nfcAdapter
+        return when {
+            adapter == null -> "not_supported"
+            !adapter.isEnabled -> "disabled"
+            else -> "ready"
+        }
+    }
+
+    private fun emitNfcState() {
+        emitEvent("state", mapOf("status" to currentNfcStatus()))
+    }
+
+    private fun emitError(code: String, message: String) {
+        emitEvent("error", mapOf("code" to code, "message" to message))
+    }
+
+    private fun emitEvent(type: String, data: Map<String, Any?>) {
+        val sink = eventSink.get() ?: return
+        val payload = HashMap<String, Any?>(data)
+        payload["type"] = type
+        mainHandler.post { sink.success(payload) }
     }
 
     private fun parseAppearance(map: Map<*, *>?): PdfAppearanceOptions? {
@@ -155,7 +197,8 @@ class CieSignFlutterPlugin :
         val location = (map["location"] as? String)?.takeIf { it.isNotBlank() }
         val name = (map["name"] as? String)?.takeIf { it.isNotBlank() }
         val fieldIds = (map["fieldIds"] as? List<*>)?.mapNotNull { (it as? String)?.takeIf { it.isNotBlank() } }
-        val decoded = decodeSignatureImage(map["signatureImage"] as? ByteArray)
+        val payload = (map["signatureImage"] as? ByteArray)?.takeIf { it.isNotEmpty() }
+        Log.d(TAG, "appearance: fieldIds=${fieldIds?.joinToString()} bytes=${payload?.size ?: 0} width=0 height=0")
         return PdfAppearanceOptions(
             pageIndex,
             left,
@@ -166,34 +209,17 @@ class CieSignFlutterPlugin :
             location,
             name,
             fieldIds,
-            decoded?.data,
-            decoded?.width ?: 0,
-            decoded?.height ?: 0
+            payload,
+            0,
+            0
         )
-    }
-
-    private data class SignatureImage(val data: ByteArray, val width: Int, val height: Int)
-
-    private fun decodeSignatureImage(bytes: ByteArray?): SignatureImage? {
-        if (bytes == null || bytes.isEmpty()) return null
-        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
-        val width = bitmap.width
-        val height = bitmap.height
-        val pixels = IntArray(width * height)
-        bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
-        val raw = ByteArray(width * height * 4)
-        var dst = 0
-        for (color in pixels) {
-            raw[dst++] = ((color shr 16) and 0xFF).toByte()
-            raw[dst++] = ((color shr 8) and 0xFF).toByte()
-            raw[dst++] = (color and 0xFF).toByte()
-            raw[dst++] = ((color shr 24) and 0xFF).toByte()
-        }
-        return SignatureImage(raw, width, height)
     }
 
     override fun onTagDiscovered(tag: Tag) {
         val request = pending.get() ?: return
+        val tagId = tag.id?.joinToString(separator = "") { String.format("%02X", it) }
+        Log.d(TAG, "Tag discovered. id=$tagId tech=${tag.techList?.joinToString()}")
+        emitEvent("tag", mapOf("tagId" to (tagId ?: "unknown")))
         val isoDep = IsoDep.get(tag)
         if (isoDep == null) {
             mainHandler.post {
@@ -201,11 +227,13 @@ class CieSignFlutterPlugin :
                 disableReaderMode()
                 request.result.error("unsupported_tag", "Detected tag does not support ISO-DEP", null)
             }
+            emitError("unsupported_tag", "Detected tag does not support ISO-DEP")
             return
         }
         executor.execute {
             try {
                 isoDep.timeout = maxOf(isoDep.timeout, 60_000)
+                Log.d(TAG, "IsoDep connected. Timeout=${isoDep.timeout}")
                 val signed = sdk.signPdfWithNfc(
                     request.pdf,
                     request.pin,
@@ -218,12 +246,15 @@ class CieSignFlutterPlugin :
                     disableReaderMode()
                     request.result.success(signed)
                 }
+                emitEvent("completed", mapOf("bytes" to signed.size))
             } catch (ex: Exception) {
+                Log.e(TAG, "NFC signing failed", ex)
                 mainHandler.post {
                     pending.set(null)
                     disableReaderMode()
                     request.result.error("nfc_sign_failed", ex.message, null)
                 }
+                emitError("nfc_sign_failed", ex.message ?: "NFC signing failed")
             } finally {
                 try {
                     isoDep.close()
@@ -244,11 +275,13 @@ class CieSignFlutterPlugin :
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
         nfcAdapter = NfcAdapter.getDefaultAdapter(binding.activity)
+        emitNfcState()
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
         activity = null
         nfcAdapter = null
+        emitNfcState()
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
@@ -262,6 +295,16 @@ class CieSignFlutterPlugin :
         }
         activity = null
         nfcAdapter = null
+        emitNfcState()
+    }
+
+    override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+        eventSink.set(events)
+        emitNfcState()
+    }
+
+    override fun onCancel(arguments: Any?) {
+        eventSink.set(null)
     }
 
     private data class PendingRequest(
@@ -271,4 +314,5 @@ class CieSignFlutterPlugin :
         val outputPath: String?,
         val result: MethodChannel.Result
     )
+
 }

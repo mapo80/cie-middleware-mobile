@@ -4,16 +4,24 @@
 #include "UUCLogger.h"
 
 #include "podofo/main/PdfAnnotation.h"
+#include "podofo/main/PdfAnnotationCollection.h"
 #include "podofo/main/PdfAnnotationWidget.h"
+#include "podofo/main/PdfCatalog.h"
 #include "podofo/main/PdfField.h"
 #include "podofo/main/PdfImage.h"
+#include "podofo/main/PdfPage.h"
 #include "podofo/main/PdfPainter.h"
 #include "podofo/main/PdfSignature.h"
 #include "podofo/main/PdfXObjectForm.h"
 
+#include <algorithm>
+#include <array>
 #include <stdexcept>
 #include <vector>
 #include <cstdio>
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 USE_LOG;
 
@@ -112,6 +120,49 @@ static PdfSignature* CreateSignatureField(PdfMemDocument& doc,
     return dynamic_cast<PdfSignature*>(&field);
 }
 
+bool ExtractRectFromDictionary(const PdfSignature& signature, Rect& rectOut)
+{
+    try
+    {
+        const PdfObject* rectObj = signature.GetDictionary().GetKey("Rect");
+        if (!rectObj || !rectObj->IsArray())
+            return false;
+        const PdfArray& arr = rectObj->GetArray();
+        double left = 0.0, bottom = 0.0, right = 0.0, top = 0.0;
+        if (!arr.TryGetAtAs(0, left) ||
+            !arr.TryGetAtAs(1, bottom) ||
+            !arr.TryGetAtAs(2, right) ||
+            !arr.TryGetAtAs(3, top))
+        {
+            return false;
+        }
+        const double width = right - left;
+        const double height = top - bottom;
+        if (width <= 0.0 || height <= 0.0)
+            return false;
+        rectOut = Rect(left, bottom, width, height);
+        return true;
+    }
+    catch (const PdfError&)
+    {
+        return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+void EnsureRectDictionaryEntry(PdfSignature& signature, const Rect& rect)
+{
+    PdfArray array;
+    array.Add(PdfObject(static_cast<double>(rect.GetLeft())));
+    array.Add(PdfObject(static_cast<double>(rect.GetBottom())));
+    array.Add(PdfObject(static_cast<double>(rect.GetRight())));
+    array.Add(PdfObject(static_cast<double>(rect.GetTop())));
+    signature.GetDictionary().AddKey(PdfName("Rect"), PdfObject(array));
+}
+
 void ApplyAppearanceImage(PdfSignature& signature,
                           PdfMemDocument& document,
                           const Rect& rect,
@@ -120,6 +171,12 @@ void ApplyAppearanceImage(PdfSignature& signature,
                           uint32_t imageWidth,
                           uint32_t imageHeight)
 {
+#ifdef ANDROID
+    __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative",
+        "ApplyAppearanceImage len=%zu width=%u height=%u rect=%.2f %.2f %.2f %.2f",
+        imageLen, imageWidth, imageHeight,
+        rect.GetLeft(), rect.GetBottom(), rect.Width, rect.Height);
+#endif
     const double rectWidth = rect.Width;
     const double rectHeight = rect.Height;
     if (!imageData || imageLen == 0 || rectWidth <= 0 || rectHeight <= 0)
@@ -164,18 +221,78 @@ void ApplyAppearanceImage(PdfSignature& signature,
         }
 
         painter.FinishDrawing();
-        signature.MustGetWidget().SetAppearanceStream(*appearance);
+
+        bool applied = false;
+        try
+        {
+            PdfAnnotationWidget& widget = signature.MustGetWidget();
+            widget.SetAppearanceStream(*appearance);
+            applied = true;
+#ifdef ANDROID
+            __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative", "Appearance applied via widget");
+#endif
+        }
+        catch (const PdfError&)
+        {
+            applied = false;
+        }
+        catch (...)
+        {
+            applied = false;
+        }
+
+        if (!applied)
+        {
+            try
+            {
+                PdfAnnotationWidget* widget = signature.GetWidget();
+                PdfDictionary* dict = widget ? &widget->GetDictionary() : nullptr;
+                if (!dict)
+                {
+                    dict = &signature.GetDictionary();
+                }
+                PdfObject* apObj = dict->GetKey("AP");
+                PdfDictionary* apDict = nullptr;
+                if (apObj && apObj->IsDictionary())
+                {
+                    apDict = &apObj->GetDictionary();
+                }
+                else
+                {
+                    PdfObject newAp{PdfDictionary()};
+                    apObj = &dict->AddKey(PdfName("AP"), newAp);
+                    apDict = &apObj->GetDictionary();
+                }
+                apDict->AddKeyIndirect(PdfName("N"), appearance->GetObject());
+#ifdef ANDROID
+                __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative", "Appearance applied via fallback dictionary");
+#endif
+            }
+            catch (...)
+            {
+                std::fprintf(stderr, "PdfSignatureGenerator: Unable to attach appearance dictionary\n");
+            }
+        }
     }
     catch (const PdfError& err)
     {
+#ifdef ANDROID
+        __android_log_print(ANDROID_LOG_ERROR, "CieSignNative",
+            "PdfSignatureGenerator: Unable to embed signature image: %s", err.what());
+#else
         std::fprintf(stderr, "PdfSignatureGenerator: Unable to embed signature image: %s\n", err.what());
+#endif
     }
     catch (...)
     {
+#ifdef ANDROID
+        __android_log_print(ANDROID_LOG_ERROR, "CieSignNative",
+            "PdfSignatureGenerator: Unable to embed signature image (unknown error)");
+#else
         std::fprintf(stderr, "PdfSignatureGenerator: Unable to embed signature image (unknown error)\n");
+#endif
     }
 }
-
 } // namespace
 
 PdfSignatureGenerator::PdfSignatureGenerator()
@@ -400,6 +517,14 @@ bool PdfSignatureGenerator::InitFirstUnsignedSignatureField(const char* szReason
     {
         return false;
     }
+    auto legacy = ExtractLegacySignatureFields();
+    if (!legacy.empty())
+    {
+        PdfSignature* signature = CreateFieldFromLegacy(legacy.front());
+        if (!signature)
+            return false;
+        return PrepareSignatureField(*signature, nullptr, szReason, szName, szLocation, szSubFilter);
+    }
     return false;
 }
 
@@ -434,6 +559,9 @@ std::vector<std::string> PdfSignatureGenerator::ListUnsignedSignatureFieldNames(
     {
         names.clear();
     }
+    auto legacy = ExtractLegacySignatureFields();
+    for (const auto& info : legacy)
+        names.push_back(info.name);
     return names;
 }
 
@@ -450,27 +578,50 @@ PdfSignature* PdfSignatureGenerator::FindSignatureField(const std::string& field
             PdfField* field = *it;
             if (!field || field->GetType() != PdfFieldType::Signature)
                 continue;
-            auto* signature = dynamic_cast<PdfSignature*>(field);
-            if (!signature)
+            auto* signatureField = dynamic_cast<PdfSignature*>(field);
+            if (!signatureField)
                 continue;
+#ifdef ANDROID
+            auto currentNameDebug = getFieldName(field);
+            __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative",
+                "FindSignatureField saw field name=%s signed=%d",
+                currentNameDebug.c_str(),
+                IsFieldSigned(*signatureField) ? 1 : 0);
+#endif
             if (!fieldName.empty())
             {
                 auto currentName = getFieldName(field);
                 if (currentName != fieldName)
                     continue;
             }
-            if (requireUnsigned && IsFieldSigned(*signature))
+            if (requireUnsigned && IsFieldSigned(*signatureField))
                 continue;
-            return signature;
+            return signatureField;
         }
     }
     catch (const PdfError&)
     {
-        return nullptr;
     }
     catch (...)
     {
-        return nullptr;
+    }
+    if (!fieldName.empty())
+    {
+        auto legacyFields = ExtractLegacySignatureFields();
+        auto itLegacy = std::find_if(legacyFields.begin(), legacyFields.end(),
+            [&](const LegacyFieldInfo& info) { return info.name == fieldName; });
+        if (itLegacy != legacyFields.end())
+        {
+            return CreateFieldFromLegacy(*itLegacy);
+        }
+    }
+    else
+    {
+        auto legacyFields = ExtractLegacySignatureFields();
+        if (!legacyFields.empty())
+        {
+            return CreateFieldFromLegacy(legacyFields.front());
+        }
     }
     return nullptr;
 }
@@ -506,33 +657,47 @@ bool PdfSignatureGenerator::PrepareSignatureField(PdfSignature& signature,
     signature.SetSignatureDate(now);
 
     Rect rect;
-    if (customRect)
+    bool rectValid = false;
+    if (customRect && customRect->Width > 0.0 && customRect->Height > 0.0)
     {
         rect = *customRect;
+        rectValid = true;
     }
-    else
+    if (!rectValid)
     {
         try
         {
-            PdfAnnotationWidget& widget = signature.MustGetWidget();
-            rect = widget.GetRect();
+            PdfAnnotationWidget* widget = signature.GetWidget();
+            if (widget)
+            {
+                rect = widget->GetRect();
+                rectValid = rect.Width > 0.0 && rect.Height > 0.0;
+            }
         }
         catch (const PdfError&)
         {
-            rect = Rect();
+            rectValid = false;
         }
         catch (...)
         {
-            rect = Rect();
+            rectValid = false;
         }
+    }
+    if (!rectValid)
+    {
+        rectValid = ExtractRectFromDictionary(signature, rect);
+    }
+    if (rectValid)
+    {
+        EnsureRectDictionaryEntry(signature, rect);
     }
 
     m_pSignatureField = &signature;
-    if (!m_signatureImage.empty() && rect.Width > 0.0 && rect.Height > 0.0)
+    if (!m_signatureImage.empty() && rectValid)
     {
         ApplyAppearanceImage(signature,
-            *m_pPdfDocument,
-            rect,
+                              *m_pPdfDocument,
+                              rect,
             m_signatureImage.data(),
             m_signatureImage.size(),
             m_signatureImageWidth,
@@ -540,6 +705,135 @@ bool PdfSignatureGenerator::PrepareSignatureField(PdfSignature& signature,
     }
     m_subFilter = szSubFilter && szSubFilter[0] ? szSubFilter : kDefaultSubFilter;
     return true;
+}
+
+std::vector<PdfSignatureGenerator::LegacyFieldInfo> PdfSignatureGenerator::ExtractLegacySignatureFields() const
+{
+    std::vector<LegacyFieldInfo> legacy;
+    if (!m_pPdfDocument)
+        return legacy;
+
+    try
+    {
+        PdfCatalog& catalog = m_pPdfDocument->GetCatalog();
+        PdfObject* acroObj = catalog.GetDictionary().GetKey("AcroForm");
+        if (!acroObj || !acroObj->IsDictionary())
+            return legacy;
+        PdfObject* fieldsObj = acroObj->GetDictionary().GetKey("Fields");
+        if (!fieldsObj || !fieldsObj->IsArray())
+            return legacy;
+        PdfArray& fieldsArray = fieldsObj->GetArray();
+        PdfPageCollection& pages = m_pPdfDocument->GetPages();
+        PdfIndirectObjectList& objects = m_pPdfDocument->GetObjects();
+
+        for (unsigned int i = 0; i < fieldsArray.GetSize(); ++i)
+        {
+            PdfObject& entry = fieldsArray[i];
+            if (!entry.IsReference())
+                continue;
+            PdfObject* resolved = objects.GetObject(entry.GetReference());
+            if (!resolved || !resolved->IsDictionary())
+                continue;
+            PdfDictionary& dict = resolved->GetDictionary();
+            const PdfObject* subtype = dict.GetKey("Subtype");
+            if (!subtype || !subtype->IsName())
+                continue;
+            if (subtype->GetName().GetString() != "Widget")
+                continue;
+            const PdfObject* fieldType = dict.GetKey("FT");
+            if (!fieldType || !fieldType->IsName())
+                continue;
+            if (fieldType->GetName().GetString() != "Sig")
+                continue;
+            const PdfObject* nameObj = dict.GetKey("T");
+            if (!nameObj || !nameObj->IsString())
+                continue;
+            const PdfObject* rectObj = dict.GetKey("Rect");
+            if (!rectObj || !rectObj->IsArray())
+                continue;
+            const PdfObject* pageObj = dict.GetKey("P");
+            if (!pageObj || !pageObj->IsReference())
+                continue;
+            PdfPage& page = pages.GetPage(pageObj->GetReference());
+            Rect rect;
+            const PdfArray& arr = rectObj->GetArray();
+            double left = 0.0, bottom = 0.0, right = 0.0, top = 0.0;
+            if (!arr.TryGetAtAs(0, left) ||
+                !arr.TryGetAtAs(1, bottom) ||
+                !arr.TryGetAtAs(2, right) ||
+                !arr.TryGetAtAs(3, top))
+            {
+                continue;
+            }
+            rect = Rect(left, bottom, right - left, top - bottom);
+            if (rect.Width <= 0.0 || rect.Height <= 0.0)
+                continue;
+
+            LegacyFieldInfo info;
+            auto nameView = nameObj->GetString().GetString();
+            info.name.assign(nameView.data(), nameView.size());
+            info.rect = rect;
+            info.pageIndex = static_cast<int>(page.GetIndex());
+            info.widgetRef = entry.GetReference();
+            legacy.push_back(std::move(info));
+        }
+    }
+    catch (const PdfError&)
+    {
+    }
+    catch (...)
+    {
+    }
+    return legacy;
+}
+
+void PdfSignatureGenerator::RemoveLegacyFieldReferences(const LegacyFieldInfo& info,
+    const PdfReference& widgetRef)
+{
+    if (!m_pPdfDocument || !widgetRef.IsIndirect())
+        return;
+    try
+    {
+        PdfCatalog& catalog = m_pPdfDocument->GetCatalog();
+        PdfObject* acroObj = catalog.GetDictionary().GetKey("AcroForm");
+        if (acroObj && acroObj->IsDictionary())
+        {
+            PdfObject* fieldsObj = acroObj->GetDictionary().GetKey("Fields");
+            if (fieldsObj && fieldsObj->IsArray())
+            {
+                PdfArray& fieldsArray = fieldsObj->GetArray();
+                for (unsigned int i = 0; i < fieldsArray.GetSize(); ++i)
+                {
+                    PdfObject& entry = fieldsArray[i];
+                    if (entry.IsReference() && entry.GetReference() == widgetRef)
+                    {
+                        fieldsArray.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        PdfPage& page = m_pPdfDocument->GetPages().GetPageAt(info.pageIndex);
+        page.GetAnnotations().RemoveAnnot(widgetRef);
+    }
+    catch (...)
+    {
+    }
+}
+
+PdfSignature* PdfSignatureGenerator::CreateFieldFromLegacy(const LegacyFieldInfo& info)
+{
+    if (!m_pPdfDocument)
+        return nullptr;
+    PdfSignature* signature = CreateSignatureField(*m_pPdfDocument,
+        info.pageIndex,
+        info.name,
+        info.rect);
+    if (!signature)
+        return nullptr;
+    RemoveLegacyFieldReferences(info, info.widgetRef);
+    return signature;
 }
 
 const double PdfSignatureGenerator::getWidth(int pageIndex)

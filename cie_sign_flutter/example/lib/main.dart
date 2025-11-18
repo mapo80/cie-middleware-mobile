@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -15,11 +16,13 @@ void runCieSignApp({
   Future<Uint8List> Function()? loadSamplePdf,
   Future<Uint8List> Function()? loadSignatureImage,
 }) {
-  runApp(MyApp(
-    enablePdfView: enablePdfView,
-    loadSamplePdf: loadSamplePdf,
-    loadSignatureImage: loadSignatureImage,
-  ));
+  runApp(
+    MyApp(
+      enablePdfView: enablePdfView,
+      loadSamplePdf: loadSamplePdf,
+      loadSignatureImage: loadSignatureImage,
+    ),
+  );
 }
 
 void main() {
@@ -45,8 +48,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final _plugin = CieSignFlutter();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-  final TextEditingController _pinController =
-      TextEditingController(text: '12345678');
+  final TextEditingController _pinController = TextEditingController(
+    text: '25051980',
+  );
   final HandSignatureControl _signatureControl = HandSignatureControl(
     initialSetup: const SignaturePathSetup(
       threshold: 3.0,
@@ -61,6 +65,13 @@ class _MyAppState extends State<MyApp> {
   bool _busy = false;
   Uint8List? _signatureImage;
   String? _viewerPath;
+  StreamSubscription<NfcSessionEvent>? _nfcSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _nfcSubscription = _plugin.watchNfcEvents().listen(_handleNfcEvent);
+  }
 
   Future<File> _createOutputFile(String prefix) async {
     final docsDir = await getApplicationDocumentsDirectory();
@@ -79,9 +90,61 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    _nfcSubscription?.cancel();
     _pinController.dispose();
     _signatureControl.dispose();
     super.dispose();
+  }
+
+  void _handleNfcEvent(NfcSessionEvent event) {
+    if (!mounted) return;
+    switch (event.type) {
+      case NfcSessionEventType.state:
+        final status = event.status;
+        String? message;
+        if (status == 'not_supported') {
+          message = 'NFC non supportato su questo dispositivo.';
+        } else if (status == 'disabled') {
+          message = 'Attiva l\'NFC per procedere con la firma.';
+        } else if (status == 'ready') {
+          message = 'NFC pronto. Premi “Firma con NFC” per iniziare.';
+        }
+        if (message != null) {
+          final text = message;
+          setState(() {
+            _status = text;
+          });
+        }
+        break;
+      case NfcSessionEventType.listening:
+        setState(() {
+          _status = 'In ascolto... avvicina la CIE al lettore.';
+        });
+        break;
+      case NfcSessionEventType.tag:
+        setState(() {
+          _status = 'Carta rilevata, autenticazione in corso...';
+        });
+        break;
+      case NfcSessionEventType.completed:
+        setState(() {
+          _status = 'Sessione NFC completata.';
+        });
+        break;
+      case NfcSessionEventType.canceled:
+        setState(() {
+          _busy = false;
+          _status = 'Sessione NFC annullata.';
+        });
+        break;
+      case NfcSessionEventType.error:
+        setState(() {
+          _busy = false;
+          _status =
+              event.message ?? 'Errore NFC: ${event.code ?? 'sconosciuto'}';
+        });
+        break;
+    }
   }
 
   Future<Uint8List> _resolveSignatureImage() async {
@@ -281,9 +344,10 @@ class _MyAppState extends State<MyApp> {
   Widget _buildViewer() {
     final path = _viewerPath ?? _outputPath;
     if (path == null) {
-      return const Expanded(child: SizedBox.shrink());
+      return const SizedBox.shrink();
     }
-    return Expanded(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: ElevatedButton.icon(
           key: const Key('openViewerButton'),
@@ -342,8 +406,9 @@ class _MyAppState extends State<MyApp> {
                     const Spacer(),
                     ElevatedButton(
                       key: const Key('saveSignatureButton'),
-                      onPressed:
-                          (!_busy && canSave) ? _saveSignatureFromPad : null,
+                      onPressed: (!_busy && canSave)
+                          ? _saveSignatureFromPad
+                          : null,
                       child: const Text('Salva firma'),
                     ),
                   ],
@@ -357,10 +422,7 @@ class _MyAppState extends State<MyApp> {
                   const SizedBox(height: 4),
                   SizedBox(
                     height: 80,
-                    child: Image.memory(
-                      _signatureImage!,
-                      fit: BoxFit.contain,
-                    ),
+                    child: Image.memory(_signatureImage!, fit: BoxFit.contain),
                   ),
                 ],
               ],
@@ -376,19 +438,18 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       navigatorKey: _navigatorKey,
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('CIE Sign Flutter Mock'),
-        ),
-        body: Padding(
+        appBar: AppBar(title: const Text('CIE Sign Flutter Mock')),
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _status,
-                key: const Key('statusText'),
-              ),
+              Text(_status, key: const Key('statusText')),
               const SizedBox(height: 12),
+              if (_busy) ...[
+                const Center(child: CircularProgressIndicator()),
+                const SizedBox(height: 12),
+              ],
               TextField(
                 key: const Key('pinField'),
                 controller: _pinController,
@@ -465,9 +526,7 @@ class _MyAppState extends State<MyApp> {
     final navigator = _navigatorKey.currentState;
     if (navigator == null) return;
     await navigator.push(
-      MaterialPageRoute(
-        builder: (_) => PdfPreviewPage(path: path),
-      ),
+      MaterialPageRoute(builder: (_) => PdfPreviewPage(path: path)),
     );
   }
 }

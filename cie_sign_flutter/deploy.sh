@@ -1,0 +1,1 @@
+../scripts/deploy_android_device.sh

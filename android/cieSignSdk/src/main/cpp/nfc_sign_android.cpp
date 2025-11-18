@@ -27,6 +27,16 @@ struct IsoDepBridge {
     std::vector<uint8_t> atr;
 };
 
+struct LoggerBridge {
+    const char* fallback_tag = kTag;
+};
+
+void android_logger_log(void* user_data, const char* tag, const char* message) {
+    auto* bridge = static_cast<LoggerBridge*>(user_data);
+    const char* resolved_tag = tag && tag[0] ? tag : (bridge && bridge->fallback_tag ? bridge->fallback_tag : kTag);
+    __android_log_print(ANDROID_LOG_DEBUG, resolved_tag, "%s", message ? message : "");
+}
+
 class ScopedEnv {
 public:
     explicit ScopedEnv(JavaVM* vm) : vm_(vm) {
@@ -312,8 +322,14 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_signPdfWithNfc(
     adapter.transceive = android_nfc_transceive;
     adapter.close = android_nfc_close;
 
+    LoggerBridge logger_bridge{};
+    cie_platform_logger logger{};
+    logger.user_data = &logger_bridge;
+    logger.log = android_logger_log;
+
     cie_platform_config config{};
     config.nfc = &adapter;
+    config.logger = &logger;
 
     std::unique_ptr<cie_sign_ctx, decltype(&cie_sign_ctx_destroy)> ctx(
         cie_sign_ctx_create_with_platform(&config), cie_sign_ctx_destroy);

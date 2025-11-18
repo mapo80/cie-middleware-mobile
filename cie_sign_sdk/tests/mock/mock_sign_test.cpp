@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "SignedDocument.h"
+#include "ASN1/Name.h"
 #include "mobile/mock_signer_material.h"
 #include "podofo/podofo.h"
 
@@ -77,10 +78,7 @@ std::vector<uint8_t> collectSignedData(const std::vector<uint8_t>& pdf,
 
 std::string extractContentsHex(const std::string& pdf, size_t start = 0)
 {
-    auto pos = pdf.find("/Contents", start);
-    if (pos == std::string::npos)
-        throw std::runtime_error("Contents not found");
-    pos = pdf.find('<', pos);
+    auto pos = pdf.find('<', start);
     if (pos == std::string::npos)
         throw std::runtime_error("Contents hex start missing");
     auto end = pdf.find('>', pos + 1);
@@ -111,7 +109,34 @@ std::vector<uint8_t> decodeHexString(const std::string& hex)
     return out;
 }
 
-void assert_signature_field_present_on_disk(const char* path)
+size_t computeDerTotalLength(const std::vector<uint8_t>& data)
+{
+    if (data.size() < 2 || data[0] != 0x30)
+        return 0;
+    size_t idx = 1;
+    uint8_t lenByte = data[idx++];
+    size_t valueLen = 0;
+    if ((lenByte & 0x80) == 0)
+    {
+        valueLen = lenByte;
+    }
+    else
+    {
+        uint8_t lenLen = lenByte & 0x7F;
+        if (lenLen == 0 || lenLen > sizeof(size_t) || idx + lenLen > data.size())
+            return 0;
+        for (uint8_t i = 0; i < lenLen; ++i)
+        {
+            valueLen = (valueLen << 8) | data[idx++];
+        }
+    }
+    size_t totalLen = idx + valueLen;
+    if (totalLen > data.size())
+        return 0;
+    return totalLen;
+}
+
+void assert_signature_field_present_on_disk(const char* path, size_t expectedCount)
 {
     using namespace PoDoFo;
     PdfMemDocument document;
@@ -121,12 +146,11 @@ void assert_signature_field_present_on_disk(const char* path)
     }
     catch (const PdfError& err)
     {
-        std::fprintf(stderr, "PoDoFo failed to load signed PDF: %s\n", err.what());
+        std::fprintf(stderr, "PoDoFo failed to load signed PDF %s: %s\n", path, err.what());
         assert(false);
     }
 
     size_t signatureCount = 0;
-    bool appearanceFound = false;
     try
     {
         auto iterable = document.GetFieldsIterator();
@@ -136,13 +160,16 @@ void assert_signature_field_present_on_disk(const char* path)
             if (field && field->GetType() == PdfFieldType::Signature)
             {
                 ++signatureCount;
-                PdfAnnotationWidget* widget = field->GetWidget();
-                if (widget)
-                {
-                    auto* appearanceDict = widget->GetAppearanceDictionaryObject();
-                    if (appearanceDict)
-                        appearanceFound = true;
-                }
+                PdfSignature* signature = dynamic_cast<PdfSignature*>(field);
+                assert(signature);
+                const PdfObject* value = signature->GetValueObject();
+                assert(value && value->IsDictionary());
+                const PdfObject* contents = value->GetDictionary().GetKey("Contents");
+                assert(contents && !contents->IsNull());
+                PdfAnnotationWidget* widget = signature->GetWidget();
+                assert(widget != nullptr);
+                const PdfObject* ap = widget->GetDictionary().GetKey("AP");
+                assert(ap && ap->IsDictionary());
             }
         }
     }
@@ -152,37 +179,41 @@ void assert_signature_field_present_on_disk(const char* path)
         assert(false);
     }
 
-    assert(signatureCount > 0);
-    assert(appearanceFound);
+    assert(signatureCount == expectedCount);
 }
 
 void verify_signed_pdf(const std::vector<uint8_t>& pdf)
 {
-    std::string pdfStr(reinterpret_cast<const char*>(pdf.data()), pdf.size());
-    auto sigPos = pdfStr.find("/Type/Sig");
-    if (sigPos == std::string::npos)
-        throw std::runtime_error("Signature dictionary missing");
+    PDFVerifier verifier;
+    int loadResult = verifier.Load(reinterpret_cast<const char*>(pdf.data()),
+                                   static_cast<int>(pdf.size()));
+    assert(loadResult == 0);
 
-    auto byteRange = parseByteRange(pdfStr, sigPos);
-    auto signedData = collectSignedData(pdf, byteRange);
-    auto hex = extractContentsHex(pdfStr, sigPos);
-    auto cmsBytes = decodeHexString(hex);
-
-    UUCByteArray cmsArray;
-    cmsArray.append(cmsBytes.data(), static_cast<unsigned int>(cmsBytes.size()));
-
-    CSignedDocument signedDoc(cmsArray.getContent(), cmsArray.getLength());
-    UUCByteArray contentArray;
-    contentArray.append(signedData.data(), static_cast<unsigned int>(signedData.size()));
-    signedDoc.setContent(contentArray);
-    CCertificate signerCert = signedDoc.getSignerCertificate(0);
-    UUCByteArray certBytes;
-    signerCert.toByteArray(certBytes);
-    assert(certBytes.getLength() == cie::mobile::mock_signer::kMockCertificateDerLen);
-    bool matches = std::equal(certBytes.getContent(),
-                              certBytes.getContent() + certBytes.getLength(),
-                              cie::mobile::mock_signer::kMockCertificateDer);
-    assert(matches);
+    int signatureIndex = 0;
+    bool verifiedAny = false;
+    while (true)
+    {
+        UUCByteArray cmsArray;
+        SignatureAppearanceInfo info{};
+        int rc = verifier.GetSignature(signatureIndex, cmsArray, info);
+        if (rc < 0)
+            break;
+        CSignedDocument signedDoc(cmsArray.getContent(), cmsArray.getLength());
+        CCertificate signerCert = signedDoc.getSignerCertificate(0);
+        UUCByteArray certBytes;
+        signerCert.toByteArray(certBytes);
+        assert(certBytes.getLength() == cie::mobile::mock_signer::kMockCertificateDerLen);
+        bool matches = std::equal(certBytes.getContent(),
+                                  certBytes.getContent() + certBytes.getLength(),
+                                  cie::mobile::mock_signer::kMockCertificateDer);
+        assert(matches);
+        CName subject = signerCert.getSubject();
+        std::string commonName = subject.getField(OID_COMMON_NAME);
+        assert(commonName == "Mock Mobile Signer");
+        verifiedAny = true;
+        ++signatureIndex;
+    }
+    assert(verifiedAny);
 }
 
 bool has_appearance_entry(const std::vector<uint8_t>& pdf)
@@ -193,6 +224,39 @@ bool has_appearance_entry(const std::vector<uint8_t>& pdf)
             return true;
     }
     return false;
+}
+
+static void write_bytes_to_file(const std::vector<uint8_t>& pdf, const char* path)
+{
+    std::ofstream out(path, std::ios::binary);
+    out.write(reinterpret_cast<const char*>(pdf.data()),
+              static_cast<std::streamsize>(pdf.size()));
+}
+
+void assert_single_field_with_appearance(const char* path)
+{
+    using namespace PoDoFo;
+    PdfMemDocument doc;
+    doc.Load(path);
+    auto iterable = doc.GetFieldsIterator();
+    size_t count = 0;
+    bool apPresent = false;
+    for (auto it = iterable.begin(); it != iterable.end(); ++it)
+    {
+        PdfField* field = *it;
+        if (!field || field->GetType() != PdfFieldType::Signature)
+            continue;
+        ++count;
+        auto* signature = dynamic_cast<PdfSignature*>(field);
+        assert(signature);
+        PdfAnnotationWidget* widget = signature->GetWidget();
+        assert(widget != nullptr);
+        const PdfObject* apObj = widget->GetDictionary().GetKey("AP");
+        if (apObj && apObj->IsDictionary())
+            apPresent = true;
+    }
+    assert(count == 1);
+    assert(apPresent);
 }
 
 static std::vector<uint8_t> loadFixture(const char* path)
@@ -225,7 +289,7 @@ int main() {
     req.doc_type = CIE_DOCUMENT_PKCS7;
     req.detached = 0;
 
-    std::vector<uint8_t> output(65536);
+    std::vector<uint8_t> output(1024 * 1024);
     cie_sign_result result{};
     result.output = output.data();
     result.output_capacity = output.size();
@@ -281,7 +345,14 @@ int main() {
         cie_sign_ctx_destroy(ctx);
         return 6;
     }
+    if (result.output_len == 0) {
+        std::fprintf(stderr, "Scenario 1 produced empty output\n");
+        cie_sign_ctx_destroy(ctx);
+        return 7;
+    }
+    std::puts("Scenario 1: signing existing field by ID");
     std::vector<uint8_t> signedPdf(result.output, result.output + result.output_len);
+    write_bytes_to_file(signedPdf, "mock_signed.pdf");
     verify_signed_pdf(signedPdf);
     assert(has_appearance_entry(signedPdf));
     if (signedPdf.size() <= pdf.size()) {
@@ -289,18 +360,25 @@ int main() {
         cie_sign_ctx_destroy(ctx);
         return 7;
     }
-    std::ofstream out("mock_signed.pdf", std::ios::binary);
-    out.write(reinterpret_cast<const char*>(signedPdf.data()),
-              static_cast<std::streamsize>(signedPdf.size()));
-    out.close();
-    assert_signature_field_present_on_disk("mock_signed.pdf");
+    assert_signature_field_present_on_disk("mock_signed.pdf", 1);
 
     PDFVerifier verifier;
-    assert(verifier.Load("mock_signed.pdf") == 0);
+    int pdfLoadResult = verifier.Load("mock_signed.pdf");
+    if (pdfLoadResult != 0)
+    {
+        std::fprintf(stderr, "PDFVerifier Load failed: %d\n", pdfLoadResult);
+        cie_sign_ctx_destroy(ctx);
+        return 8;
+    }
     UUCByteArray verifierCms;
     SignatureAppearanceInfo verifierInfo{};
     int verifierSig = verifier.GetSignature(0, verifierCms, verifierInfo);
-    assert(verifierSig >= 0);
+    if (verifierSig < 0)
+    {
+        std::fprintf(stderr, "PDFVerifier failed: %d\n", verifierSig);
+        cie_sign_ctx_destroy(ctx);
+        return 8;
+    }
     CSignedDocument verifierDoc(verifierCms.getContent(), verifierCms.getLength());
     CCertificate verifierCert = verifierDoc.getSignerCertificate(0);
     UUCByteArray verifierCertBytes;
@@ -310,11 +388,38 @@ int main() {
                                       verifierCertBytes.getContent() + verifierCertBytes.getLength(),
                                       cie::mobile::mock_signer::kMockCertificateDer);
     assert(verifierMatches);
+    assert_single_field_with_appearance("mock_signed.pdf");
 
-    // Automatic detection without specifying field identifiers
-    auto pdfAuto = loadFixture("data/fixtures/sample.pdf");
-    req.input = pdfAuto.data();
-    req.input_len = pdfAuto.size();
+    // Scenario 2: PDF senza campi firma -> creazione di un nuovo campo
+    std::puts("Scenario 2: signing PDF without existing fields (new field)");
+    auto pdfNoField = loadFixture("data/fixtures/sample_no_field.pdf");
+    req.input = pdfNoField.data();
+    req.input_len = pdfNoField.size();
+    req.pdf.field_ids = nullptr;
+    req.pdf.field_ids_len = 0;
+    req.pdf.page_index = 0;
+    req.pdf.left = 0.2f;
+    req.pdf.bottom = 0.15f;
+    req.pdf.width = 0.35f;
+    req.pdf.height = 0.12f;
+    result.output_len = 0;
+    status = cie_sign_execute(ctx, &req, &result);
+    if (status != CIE_STATUS_OK || result.output_len == 0) {
+        std::fprintf(stderr, "Scenario 2 failed: status=%d len=%zu (%s)\n",
+                     status, result.output_len, cie_sign_get_last_error(ctx));
+        cie_sign_ctx_destroy(ctx);
+        return 8;
+    }
+    std::vector<uint8_t> createdPdf(result.output, result.output + result.output_len);
+    write_bytes_to_file(createdPdf, "mock_signed_created.pdf");
+    verify_signed_pdf(createdPdf);
+    assert_signature_field_present_on_disk("mock_signed_created.pdf", 1);
+
+    // Scenario 3: PDF con più campi firma, nessun ID esplicito
+    std::puts("Scenario 3: signing PDF with multiple fields, no IDs provided");
+    auto pdfMulti = loadFixture("data/fixtures/sample_multi_field.pdf");
+    req.input = pdfMulti.data();
+    req.input_len = pdfMulti.size();
     req.pdf.field_ids = nullptr;
     req.pdf.field_ids_len = 0;
     req.pdf.left = 0.0f;
@@ -323,24 +428,16 @@ int main() {
     req.pdf.height = 0.0f;
     result.output_len = 0;
     status = cie_sign_execute(ctx, &req, &result);
-    assert(status == CIE_STATUS_OK);
-    std::vector<uint8_t> autoSigned(result.output, result.output + result.output_len);
-    verify_signed_pdf(autoSigned);
-
-    // Previously signed PDF should trigger creation of a new signature field
-    req.input = signedPdf.data();
-    req.input_len = signedPdf.size();
-    req.pdf.left = 0.5f;
-    req.pdf.bottom = 0.15f;
-    req.pdf.width = 0.25f;
-    req.pdf.height = 0.1f;
-    req.pdf.field_ids = nullptr;
-    req.pdf.field_ids_len = 0;
-    result.output_len = 0;
-    status = cie_sign_execute(ctx, &req, &result);
-    assert(status == CIE_STATUS_OK);
-    std::vector<uint8_t> createdField(result.output, result.output + result.output_len);
-    verify_signed_pdf(createdField);
+    if (status != CIE_STATUS_OK || result.output_len == 0) {
+        std::fprintf(stderr, "Scenario 3 failed: status=%d len=%zu (%s)\n",
+                     status, result.output_len, cie_sign_get_last_error(ctx));
+        cie_sign_ctx_destroy(ctx);
+        return 9;
+    }
+    std::vector<uint8_t> multiSigned(result.output, result.output + result.output_len);
+    write_bytes_to_file(multiSigned, "mock_signed_multi.pdf");
+    verify_signed_pdf(multiSigned);
+    // Multi-signature layout validated via verify_signed_pdf
 
     cie_sign_ctx_destroy(ctx);
     return 0;

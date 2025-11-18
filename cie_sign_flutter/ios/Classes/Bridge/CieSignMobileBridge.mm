@@ -105,6 +105,10 @@ static void ios_nfc_close(void *user_data) {
         _reason = @"Firma con CIE";
         _location = @"";
         _name = @"";
+        _fieldIds = @[];
+        _signatureImage = [NSData data];
+        _signatureImageWidth = 0;
+        _signatureImageHeight = 0;
     }
     return self;
 }
@@ -233,6 +237,35 @@ static void ios_nfc_close(void *user_data) {
     request.pdf.width = appearance.width;
     request.pdf.height = appearance.height;
 
+    std::vector<std::string> fieldIdsUtf8;
+    std::vector<const char *> fieldIdPtrs;
+    if (appearance.fieldIds.count > 0) {
+        fieldIdsUtf8.reserve(appearance.fieldIds.count);
+        fieldIdPtrs.reserve(appearance.fieldIds.count);
+        for (NSString *field in appearance.fieldIds) {
+            if (![field isKindOfClass:[NSString class]] || field.length == 0) {
+                continue;
+            }
+            fieldIdsUtf8.emplace_back(field.UTF8String ?: "");
+        }
+        for (const auto &entry : fieldIdsUtf8) {
+            fieldIdPtrs.push_back(entry.c_str());
+        }
+        if (!fieldIdPtrs.empty()) {
+            request.pdf.field_ids = fieldIdPtrs.data();
+            request.pdf.field_ids_len = fieldIdPtrs.size();
+        }
+    }
+
+    if (appearance.signatureImage.length > 0 &&
+        appearance.signatureImageWidth > 0 &&
+        appearance.signatureImageHeight > 0) {
+        request.pdf.signature_image = static_cast<const uint8_t *>(appearance.signatureImage.bytes);
+        request.pdf.signature_image_len = appearance.signatureImage.length;
+        request.pdf.signature_image_width = (uint32_t)appearance.signatureImageWidth;
+        request.pdf.signature_image_height = (uint32_t)appearance.signatureImageHeight;
+    }
+
     size_t capacity = pdf.length + 65536;
     NSMutableData *output = [NSMutableData dataWithLength:capacity];
     cie_sign_result result{};
@@ -260,6 +293,12 @@ static void ios_nfc_close(void *user_data) {
 
     output.length = result.output_len;
     return [output copy];
+}
+
+- (void)cancelActiveSession {
+    if (self.session) {
+        [self.session invalidate];
+    }
 }
 
 @end

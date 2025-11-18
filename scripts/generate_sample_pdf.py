@@ -78,7 +78,9 @@ def build_base_pdf() -> io.BytesIO:
     return buffer
 
 
-def add_signature_field(writer: PdfWriter, rect: tuple[float, float, float, float]) -> None:
+def add_signature_field(writer: PdfWriter,
+                        rect: tuple[float, float, float, float],
+                        field_name: str = FIELD_NAME) -> None:
     page = writer.pages[0]
     if "/Annots" in page:
         annotations = page["/Annots"]
@@ -89,19 +91,32 @@ def add_signature_field(writer: PdfWriter, rect: tuple[float, float, float, floa
         annotations = ArrayObject()
         page[NameObject("/Annots")] = annotations
 
+    field = DictionaryObject()
+    field.update(
+        {
+            NameObject("/FT"): NameObject("/Sig"),
+            NameObject("/T"): TextStringObject(field_name),
+            NameObject("/F"): NumberObject(4),
+            NameObject("/Rect"): ArrayObject([FloatObject(v) for v in rect]),
+        }
+    )
+
     widget = DictionaryObject()
     widget.update(
         {
             NameObject("/Type"): NameObject("/Annot"),
             NameObject("/Subtype"): NameObject("/Widget"),
             NameObject("/FT"): NameObject("/Sig"),
-            NameObject("/T"): TextStringObject(FIELD_NAME),
+            NameObject("/T"): TextStringObject(field_name),
             NameObject("/F"): NumberObject(4),
             NameObject("/Rect"): ArrayObject([FloatObject(v) for v in rect]),
             NameObject("/P"): page.indirect_reference,
         }
     )
     widget_ref = writer._add_object(widget)  # pylint: disable=protected-access
+    field[NameObject("/Kids")] = ArrayObject([widget_ref])
+    field_ref = writer._add_object(field)  # pylint: disable=protected-access
+    widget[NameObject("/Parent")] = field_ref
     annotations.append(widget_ref)
 
     acro_form = writer._root_object.get(NameObject("/AcroForm"))  # pylint: disable=protected-access
@@ -112,33 +127,64 @@ def add_signature_field(writer: PdfWriter, rect: tuple[float, float, float, floa
     if fields is None:
         fields = ArrayObject()
         acro_form[NameObject("/Fields")] = fields
-    fields.append(widget_ref)
+    fields.append(field_ref)
     acro_form[NameObject("/SigFlags")] = NumberObject(3)
 
 
-def main() -> None:
-    buffer = build_base_pdf()
+def copy_pages(buffer: io.BytesIO) -> PdfWriter:
     reader = PdfReader(buffer)
     writer = PdfWriter()
     for page in reader.pages:
         writer.add_page(page)
+    return writer
+
+
+def main() -> None:
+    buffer = build_base_pdf()
+
+    # PDF senza campi firma
+    writer_plain = copy_pages(io.BytesIO(buffer.getvalue()))
+    plain_outputs = [
+        Path("cie_sign_sdk/data/fixtures/sample_no_field.pdf"),
+    ]
+    for output in plain_outputs:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with output.open("wb") as fh:
+            writer_plain.write(fh)
+        print(f"Wrote base PDF without signature field to {output}")
 
     width, height = letter
     left = width * 0.1
     bottom = height * 0.1
     right = left + (width * 0.4)
     top = bottom + (height * 0.12)
-    add_signature_field(writer, (left, bottom, right, top))
 
-    outputs = [
+    # PDF con un campo firma
+    writer_single = copy_pages(io.BytesIO(buffer.getvalue()))
+    add_signature_field(writer_single, (left, bottom, right, top), "SignatureField1")
+    single_outputs = [
         Path("cie_sign_flutter/example/assets/sample.pdf"),
         Path("cie_sign_sdk/data/fixtures/sample.pdf"),
     ]
-    for output in outputs:
+    for output in single_outputs:
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("wb") as fh:
-            writer.write(fh)
-        print(f"Wrote sample PDF with signature field to {output}")
+            writer_single.write(fh)
+        print(f"Wrote sample PDF with single signature field to {output}")
+
+    # PDF con due campi firma
+    writer_multi = copy_pages(io.BytesIO(buffer.getvalue()))
+    add_signature_field(writer_multi, (left, bottom, right, top), "SignatureField1")
+    second_rect = (width * 0.45, height * 0.55, width * 0.85, height * 0.67)
+    add_signature_field(writer_multi, second_rect, "SignatureField2")
+    multi_outputs = [
+        Path("cie_sign_sdk/data/fixtures/sample_multi_field.pdf"),
+    ]
+    for output in multi_outputs:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with output.open("wb") as fh:
+            writer_multi.write(fh)
+        print(f"Wrote sample PDF with two signature fields to {output}")
 
 
 if __name__ == "__main__":

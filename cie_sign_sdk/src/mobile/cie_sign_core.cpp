@@ -1,4 +1,6 @@
 #include "mobile/cie_sign.h"
+#include "mobile/cie_sign_version.h"
+#include "mobile/cie_mobile_log.h"
 
 #include "CSP/IAS.h"
 #include "CIESigner.h"
@@ -11,13 +13,20 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdarg>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 #include <memory>
 #include <new>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#ifdef ANDROID
+#include <android/log.h>
+#endif
 
 #include <openssl/evp.h>
 #include <openssl/pem.h>
@@ -32,6 +41,28 @@ constexpr HRESULT kTransmitOk = 0;
 constexpr std::array<uint8_t, 4> kMockAtrPrefix = {'M', 'O', 'C', 'K'};
 
 using namespace cie::mobile::mock_signer;
+
+std::string bytes_to_hex(const ByteDynArray &bytes) {
+    static const char *hex = "0123456789ABCDEF";
+    std::string out;
+    out.reserve(bytes.size() * 2);
+    for (size_t i = 0; i < bytes.size(); ++i) {
+        uint8_t b = bytes[i];
+        out.push_back(hex[(b >> 4) & 0xF]);
+        out.push_back(hex[b & 0xF]);
+    }
+    return out;
+}
+
+std::string format_sw(long code) {
+    std::ostringstream oss;
+    if (code < 0) {
+        oss << code;
+    } else {
+        oss << "0x" << std::hex << std::uppercase << (code & 0xFFFF);
+    }
+    return oss.str();
+}
 
 class MockSigner : public CBaseSigner
 {
@@ -118,11 +149,71 @@ struct LoggerState {
     cie_platform_logger logger{};
 };
 
+thread_local LoggerState* g_thread_logger = nullptr;
+
+struct ScopedLoggerBinding {
+    LoggerState* previous = nullptr;
+    explicit ScopedLoggerBinding(LoggerState* state)
+    {
+        previous = g_thread_logger;
+        g_thread_logger = state;
+    }
+    ~ScopedLoggerBinding()
+    {
+        g_thread_logger = previous;
+    }
+};
+
 void log_message(const LoggerState& state, const std::string& message)
 {
     if (state.enabled && state.logger.log) {
         state.logger.log(state.logger.user_data, "cie_sign", message.c_str());
     }
+}
+
+extern "C" {
+
+void cie_mobile_debug(const char *message)
+{
+    if (message && g_thread_logger) {
+        log_message(*g_thread_logger, message);
+    }
+#ifdef ANDROID
+    if (message) {
+        __android_log_print(ANDROID_LOG_DEBUG, "cie_sign", "%s", message);
+    }
+#else
+    if (message) {
+        fprintf(stderr, "%s\n", message);
+    }
+#endif
+}
+
+void cie_mobile_logf(const char *fmt, ...)
+{
+    if (!fmt) {
+        return;
+    }
+    char buffer[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    cie_mobile_debug(buffer);
+}
+
+} // extern "C"
+
+void signer_logger_callback(const char* message, void* user)
+{
+    if (!message || !user) {
+        return;
+    }
+    auto* state = reinterpret_cast<LoggerState*>(user);
+    if (!state) {
+        return;
+    }
+    log_message(*state, message);
 }
 
 struct cie_sign_ctx_impl {
@@ -203,7 +294,11 @@ cie_status map_error(cie_sign_ctx_impl *ctx,
                      long code,
                      cie_status fallback = CIE_STATUS_CARD_ERROR)
 {
-    ctx->last_error = std::string(stage) + " failed with code " + std::to_string(code);
+    std::string detail = std::to_string(code);
+    if (code >= 0) {
+        detail += " (" + format_sw(code) + ")";
+    }
+    ctx->last_error = std::string(stage) + " failed with code " + detail;
     log_message(ctx->platform_logger, ctx->last_error);
     return fallback;
 }
@@ -287,6 +382,17 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
                                    request->pdf.signature_image_height);
 
     std::vector<std::string> requestedFields = collect_field_ids(&request->pdf);
+#ifdef ANDROID
+    if (!requestedFields.empty()) {
+        __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative",
+                            "sign_pdf requestedFields=%zu first=%s",
+                            requestedFields.size(),
+                            requestedFields.front().c_str());
+    } else {
+        __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative",
+                            "sign_pdf without explicit field IDs");
+    }
+#endif
     UUCByteArray latestSignedPdf;
 
     auto finalizeSignature = [&](bool reloadAfter) -> cie_status {
@@ -461,6 +567,12 @@ cie_sign_ctx *create_ctx_internal(cie_apdu_cb cb,
             ctx->platform_logger.enabled = logger->log != nullptr;
             ctx->platform_logger.logger = *logger;
         }
+        {
+            std::string buildLog = std::string("CIE core build ") + CIE_SIGN_BUILD_ID;
+            log_message(ctx->platform_logger, buildLog.c_str());
+            std::string atrLog = "ATR=" + bytes_to_hex(ctx->atr);
+            log_message(ctx->platform_logger, atrLog.c_str());
+        }
         if (is_mock_atr(ctx->atr)) {
             ctx->mock_mode = true;
         } else {
@@ -538,13 +650,17 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
                             cie_sign_result *result)
 {
     auto *ctx = reinterpret_cast<cie_sign_ctx_impl *>(public_ctx);
-    if (!ctx || !request || !result || !result->output || result->output_capacity == 0 ||
+    if (!ctx) {
+        return CIE_STATUS_INVALID_INPUT;
+    }
+
+    ScopedLoggerBinding logger_binding(&ctx->platform_logger);
+
+    if (!request || !result || !result->output || result->output_capacity == 0 ||
         !request->input || request->input_len == 0 ||
         (!ctx->mock_mode && !ctx->ias)) {
-        if (ctx) {
-            ctx->last_error = "Invalid input arguments";
-            log_message(ctx->platform_logger, ctx->last_error);
-        }
+        ctx->last_error = "Invalid input arguments";
+        log_message(ctx->platform_logger, ctx->last_error);
         return CIE_STATUS_INVALID_INPUT;
     }
 
@@ -573,10 +689,15 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
             signerIface = ctx->mock_signer.get();
         } else {
             realSigner = std::make_unique<CCIESigner>(ctx->ias.get());
+            realSigner->SetLogger(signer_logger_callback, &ctx->platform_logger);
+            log_message(ctx->platform_logger, "Starting IAS initialization");
             long initRes = realSigner->Init(pin.value.c_str());
             if (initRes != 0) {
+                std::string initMsg = "IAS Init failed with " + format_sw(initRes);
+                log_message(ctx->platform_logger, initMsg.c_str());
                 return map_error(ctx, "CIE initialization", initRes);
             }
+            log_message(ctx->platform_logger, "IAS initialization completed");
             signerIface = realSigner.get();
         }
 

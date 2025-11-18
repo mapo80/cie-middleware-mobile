@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <string>
 #include "Certificate.h"
 #include "BaseSigner.h"
 #include "RSAPrivateKey.h"
@@ -20,8 +21,14 @@ public:
 
 	virtual long Close();
 
+    typedef void (*LoggerFn)(const char* message, void* user_data);
+    void SetLogger(LoggerFn fn, void* user_data);
+
 private:
+    void Log(const std::string& message);
     IAS* m_pIAS;
     char m_szPIN[9];
 	CCertificate*   m_pCertificate;
+    LoggerFn m_loggerFn = nullptr;
+    void* m_loggerUser = nullptr;
 };

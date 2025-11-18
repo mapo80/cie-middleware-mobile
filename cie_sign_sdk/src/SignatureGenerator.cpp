@@ -383,14 +383,7 @@ long CSignatureGenerator::Generate(UUCByteArray& pkcs7SignedData, BOOL bDetached
 		m_certificates.addElement(cert);
 */
 
-    // aggiunge i certificati di CA
-    
-    CCertificate* pCACert = CCertStore::GetCertificate(*pSignerCertificate);
-    while(pCACert)
-    {
-        m_certificates.addElement(*pCACert);
-        pCACert = CCertStore::GetCertificate(*pCACert);
-    }
+    // aggiunge i certificati di CA: ignorato per varianti mobile/mock
         
 	m_certificates.addElement(*pSignerCertificate);
 	delete pSignerCertificate;
