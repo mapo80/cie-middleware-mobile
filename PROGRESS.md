@@ -68,6 +68,23 @@
 - Lo stato `_busy` ora pilota una vista dedicata con `CircularProgressIndicator` per mostrare chiaramente il loader finché la firma mock è in corso.
 - Il viewer viene renderizzato solo dopo il completamento con successo e con `_outputPath` valorizzato, evitando che venga mostrato un PDF precedente mentre la nuova firma è in esecuzione.
 
+## 2025-11-18
+
+### 12. Vendorizzazione di `flutter_pdfview` 1.2.2
+- Copiata la release originale del plugin in `third_party/flutter_pdfview-1.2.2` così da poterla patchare in modo ripetibile senza toccare la `.pub-cache`.
+- Aggiornato `android/build.gradle` del plugin con namespace moderno (`io.endigo.plugins.pdfview`), `compileSdkVersion 34`, `minSdkVersion 21`, compatibilità Java 8 e repository `google/mavenCentral/jitpack`.
+- Rimpiazzata la dipendenza obsoleta `com.github.barteksc:android-pdf-viewer` (non più pubblicata) con `com.github.barteksc:AndroidPdfViewer:3.1.0-beta.1`, unico artefatto disponibile su JitPack che espone la stessa API Java attesa dal plugin.
+- Allineato il `AndroidManifest.xml` del plugin al nuovo package per evitare collisioni con `com.shockwave.pdfium`.
+- L’esempio Flutter punta ora alla directory vendorizzata tramite dependency path nel `pubspec.yaml`, garantendo a tutto il team lo stesso codice sorgente del viewer.
+
+### 13. Tooling Gradle e Jetifier per l’esempio Android
+- Aggiornati `cie_sign_flutter/example/android/settings.gradle.kts` e `build.gradle.kts` aggiungendo `maven("https://jitpack.io")` sia a livello di pluginManagement sia sugli `allprojects`.
+- Abilitato `android.enableJetifier=true` in `cie_sign_flutter/example/android/gradle.properties` per riconciliare automaticamente le vecchie librerie `com.android.support` importate da AndroidPdfViewer con il mondo AndroidX.
+- Rigenerato il `pubspec.lock` dell’esempio eseguendo `flutter pub get`, così da fissare il riferimento al plugin locale e al nuovo grafo di dipendenze.
+
+### 14. Test di integrazione Flutter con il viewer legacy
+- Eseguito `flutter test integration_test/ui_mock_flow_test.dart -d emulator-5554` (emulatore `CieSignArm64`) con `JAVA_HOME=/Users/politom/Library/Java/JavaVirtualMachines/temurin-17.0.11.jdk/Contents/Home`: compilazione, installazione APK e scenario di firma mock completano correttamente, confermando che `flutter_pdfview` 1.2.2 patchato continua a funzionare.
+- Il test verifica che il PDF scritto dall’SDK contenga `/Type/Sig` e che il nuovo viewer full-screen apra la copia temporanea `_viewerPath`, requisito richiesto per visualizzare la firma appena salvata senza incorrere nella cache del plugin.
 ### 12. Bridge iOS reale (CoreNFC)
 - Creato il modulo `ios/CieSignBridge` con `CieNfcSession` (Objective-C++) che incapsula `NFCTagReaderSession` e fornisce le callback richieste da `cie_platform_nfc_adapter`. Su simulatore e dispositivi senza NFC restituisce errori controllati.
 - Implementato `CieSignMobileBridge` che costruisce il `cie_platform_config`, richiama `cie_sign_ctx_create_with_platform` e mappa l’output/errore verso API Swift. Include helper `CieSignPdfParameters` per configurare la firma PDF.
@@ -99,3 +116,15 @@
 - `cie_sign_core::sign_pdf` esegue la firma in sequenza: se viene passato un elenco di ID firma li processa nell’ordine indicato; altrimenti firma tutti i campi disponibili e, solo se nessuno è presente, ne crea uno nuovo usando le coordinate normalizzate.
 - Aggiornati JNI/SDK Android, plugin Flutter (Dart/Kotlin) e bridge mock/strumentali per ricevere e propagare `fieldIds`. `PdfSignatureAppearance`/`PdfAppearanceOptions` espongono la nuova lista; i test Dart/Kotlin verificano che il MethodChannel inoltri correttamente i valori.
 - `mock_sign_test.cpp` ora copre i tre scenari (campo nominato, auto-detection e creazione forzata) verificando con PoDoFo che l’apparenza `/AP` venga applicata e che i certificati coincidano con il mock signer.
+
+### 12. Plugin Flutter iOS con CoreNFC reale
+- Il plugin iOS (`cie_sign_flutter/ios/Classes/CieSignFlutterPlugin.m`) supporta ora i metodi `signPdfWithNfc` e `cancelNfcSigning`, esponendo lo stesso contract disponibile su Android.
+- Introdotta una coda seriale di lavoro per non bloccare il thread UI durante l’esecuzione di `cie_sign_execute`. Le chiamate NFC sono instradate al bridge `CieSignMobileBridge` che usa `CieNfcSession` per gestire `NFCTagReaderSession`.
+- Per i test/simulatore resta disponibile la firma mock (`mockSignPdf`), sempre basata su `MockApduTransport`.
+- Il layer Objective-C++ (`CieSignMobileBridge`) accetta ora field ID multipli e immagini di firma RGBA (width/height), allineandosi alle opzioni `cie_pdf_options`. È stata aggiunta l’API `cancelActiveSession` per invalidare la sessione CoreNFC quando l’utente annulla il flow.
+- Il parsing dei parametri `PdfSignatureAppearance` lato iOS legge anche `fieldIds` e `signatureImage` (Uint8List) e li converte in RGBA tramite CoreGraphics, così l’apparenza risultante corrisponde al comportamento Android.
+
+### 17. Firma disegnata dall’utente nell’app Flutter
+- L’esempio Flutter dipende ora dal plugin `hand_signature`: abbiamo inserito un canvas tattile per disegnare la firma e salvarla come PNG (convertita poi in RGBA dai bridge nativi).
+- L’utente deve esplicitamente premere “Salva firma” prima di procedere: in assenza di una firma salvata viene mostrato un errore e l’SDK non viene invocato.
+- La firma salvata viene visualizzata come anteprima e riutilizzata sia nel flusso mock sia nel flusso NFC; i test continuano a funzionare tramite l’hook `loadSignatureImage` che fornisce bytes custom in contesti automatizzati.

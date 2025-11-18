@@ -18,7 +18,8 @@ dependencies:
     sdk: flutter
 
   path_provider: ^2.1.5
-  flutter_pdfview: ^1.4.3
+  flutter_pdfview:
+    path: ../../third_party/flutter_pdfview-1.2.2
   hand_signature: ^3.1.0+2
 
   cie_sign_flutter:
