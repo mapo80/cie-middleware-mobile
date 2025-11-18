@@ -1,9 +1,11 @@
 import 'dart:typed_data';
 
 import 'cie_sign_flutter_platform_interface.dart';
+import 'src/nfc_session_event.dart';
 import 'src/pdf_signature_appearance.dart';
 
 export 'src/pdf_signature_appearance.dart';
+export 'src/nfc_session_event.dart';
 
 class CieSignFlutter {
   Future<Uint8List> mockSignPdf(
@@ -43,5 +45,9 @@ class CieSignFlutter {
 
   Future<bool> cancelNfcSigning() {
     return CieSignFlutterPlatform.instance.cancelNfcSigning();
+  }
+
+  Stream<NfcSessionEvent> watchNfcEvents() {
+    return CieSignFlutterPlatform.instance.watchNfcEvents();
   }
 }

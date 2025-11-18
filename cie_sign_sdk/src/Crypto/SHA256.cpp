@@ -34,45 +34,39 @@ ByteDynArray CSHA256::Digest(ByteArray &data)
 
 #else
 
-#include "cryptopp/sha.h"
-#include "cryptopp/filters.h"
-#include "cryptopp/base64.h"
+#include <openssl/sha.h>
 
 void CSHA256::Init() {
-//    if (isInit)
-//    throw logged_error("Un'operazione di hash Ë gi‡ in corso");
     SHA256_Init(&ctx);
     isInit = true;
 }
+
 void CSHA256::Update(ByteArray data) {
     if (!isInit)
-    throw logged_error("Hash non inizializzato");
-    SHA256_Update(&ctx, data.data(), data.size());
+        throw logged_error("Hash non inizializzato");
+    if (data.size() > 0) {
+        SHA256_Update(&ctx, data.data(), data.size());
+    }
 }
+
 ByteDynArray CSHA256::Final() {
     if (!isInit)
-    throw logged_error("Hash non inizializzato");
-    ByteDynArray resp(SHA_DIGEST_LENGTH);
+        throw logged_error("Hash non inizializzato");
+    ByteDynArray resp(SHA256_DIGEST_LENGTH);
     SHA256_Final(resp.data(), &ctx);
     isInit = false;
-    
     return resp;
 }
+
 ByteDynArray CSHA256::Digest(ByteArray &data)
 {
-	const BYTE* pbData = (BYTE*) data.data();
-	unsigned int nDataLen = data.size();
-	BYTE abDigest[CryptoPP::SHA256::DIGESTSIZE];
-	CryptoPP::SHA256().CalculateDigest(abDigest, pbData, nDataLen);
-	ByteArray resp(abDigest, CryptoPP::SHA256::DIGESTSIZE);
-
-
-//	ByteDynArray resp(SHA256_DIGEST_LENGTH);
-//	SHA256_Init(&ctx);
-//	SHA256_Update(&ctx, data.data(), data.size());
-//	SHA256_Final(resp.data(), &ctx);
-//	//ER_ASSERT(SHA256(data.data(), data.size(), resp.data()) != NULL, "Errore nel calcolo dello SHA256")
-
+    SHA256_CTX localCtx;
+    SHA256_Init(&localCtx);
+    if (data.size() > 0) {
+        SHA256_Update(&localCtx, data.data(), data.size());
+    }
+    ByteDynArray resp(SHA256_DIGEST_LENGTH);
+    SHA256_Final(resp.data(), &localCtx);
     return resp;
 }
 #endif

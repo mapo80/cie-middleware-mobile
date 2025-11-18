@@ -4,11 +4,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'cie_sign_flutter_platform_interface.dart';
+import 'src/nfc_session_event.dart';
 import 'src/pdf_signature_appearance.dart';
 
 class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
   @visibleForTesting
   final MethodChannel methodChannel = const MethodChannel('cie_sign_flutter');
+  @visibleForTesting
+  final EventChannel eventChannel = const EventChannel(
+    'cie_sign_flutter/nfc_events',
+  );
+
+  Stream<NfcSessionEvent>? _eventStream;
 
   @override
   Future<Uint8List> mockSignPdf(
@@ -16,14 +23,12 @@ class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
     String? outputPath,
     PdfSignatureAppearance? appearance,
   }) async {
-    final Uint8List? response = await methodChannel.invokeMethod<Uint8List>(
-      'mockSignPdf',
-      <String, dynamic>{
-        'pdf': pdfBytes,
-        if (outputPath != null) 'outputPath': outputPath,
-        if (appearance != null) 'appearance': appearance.toMap(),
-      },
-    );
+    final Uint8List? response = await methodChannel
+        .invokeMethod<Uint8List>('mockSignPdf', <String, dynamic>{
+          'pdf': pdfBytes,
+          if (outputPath != null) 'outputPath': outputPath,
+          if (appearance != null) 'appearance': appearance.toMap(),
+        });
     if (response == null) {
       throw StateError('mockSignPdf returned null');
     }
@@ -37,15 +42,13 @@ class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
     PdfSignatureAppearance appearance = const PdfSignatureAppearance(),
     String? outputPath,
   }) async {
-    final Uint8List? response = await methodChannel.invokeMethod<Uint8List>(
-      'signPdfWithNfc',
-      <String, dynamic>{
-        'pdf': pdfBytes,
-      'pin': pin,
-      'appearance': appearance.toMap(),
-      if (outputPath != null) 'outputPath': outputPath,
-      },
-    );
+    final Uint8List? response = await methodChannel
+        .invokeMethod<Uint8List>('signPdfWithNfc', <String, dynamic>{
+          'pdf': pdfBytes,
+          'pin': pin,
+          'appearance': appearance.toMap(),
+          if (outputPath != null) 'outputPath': outputPath,
+        });
     if (response == null) {
       throw StateError('signPdfWithNfc returned null');
     }
@@ -54,8 +57,21 @@ class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
 
   @override
   Future<bool> cancelNfcSigning() async {
-    final bool? canceled =
-        await methodChannel.invokeMethod<bool>('cancelNfcSigning');
+    final bool? canceled = await methodChannel.invokeMethod<bool>(
+      'cancelNfcSigning',
+    );
     return canceled ?? false;
+  }
+
+  @override
+  Stream<NfcSessionEvent> watchNfcEvents() {
+    _eventStream ??= eventChannel
+        .receiveBroadcastStream()
+        .map(
+          (dynamic event) =>
+              NfcSessionEvent.fromMap(Map<dynamic, dynamic>.from(event as Map)),
+        )
+        .asBroadcastStream();
+    return _eventStream!;
   }
 }

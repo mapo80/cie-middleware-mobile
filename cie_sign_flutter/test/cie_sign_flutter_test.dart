@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cie_sign_flutter/cie_sign_flutter.dart';
 import 'package:cie_sign_flutter/cie_sign_flutter_method_channel.dart';
 import 'package:cie_sign_flutter/cie_sign_flutter_platform_interface.dart';
+import 'package:cie_sign_flutter/src/nfc_session_event.dart';
 import 'package:cie_sign_flutter/src/pdf_signature_appearance.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -15,6 +17,8 @@ class MockCieSignFlutterPlatform
   PdfSignatureAppearance? lastAppearance;
   bool signCalled = false;
   bool cancelCalled = false;
+  final StreamController<NfcSessionEvent> controller =
+      StreamController<NfcSessionEvent>.broadcast();
 
   @override
   Future<Uint8List> mockSignPdf(
@@ -43,6 +47,13 @@ class MockCieSignFlutterPlatform
   Future<bool> cancelNfcSigning() async {
     cancelCalled = true;
     return true;
+  }
+
+  @override
+  Stream<NfcSessionEvent> watchNfcEvents() => controller.stream;
+
+  void emitEvent(NfcSessionEvent event) {
+    controller.add(event);
   }
 }
 
@@ -77,7 +88,7 @@ void main() {
     final input = Uint8List.fromList([5, 6, 7]);
     final result = await plugin.signPdfWithNfc(
       input,
-      pin: '12345678',
+      pin: '25051980',
       appearance: const PdfSignatureAppearance(pageIndex: 2),
     );
     expect(result, equals(input));
@@ -91,5 +102,36 @@ void main() {
     final canceled = await plugin.cancelNfcSigning();
     expect(canceled, isTrue);
     expect(fakePlatform.cancelCalled, isTrue);
+  });
+
+  test('watchNfcEvents exposes platform stream', () async {
+    final plugin = CieSignFlutter();
+    final fakePlatform = MockCieSignFlutterPlatform();
+    CieSignFlutterPlatform.instance = fakePlatform;
+    final events = <NfcSessionEvent>[];
+    final sub = plugin.watchNfcEvents().listen(events.add);
+    fakePlatform.emitEvent(
+      NfcSessionEvent.fromMap({'type': 'state', 'status': 'ready'}),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(events, isNotEmpty);
+    await sub.cancel();
+  });
+
+  test('mockSignPdf enforces non-empty input', () async {
+    final plugin = CieSignFlutter();
+    expect(() => plugin.mockSignPdf(Uint8List(0)), throwsArgumentError);
+  });
+
+  test('signPdfWithNfc validates inputs', () async {
+    final plugin = CieSignFlutter();
+    expect(
+      () => plugin.signPdfWithNfc(Uint8List(0), pin: '25051980'),
+      throwsArgumentError,
+    );
+    expect(
+      () => plugin.signPdfWithNfc(Uint8List.fromList([1, 2, 3]), pin: ''),
+      throwsArgumentError,
+    );
   });
 }

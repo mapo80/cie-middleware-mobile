@@ -70,8 +70,16 @@ public:
 	const double getHeight(int pageIndex);
 	
 private:
+    struct LegacyFieldInfo {
+        std::string name;
+        PoDoFo::Rect rect;
+        int pageIndex;
+        PoDoFo::PdfReference widgetRef;
+    };
+
     PoDoFo::PdfSignature* FindSignatureField(const std::string& fieldName,
         bool requireUnsigned);
+    PoDoFo::PdfSignature* CreateFieldFromLegacy(const LegacyFieldInfo& info);
     bool IsFieldSigned(const PoDoFo::PdfSignature& signature) const;
     bool PrepareSignatureField(PoDoFo::PdfSignature& signature,
         const PoDoFo::Rect* customRect,
@@ -79,6 +87,8 @@ private:
         const char* szName,
         const char* szLocation,
         const char* szSubFilter);
+    std::vector<LegacyFieldInfo> ExtractLegacySignatureFields() const;
+    void RemoveLegacyFieldReferences(const LegacyFieldInfo& info, const PoDoFo::PdfReference& widgetRef);
 	std::unique_ptr<PoDoFo::PdfMemDocument> m_pPdfDocument;
 	PoDoFo::PdfSignature* m_pSignatureField;
 	std::unique_ptr<PoDoFo::PdfSigningContext> m_pSigningContext;

@@ -29,7 +29,7 @@ Questo repository contiene il lavoro di modernizzazione e porting mobile dello s
 ### Plugin Flutter + API headless
 - Cartella `cie_sign_flutter/`: plugin MethodChannel che espone solo API logiche (`mockSignPdf`, `signPdfWithNfc`, `cancelNfcSigning`). Tramite `PdfSignatureAppearance` è possibile passare tutte le informazioni geometriche, i metadati (motivo, luogo, nome) e l'immagine della firma come `Uint8List` senza alcuna UI preconfezionata.
 - L'app di esempio (`cie_sign_flutter/example/`) funge da guscio dimostrativo e mostra come costruire l'interfaccia Flutter (PIN, loader, visualizzazione PDF) usando il plugin headless.
-- Il plugin Android sfrutta il bridge Kotlin/NDK (`CieSignSdk.signPdfWithNfc`) già collegato alla libreria C++; il canale iOS verrà adeguato con CoreNFC riutilizzando le stesse chiamate.
+- Il plugin Android sfrutta il bridge Kotlin/NDK (`CieSignSdk.signPdfWithNfc`) già collegato alla libreria C++; il canale iOS usa `CieSignMobileBridge` + `CoreNFC` per offrire lo stesso metodo `signPdfWithNfc` (con fallback mock su simulatore).
 - Test automatizzati:
   - `flutter test` sotto `cie_sign_flutter/` valida i MethodChannel e le API pubbliche.
   - `cie_sign_flutter/example/test/mock_nfc_ui_test.dart` sostituisce PathProvider e il plugin con mock per simulare un giro completo di UI + NFC, utile su CI/emulatori privi di lettore.

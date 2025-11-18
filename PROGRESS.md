@@ -128,3 +128,39 @@
 - L’esempio Flutter dipende ora dal plugin `hand_signature`: abbiamo inserito un canvas tattile per disegnare la firma e salvarla come PNG (convertita poi in RGBA dai bridge nativi).
 - L’utente deve esplicitamente premere “Salva firma” prima di procedere: in assenza di una firma salvata viene mostrato un errore e l’SDK non viene invocato.
 - La firma salvata viene visualizzata come anteprima e riutilizzata sia nel flusso mock sia nel flusso NFC; i test continuano a funzionare tramite l’hook `loadSignatureImage` che fornisce bytes custom in contesti automatizzati.
+
+### 18. Viewer Flutter aggiornato a `pdfrx`
+- Rimosso il vendor locale di `flutter_pdfview` (directory `third_party/flutter_pdfview-1.2.2/`) e la relativa dipendenza dal `pubspec` dell’esempio.
+- Aggiunta la dipendenza da `pdfrx ^2.2.15` e sostituito `PdfPreviewPage` con il widget `PdfViewer.file`, includendo banner di caricamento/errori e un overlay durante il salvataggio sul filesystem host.
+- Rieseguito `flutter pub get` per rigenerare il `pubspec.lock` con il nuovo grafo.
+
+### 19. Snellimento build Flutter (rimozione PDFium WASM)
+- Eseguito `dart run pdfrx:remove_wasm_modules` nella cartella `cie_sign_flutter/example` subito dopo `flutter pub get`, così i binari WASM (~4 MB) non vengono più impacchettati nelle build Android/iOS.
+- Notato nel README di pdfrx che il comando è reversibile (`--revert`); annotato il passaggio in questo log per ripeterlo prima di ogni build release.
+- Verificato l’impatto ricompilando il test di integrazione sull’emulatore (`flutter test integration_test/ui_mock_flow_test.dart -d emulator-5554` con `JAVA_HOME` impostato a Temurin 17): il flusso mock produce ancora il PDF firmato e il viewer resta funzionante, ora senza warning “PDFium WASM” a runtime.
+
+### 20. PIN di default aggiornato
+- Aggiornati l’app d’esempio e tutti i test (unitari e widget) per usare il nuovo PIN predefinito `25051980` al posto del precedente `12345678`.
+- `cie_sign_flutter/example/lib/main.dart` inizializza ora il campo PIN con il nuovo valore; i test `cie_sign_flutter_method_channel_test.dart`, `cie_sign_flutter_test.dart` e `example/test/mock_nfc_ui_test.dart` verificano la stessa costante per evitare regressioni.
+
+### 21. Piano di integrazione NFC reale
+- Analizzato il progetto di riferimento (`feasdk` in `/Users/politom/Downloads/bppb-android-app-master@b023b074cc3`) e documentato come l’attuale SDK C++ gestisce già IAS/DAPP (`cie_sign_sdk/src/CSP/IAS.cpp`).
+- Creato `cie_sign_sdk/docs/nfc_integration_plan.md` con i task concreti: eventi reader mode nel plugin, logging IAS tramite `cie_platform_logger`, test mock basato su transcript reale, guida di test manuale per CIE fisica e allineamento iOS.
+- Il piano servirà come backlog per l’implementazione effettiva della firma reale su Android/iOS senza duplicare la logica IAS in Kotlin/Swift.
+
+### 22. Eventi NFC e UI Flutter
+- Aggiunto un `EventChannel` (`cie_sign_flutter/nfc_events`) nel plugin Android (`CieSignFlutterPlugin.kt`): emette stati (`state/ready-disabled`), eventi di ascolto/tag, errori, completamento e annullo. Il stream è esposto in Dart tramite `NfcSessionEvent` (`lib/src/nfc_session_event.dart`) e reso disponibile via `CieSignFlutter.watchNfcEvents()`.
+- Integrato la UI dell’esempio per reagire agli eventi (status automatici, loader visibile, invito ad avvicinare la carta) e subscribed agli eventi per aggiornare `_status`.
+- Aggiornati i test:
+  * `cie_sign_flutter_method_channel_test.dart` verifica che il `watchNfcEvents` del MethodChannel riceva eventi mappati.
+  * `cie_sign_flutter_test.dart` e `example/test/mock_nfc_ui_test.dart` usano piattaforme fake con `StreamController` per simulare eventi.
+- Documentazione e codice formattati; tutte le suite (`flutter test` nel plugin e nell’esempio) tornano verdi.
+
+### 23. Copertura test >= 90%
+- Aggiunti nuovi test unitari per il package Flutter: `nfc_session_event_test.dart` copre tutte le varianti di evento; `cie_sign_flutter_platform_interface_test.dart` esercita il token enforcement della PlatformInterface e i fallback `UnimplementedError`; `cie_sign_flutter_test.dart` ora verifica anche i casi di input non valido su `mockSignPdf` e `signPdfWithNfc`.
+- Esecuzione `flutter test --coverage` in `cie_sign_flutter/` porta la copertura totale al ~95% (80/84 linee) con tutti i file principali al 100% tranne il MethodChannel (92%).
+
+### 24. Verifica certificato nei PDF firmati
+- Estratta la logica di lettura CMS (già usata in `mock_sign_test`) in un piccolo tool CLI `pdf_signature_check` (`cie_sign_sdk/tests/tools/pdf_signature_check.cpp`).
+- Il tool si builda insieme al target host (`cmake --build cie_sign_sdk/build/host --target pdf_signature_check`) e accetta `pdf_signature_check signed.pdf [expected_CN]`, stampando il CN di ogni firma ed esitando con errore se `expected_CN` non compare.
+- Per i test mock continuiamo a validare che il certificato coincida con `Mock Mobile Signer`; per il giro NFC reale basta estrarre il PDF dal dispositivo (via `adb shell run-as ... cat > file.pdf`) e lanciare il tool per verificare quale certificato è stato usato.

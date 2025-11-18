@@ -21,6 +21,10 @@ NS_SWIFT_NAME(CieSignPdfParameters)
 @property (nonatomic, copy) NSString *reason;
 @property (nonatomic, copy) NSString *location;
 @property (nonatomic, copy) NSString *name;
+@property (nonatomic, copy) NSArray<NSString *> *fieldIds;
+@property (nonatomic, strong, nullable) NSData *signatureImage;
+@property (nonatomic) NSUInteger signatureImageWidth;
+@property (nonatomic) NSUInteger signatureImageHeight;
 @end
 
 NS_SWIFT_NAME(CieSignMobileBridge)
@@ -35,6 +39,8 @@ NS_SWIFT_NAME(CieSignMobileBridge)
                           pin:(NSString *)pin
                    appearance:(CieSignPdfParameters *)appearance
                         error:(NSError * _Nullable * _Nullable)error NS_SWIFT_NAME(sign(pdf:pin:appearance:));
+
+- (void)cancelActiveSession;
 
 @end
 

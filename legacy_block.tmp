@@ -1,0 +1,121 @@
+std::vector<PdfSignatureGenerator::LegacyFieldInfo> PdfSignatureGenerator::ExtractLegacySignatureFields()
+{
+    std::vector<LegacyFieldInfo> legacy;
+    if (!m_pPdfDocument)
+        return legacy;
+
+    try
+    {
+        if (!widgetRef.IsIndirect())
+            return;
+        PdfCatalog& catalog = m_pPdfDocument->GetCatalog();
+        PdfObject* acroObj = catalog.GetDictionary().GetKey("AcroForm");
+        if (!acroObj || !acroObj->IsDictionary())
+            return legacy;
+        PdfObject* fieldsObj = acroObj->GetDictionary().GetKey("Fields");
+        if (!fieldsObj || !fieldsObj->IsArray())
+            return legacy;
+        PdfArray& fieldsArray = fieldsObj->GetArray();
+        PdfPageCollection& pages = m_pPdfDocument->GetPages();
+        PdfIndirectObjectList& objects = m_pPdfDocument->GetObjects();
+
+        for (unsigned int i = 0; i < fieldsArray.GetSize(); ++i)
+        {
+            PdfObject& entry = fieldsArray[i];
+            if (!entry.IsReference())
+                continue;
+            PdfObject* resolved = objects.GetObject(entry.GetReference());
+            if (!resolved || !resolved->IsDictionary())
+                continue;
+            PdfDictionary& dict = resolved->GetDictionary();
+            const PdfObject* subtype = dict.GetKey("Subtype");
+            if (!subtype || !subtype->IsName())
+                continue;
+            if (subtype->GetName().GetName() != "Widget")
+                continue;
+            const PdfObject* fieldType = dict.GetKey("FT");
+            if (!fieldType || !fieldType->IsName())
+                continue;
+            if (fieldType->GetName().GetName() != "Sig")
+                continue;
+            const PdfObject* nameObj = dict.GetKey("T");
+            if (!nameObj || !nameObj->IsString())
+                continue;
+            const PdfObject* rectObj = dict.GetKey("Rect");
+            if (!rectObj || !rectObj->IsArray())
+                continue;
+            const PdfObject* pageObj = dict.GetKey("P");
+            if (!pageObj || !pageObj->IsReference())
+                continue;
+            PdfObject* pageResolved = objects.GetObject(pageObj->GetReference());
+            if (!pageResolved)
+                continue;
+            PdfPage& page = pages.GetPage(pageObj->GetReference());
+            Rect rect;
+            {
+                const PdfArray& arr = rectObj->GetArray();
+                double left = 0.0, bottom = 0.0, right = 0.0, top = 0.0;
+                if (!arr.TryGetAtAs(0, left) ||
+                    !arr.TryGetAtAs(1, bottom) ||
+                    !arr.TryGetAtAs(2, right) ||
+                    !arr.TryGetAtAs(3, top))
+                {
+                    continue;
+                }
+                rect = Rect(left, bottom, right - left, top - bottom);
+                if (rect.Width <= 0.0 || rect.Height <= 0.0)
+                    continue;
+            }
+            LegacyFieldInfo info;
+            auto nameView = nameObj->GetString().GetString();
+            info.name.assign(nameView.data(), nameView.size());
+            info.rect = rect;
+            info.pageIndex = static_cast<int>(page.GetIndex());
+            info.widgetRef = entry.GetReference();
+            legacy.push_back(std::move(info));
+        }
+    }
+    catch (const PdfError&)
+    {
+    }
+    catch (...)
+    {
+    }
+    return legacy;
+}
+
+void PdfSignatureGenerator::RemoveLegacyFieldReferences(const LegacyFieldInfo& info,
+    const PdfReference& widgetRef)
+{
+    if (!m_pPdfDocument)
+        return;
+    try
+    {
+        PdfCatalog& catalog = m_pPdfDocument->GetCatalog();
+        PdfObject* acroObj = catalog.GetDictionary().GetKey("AcroForm");
+        if (acroObj && acroObj->IsDictionary())
+        {
+            PdfObject* fieldsObj = acroObj->GetDictionary().GetKey("Fields");
+            if (fieldsObj && fieldsObj->IsArray())
+            {
+                PdfArray& fieldsArray = fieldsObj->GetArray();
+                for (unsigned int i = 0; i < fieldsArray.GetSize(); ++i)
+                {
+                    PdfObject& entry = fieldsArray[i];
+                    if (entry.IsReference() && entry.GetReference() == widgetRef)
+                    {
+                        fieldsArray.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+
+        PdfPage& page = m_pPdfDocument->GetPages().GetPageAt(info.pageIndex);
+        page.GetAnnotations().RemoveAnnot(widgetRef);
+    }
+    catch (...)
+    {
+    }
+}
+

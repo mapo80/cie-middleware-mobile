@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:pdfrx/pdfrx.dart';
 
 class PdfPreviewPage extends StatefulWidget {
   const PdfPreviewPage({super.key, required this.path});
@@ -43,21 +43,63 @@ class _PdfPreviewPageState extends State<PdfPreviewPage> {
           ),
         ],
       ),
-      body: PDFView(
-        key: const Key('pdfFullScreenView'),
-        filePath: widget.path,
-        enableSwipe: true,
-        swipeHorizontal: false,
-        onError: (error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Errore viewer: $error')),
-          );
-        },
-        onPageError: (page, error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Errore pagina $page: $error')),
-          );
-        },
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: KeyedSubtree(
+              key: const Key('pdfFullScreenView'),
+              child: PdfViewer.file(
+                widget.path,
+                key: ValueKey(widget.path),
+                params: PdfViewerParams(
+                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                  loadingBannerBuilder: (context, downloaded, total) {
+                    final progress = total != null && total > 0 ? downloaded / total : null;
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          if (progress != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text('${(progress * 100).toStringAsFixed(0)}%'),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                  errorBannerBuilder: (context, error, stackTrace, _) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Errore viewer: $error',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_exporting)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black45,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

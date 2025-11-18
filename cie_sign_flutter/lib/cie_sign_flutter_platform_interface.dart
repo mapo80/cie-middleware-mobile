@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'cie_sign_flutter_method_channel.dart';
-import 'src/pdf_signature_appearance.dart';
+import 'src/nfc_session_event.dart';
 import 'src/pdf_signature_appearance.dart';
 
 abstract class CieSignFlutterPlatform extends PlatformInterface {
@@ -39,5 +39,9 @@ abstract class CieSignFlutterPlatform extends PlatformInterface {
 
   Future<bool> cancelNfcSigning() {
     throw UnimplementedError('cancelNfcSigning() has not been implemented.');
+  }
+
+  Stream<NfcSessionEvent> watchNfcEvents() {
+    throw UnimplementedError('watchNfcEvents() has not been implemented.');
   }
 }

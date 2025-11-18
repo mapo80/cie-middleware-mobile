@@ -273,6 +273,8 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
     req.pdf.reason = appearance.reason.empty() ? nullptr : appearance.reason.c_str();
     req.pdf.name = appearance.name.empty() ? nullptr : appearance.name.c_str();
     req.pdf.location = appearance.location.empty() ? nullptr : appearance.location.c_str();
+    __android_log_print(ANDROID_LOG_DEBUG, kLogTag, "appearance bytes=%zu width=%d height=%d",
+                        appearance.signatureImage.size(), appearance.imageWidth, appearance.imageHeight);
     req.pdf.signature_image = appearance.signatureImage.empty() ? nullptr : appearance.signatureImage.data();
     req.pdf.signature_image_len = appearance.signatureImage.size();
     req.pdf.signature_image_width = static_cast<uint32_t>(appearance.imageWidth);
@@ -281,6 +283,7 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
         req.pdf.field_ids = fieldPointers.data();
         req.pdf.field_ids_len = fieldPointers.size();
     }
+    __android_log_print(ANDROID_LOG_DEBUG, kLogTag, "PDF field ids len=%zu", fieldPointers.size());
     result.output_len = 0;
 
     if (cie_sign_execute(ctx.get(), &req, &result) != CIE_STATUS_OK)
@@ -289,6 +292,10 @@ std::vector<uint8_t> run_mock_flow(const uint8_t* pdf_data,
     std::vector<uint8_t> signedPdf(result.output, result.output + result.output_len);
     if (signedPdf.size() <= pdf.size())
         throw std::runtime_error("Signed PDF is not larger than input");
+    std::string signedStr(reinterpret_cast<const char*>(signedPdf.data()), signedPdf.size());
+    if (signedStr.find("/AP") == std::string::npos) {
+        __android_log_print(ANDROID_LOG_WARN, kLogTag, "Signed PDF missing /AP appearance");
+    }
     return signedPdf;
 }
 
