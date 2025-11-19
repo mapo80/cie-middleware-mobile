@@ -31,6 +31,9 @@ class _NoTokenPlatform extends PlatformInterface
   Future<bool> cancelNfcSigning() => Future.value(false);
 
   @override
+  Future<bool> verifyPinWithNfc({required String pin}) => Future.value(false);
+
+  @override
   Stream<NfcSessionEvent> watchNfcEvents() =>
       const Stream<NfcSessionEvent>.empty();
 }
@@ -59,6 +62,9 @@ class _FakePlatform extends CieSignFlutterPlatform {
   Future<bool> cancelNfcSigning() async => true;
 
   @override
+  Future<bool> verifyPinWithNfc({required String pin}) async => true;
+
+  @override
   Stream<NfcSessionEvent> watchNfcEvents() async* {}
 }
 
@@ -71,6 +77,10 @@ void main() {
     );
     await expectLater(
       () => platform.signPdfWithNfc(Uint8List(0), pin: '12345678'),
+      throwsA(isA<UnimplementedError>()),
+    );
+    await expectLater(
+      () => platform.verifyPinWithNfc(pin: '12345678'),
       throwsA(isA<UnimplementedError>()),
     );
     await expectLater(

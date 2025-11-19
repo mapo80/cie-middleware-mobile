@@ -331,6 +331,78 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _runVerifyPin() async {
+    final pin = _pinController.text.trim();
+    if (pin.length != 8) {
+      setState(() {
+        _status = 'Inserisci un PIN di 8 cifre.';
+      });
+      return;
+    }
+
+    setState(() {
+      _busy = true;
+      _status = 'Avvicina la CIE al lettore per verificare il PIN...';
+    });
+
+    try {
+      final verified = await _plugin.verifyPinWithNfc(pin: pin);
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _status = verified
+            ? 'PIN verificato correttamente.'
+            : 'Verifica PIN non riuscita.';
+      });
+      await _showPinResultDialog(
+        verified,
+        verified
+            ? 'La verifica del PIN è andata a buon fine.'
+            : 'Il PIN inserito non è stato accettato.',
+      );
+    } on PlatformException catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _status = 'Verifica PIN fallita: ${err.message ?? err.code}.';
+      });
+      await _showPinResultDialog(
+        false,
+        'Verifica PIN fallita: ${err.message ?? err.code}.',
+      );
+    } catch (err) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _status = 'Verifica PIN fallita: $err';
+      });
+      await _showPinResultDialog(
+        false,
+        'Verifica PIN fallita: $err',
+      );
+    }
+  }
+
+  Future<void> _showPinResultDialog(bool success, String message) async {
+    final ctx = _navigatorKey.currentContext ?? context;
+    if (!mounted || ctx == null) return;
+    await showDialog<void>(
+      context: ctx,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(success ? 'Verifica PIN riuscita' : 'Verifica PIN fallita'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _cancelNfcSigning() async {
     final canceled = await _plugin.cancelNfcSigning();
     if (canceled) {
@@ -450,16 +522,29 @@ class _MyAppState extends State<MyApp> {
                 const Center(child: CircularProgressIndicator()),
                 const SizedBox(height: 12),
               ],
-              TextField(
-                key: const Key('pinField'),
-                controller: _pinController,
-                maxLength: 8,
-                enabled: !_busy,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'PIN (8 cifre)',
-                  counterText: '',
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('pinField'),
+                      controller: _pinController,
+                      maxLength: 8,
+                      enabled: !_busy,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'PIN (8 cifre)',
+                        counterText: '',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    key: const Key('verifyPinButton'),
+                    onPressed: _busy ? null : _runVerifyPin,
+                    child: const Text('Verifica PIN'),
+                  ),
+                ],
               ),
               if (_outputPath != null) ...[
                 const SizedBox(height: 8),

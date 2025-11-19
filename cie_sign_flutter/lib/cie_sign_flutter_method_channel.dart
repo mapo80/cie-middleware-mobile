@@ -56,6 +56,17 @@ class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
   }
 
   @override
+  Future<bool> verifyPinWithNfc({required String pin}) async {
+    final bool? verified = await methodChannel.invokeMethod<bool>(
+      'verifyPinWithNfc',
+      <String, dynamic>{
+        'pin': pin,
+      },
+    );
+    return verified ?? false;
+  }
+
+  @override
   Future<bool> cancelNfcSigning() async {
     final bool? canceled = await methodChannel.invokeMethod<bool>(
       'cancelNfcSigning',

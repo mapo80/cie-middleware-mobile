@@ -44,4 +44,11 @@ internal object NativeBridge {
         atr: ByteArray,
         outputPath: String?
     ): ByteArray
+
+    @JvmStatic
+    external fun verifyPinWithNfc(
+        pin: String,
+        isoDep: android.nfc.tech.IsoDep,
+        atr: ByteArray
+    ): Boolean
 }

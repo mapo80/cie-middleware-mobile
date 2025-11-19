@@ -43,6 +43,13 @@ class CieSignFlutter {
     );
   }
 
+  Future<bool> verifyPinWithNfc({required String pin}) {
+    if (pin.isEmpty) {
+      throw ArgumentError('PIN cannot be empty');
+    }
+    return CieSignFlutterPlatform.instance.verifyPinWithNfc(pin: pin);
+  }
+
   Future<bool> cancelNfcSigning() {
     return CieSignFlutterPlatform.instance.cancelNfcSigning();
   }

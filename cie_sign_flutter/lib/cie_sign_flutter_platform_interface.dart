@@ -37,6 +37,10 @@ abstract class CieSignFlutterPlatform extends PlatformInterface {
     throw UnimplementedError('signPdfWithNfc() has not been implemented.');
   }
 
+  Future<bool> verifyPinWithNfc({required String pin}) {
+    throw UnimplementedError('verifyPinWithNfc() has not been implemented.');
+  }
+
   Future<bool> cancelNfcSigning() {
     throw UnimplementedError('cancelNfcSigning() has not been implemented.');
   }

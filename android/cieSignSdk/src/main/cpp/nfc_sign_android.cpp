@@ -234,6 +234,20 @@ private:
     int image_height_ = 0;
 };
 
+std::vector<uint8_t> copy_jbyte_array(JNIEnv* env, jbyteArray array)
+{
+    if (!array) {
+        return {};
+    }
+    const jsize len = env->GetArrayLength(array);
+    if (len <= 0) {
+        return {};
+    }
+    std::vector<uint8_t> out(static_cast<size_t>(len));
+    env->GetByteArrayRegion(array, 0, len, reinterpret_cast<jbyte*>(out.data()));
+    return out;
+}
+
 void persist_output(const std::vector<uint8_t>& pdf, const std::string& path) {
     if (path.empty()) {
         return;
@@ -401,4 +415,88 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_signPdfWithNfc(
     }
     env->SetByteArrayRegion(signedPdf, 0, static_cast<jsize>(output.size()), reinterpret_cast<const jbyte*>(output.data()));
     return signedPdf;
+}
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_it_ipzs_ciesign_sdk_NativeBridge_verifyPinWithNfc(
+    JNIEnv* env,
+    jclass,
+    jstring pinValue,
+    jobject isoDep,
+    jbyteArray atrBytes) {
+
+    if (!pinValue || !isoDep || !atrBytes) {
+        throw_java_exception(env, "Invalid arguments for verifyPinWithNfc");
+        return JNI_FALSE;
+    }
+
+    std::vector<uint8_t> atr = copy_jbyte_array(env, atrBytes);
+    if (atr.empty()) {
+        throw_java_exception(env, "ATR buffer is empty");
+        return JNI_FALSE;
+    }
+
+    jclass isoDepClass = env->GetObjectClass(isoDep);
+    if (!isoDepClass) {
+        throw_java_exception(env, "Unable to resolve IsoDep class");
+        return JNI_FALSE;
+    }
+    jmethodID transceiveMethod = env->GetMethodID(isoDepClass, "transceive", "([B)[B");
+    jmethodID closeMethod = env->GetMethodID(isoDepClass, "close", "()V");
+    env->DeleteLocalRef(isoDepClass);
+    if (!transceiveMethod) {
+        throw_java_exception(env, "IsoDep.transceive method not found");
+        return JNI_FALSE;
+    }
+
+    const char* pinChars = env->GetStringUTFChars(pinValue, nullptr);
+    if (!pinChars) {
+        throw_java_exception(env, "Unable to read PIN value");
+        return JNI_FALSE;
+    }
+    std::string pin(pinChars);
+    env->ReleaseStringUTFChars(pinValue, pinChars);
+
+    IsoDepBridge bridge{};
+    bridge.vm = g_android_vm;
+    bridge.iso_dep = env->NewGlobalRef(isoDep);
+    bridge.transceive = transceiveMethod;
+    bridge.close = closeMethod;
+    bridge.atr = std::move(atr);
+
+    cie_platform_nfc_adapter adapter{};
+    adapter.user_data = &bridge;
+    adapter.open = android_nfc_open;
+    adapter.transceive = android_nfc_transceive;
+    adapter.close = android_nfc_close;
+
+    LoggerBridge logger_bridge{};
+    cie_platform_logger logger{};
+    logger.user_data = &logger_bridge;
+    logger.log = android_logger_log;
+
+    cie_platform_config config{};
+    config.nfc = &adapter;
+    config.logger = &logger;
+
+    std::unique_ptr<cie_sign_ctx, decltype(&cie_sign_ctx_destroy)> ctx(
+        cie_sign_ctx_create_with_platform(&config), cie_sign_ctx_destroy);
+
+    if (!ctx) {
+        android_nfc_close(&bridge);
+        throw_java_exception(env, "Unable to create signing context");
+        return JNI_FALSE;
+    }
+
+    cie_status status = cie_sign_verify_pin(ctx.get(), pin.c_str(), pin.size());
+    android_nfc_close(&bridge);
+    if (status != CIE_STATUS_OK) {
+        const char* last_error = cie_sign_get_last_error(ctx.get());
+        std::string message = last_error ? last_error : "Unable to verify PIN via NFC";
+        throw_java_exception(env, message.c_str());
+        return JNI_FALSE;
+    }
+
+    return JNI_TRUE;
 }

@@ -203,11 +203,61 @@ static void ios_nfc_close(void *user_data) {
     }
 
     return [self runSigningWithContext:ctx.get()
-                                   pdf:pdf
-                                   pin:pin
-                            appearance:appearance
-                             lastError:nil
-                                  error:error];
+                                  pdf:pdf
+                                  pin:pin
+                           appearance:appearance
+                            lastError:nil
+                                 error:error];
+}
+
+- (BOOL)verifyPinUsingMockTransport:(NSString *)pin
+                              error:(NSError * _Nullable __autoreleasing *)error {
+    MockApduTransport transport;
+    std::unique_ptr<cie_sign_ctx, decltype(&cie_sign_ctx_destroy)> ctx(
+        create_mock_context(transport), cie_sign_ctx_destroy);
+    if (!ctx) {
+        if (error) {
+            *error = MakeError(CieSignMobileErrorDomain, CieSignMobileErrorContext, @"Impossibile inizializzare il mock NFC.");
+        }
+        return NO;
+    }
+    return [self runPinVerificationWithContext:ctx.get()
+                                            pin:pin
+                                      lastError:nil
+                                           error:error];
+}
+
+- (BOOL)verifyPin:(NSString *)pin error:(NSError * _Nullable __autoreleasing *)error {
+    if (self.useMockTransport) {
+        return [self verifyPinUsingMockTransport:pin error:error];
+    }
+
+    IosNfcAdapterState state(self.session);
+
+    cie_platform_nfc_adapter adapter{};
+    adapter.user_data = &state;
+    adapter.open = ios_nfc_open;
+    adapter.transceive = ios_nfc_transceive;
+    adapter.close = ios_nfc_close;
+
+    cie_platform_config config{};
+    config.nfc = &adapter;
+
+    std::unique_ptr<cie_sign_ctx, decltype(&cie_sign_ctx_destroy)> ctx(
+        cie_sign_ctx_create_with_platform(&config), cie_sign_ctx_destroy);
+
+    if (!ctx) {
+        NSError *ctxError = state.lastError ?: MakeError(CieSignMobileErrorDomain, CieSignMobileErrorContext, @"Impossibile creare il contesto NFC.");
+        if (error) {
+            *error = ctxError;
+        }
+        return NO;
+    }
+
+    return [self runPinVerificationWithContext:ctx.get()
+                                            pin:pin
+                                      lastError:state.lastError
+                                           error:error];
 }
 
 - (NSData *)runSigningWithContext:(cie_sign_ctx *)ctx
@@ -293,6 +343,32 @@ static void ios_nfc_close(void *user_data) {
 
     output.length = result.output_len;
     return [output copy];
+}
+
+- (BOOL)runPinVerificationWithContext:(cie_sign_ctx *)ctx
+                                  pin:(NSString *)pin
+                            lastError:(NSError *)lastError
+                                 error:(NSError * _Nullable __autoreleasing *)error {
+    std::string pinUtf8(pin.UTF8String ?: "");
+    cie_status status = cie_sign_verify_pin(ctx, pinUtf8.c_str(), pinUtf8.size());
+    if (status != CIE_STATUS_OK) {
+        NSString *message = nil;
+        const char *err = cie_sign_get_last_error(ctx);
+        if (err) {
+            message = [NSString stringWithUTF8String:err];
+        }
+        if (!message.length && lastError) {
+            message = lastError.localizedDescription;
+        }
+        if (!message.length) {
+            message = @"Verifica PIN fallita.";
+        }
+        if (error) {
+            *error = MakeError(CieSignMobileErrorDomain, CieSignMobileErrorExecution, message, lastError);
+        }
+        return NO;
+    }
+    return YES;
 }
 
 - (void)cancelActiveSession {

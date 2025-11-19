@@ -313,6 +313,20 @@ int main() {
         return 4;
     }
 
+    cie_status verify_status = cie_sign_verify_pin(ctx, pin, sizeof(pin) - 1);
+    if (verify_status != CIE_STATUS_OK) {
+        std::fprintf(stderr, "cie_sign_verify_pin failed: %d (%s)\n", verify_status, cie_sign_get_last_error(ctx));
+        cie_sign_ctx_destroy(ctx);
+        return 5;
+    }
+
+    verify_status = cie_sign_verify_pin(ctx, nullptr, 0);
+    if (verify_status != CIE_STATUS_INVALID_INPUT) {
+        std::fprintf(stderr, "cie_sign_verify_pin should fail on invalid input\n");
+        cie_sign_ctx_destroy(ctx);
+        return 6;
+    }
+
     std::printf("Mock signature generated, %zu bytes\n", result.output_len);
 
     // PDF signing workflow through cie_sign_execute

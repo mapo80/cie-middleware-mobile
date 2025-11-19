@@ -46,6 +46,8 @@
         [self handleMockSignCall:call result:result];
     } else if ([call.method isEqualToString:@"signPdfWithNfc"]) {
         [self handleSignWithNfcCall:call result:result];
+    } else if ([call.method isEqualToString:@"verifyPinWithNfc"]) {
+        [self handleVerifyPinCall:call result:result];
     } else if ([call.method isEqualToString:@"cancelNfcSigning"]) {
         [self handleCancelNfcCall:result];
     } else {
@@ -149,6 +151,49 @@
     }];
 }
 
+- (void)handleVerifyPinCall:(FlutterMethodCall *)call result:(FlutterResult)result {
+    if (!self.nfcBridge) {
+        result([FlutterError errorWithCode:@"nfc_unavailable"
+                                   message:@"CoreNFC non disponibile su questo dispositivo."
+                                   details:nil]);
+        return;
+    }
+    if (self.pendingNfcResult) {
+        result([FlutterError errorWithCode:@"busy"
+                                   message:@"A NFC request is already in progress."
+                                   details:nil]);
+        return;
+    }
+    NSDictionary *args = [self validatedArgumentsFromCall:call result:result];
+    if (!args) {
+        return;
+    }
+    NSString *pin = [args[@"pin"] isKindOfClass:[NSString class]] ? [args[@"pin"] stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet] : @"";
+    if (pin.length == 0) {
+        result([FlutterError errorWithCode:@"invalid_pin" message:@"PIN cannot be empty" details:nil]);
+        return;
+    }
+    self.pendingNfcResult = [result copy];
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(self.signingQueue, ^{
+        NSError *error = nil;
+        BOOL ok = [weakSelf.nfcBridge verifyPin:pin error:&error];
+        __strong typeof(self) strongSelf = weakSelf;
+        FlutterResult pendingResult = strongSelf.pendingNfcResult;
+        strongSelf.pendingNfcResult = nil;
+        if (!pendingResult) {
+            return;
+        }
+        if (!ok) {
+            pendingResult([strongSelf flutterErrorFromNSError:error
+                                                        code:@"nfc_verify_failed"
+                                                    fallback:@"Impossibile verificare il PIN via NFC."]);
+            return;
+        }
+        pendingResult(@(YES));
+    });
+}
+
 - (void)handleCancelNfcCall:(FlutterResult)result {
     FlutterResult pending = self.pendingNfcResult;
     if (!pending) {
@@ -158,7 +203,7 @@
     self.pendingNfcResult = nil;
     [self.nfcBridge cancelActiveSession];
     pending([FlutterError errorWithCode:@"canceled"
-                               message:@"Signing flow canceled"
+                               message:@"Operazione NFC annullata"
                                details:nil]);
     result(@(YES));
 }

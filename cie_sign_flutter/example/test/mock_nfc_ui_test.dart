@@ -45,6 +45,9 @@ class _FakePlatform extends CieSignFlutterPlatform {
   Future<bool> cancelNfcSigning() async => true;
 
   @override
+  Future<bool> verifyPinWithNfc({required String pin}) async => true;
+
+  @override
   Stream<NfcSessionEvent> watchNfcEvents() => _controller.stream;
 
   void emit(Map<String, dynamic> payload) {

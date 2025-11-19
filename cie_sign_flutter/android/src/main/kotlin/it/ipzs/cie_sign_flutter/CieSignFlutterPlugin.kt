@@ -59,6 +59,7 @@ class CieSignFlutterPlugin :
         when (call.method) {
             "mockSignPdf" -> handleMockSign(call, result)
             "signPdfWithNfc" -> handleSignWithNfc(call, result)
+            "verifyPinWithNfc" -> handleVerifyPin(call, result)
             "cancelNfcSigning" -> handleCancel(result)
             else -> result.notImplemented()
         }
@@ -135,7 +136,68 @@ class CieSignFlutterPlugin :
         }
         val outputPath = (args["outputPath"] as? String)?.takeIf { it.isNotBlank() }
 
-        val pendingRequest = PendingRequest(pdf, pin, appearance, outputPath, result)
+        val pendingRequest = PendingRequest(
+            operation = Operation.SIGN,
+            pdf = pdf,
+            pin = pin,
+            appearance = appearance,
+            outputPath = outputPath,
+            result = result
+        )
+        pending.set(pendingRequest)
+        emitEvent("listening", emptyMap())
+        adapter.enableReaderMode(
+            activity,
+            this,
+            NfcAdapter.FLAG_READER_NFC_A or
+                NfcAdapter.FLAG_READER_NFC_B or
+                NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK,
+            null
+        )
+    }
+
+    private fun handleVerifyPin(call: MethodCall, result: MethodChannel.Result) {
+        val args = call.arguments
+        if (args !is Map<*, *>) {
+            result.error("invalid_args", "Expected map arguments", null)
+            return
+        }
+        val activity = activity ?: run {
+            result.error("no_activity", "Plugin is not attached to an Activity", null)
+            return
+        }
+        val adapter = nfcAdapter ?: run {
+            emitError("nfc_unavailable", "NFC adapter not available")
+            result.error("nfc_unavailable", "NFC adapter not available", null)
+            return
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            emitError("nfc_unsupported", "Reader mode requires API 19 or later")
+            result.error("nfc_unsupported", "Reader mode requires API 19 or later", null)
+            return
+        }
+        if (!adapter.isEnabled) {
+            emitNfcState()
+            result.error("nfc_disabled", "NFC adapter is disabled", null)
+            return
+        }
+        if (pending.get() != null) {
+            emitError("busy", "A signing request is already running")
+            result.error("busy", "A signing request is already running", null)
+            return
+        }
+        val pin = (args["pin"] as? String)?.takeIf { it.isNotBlank() } ?: run {
+            result.error("invalid_pin", "PIN cannot be empty", null)
+            return
+        }
+        val pendingRequest = PendingRequest(
+            operation = Operation.VERIFY,
+            pdf = null,
+            pin = pin,
+            appearance = null,
+            outputPath = null,
+            result = result
+        )
         pending.set(pendingRequest)
         emitEvent("listening", emptyMap())
         adapter.enableReaderMode(
@@ -231,35 +293,68 @@ class CieSignFlutterPlugin :
             return
         }
         executor.execute {
+            when (request.operation) {
+                Operation.SIGN -> performSigning(request, isoDep)
+                Operation.VERIFY -> performVerification(request, isoDep)
+            }
+        }
+    }
+
+    private fun performSigning(request: PendingRequest, isoDep: IsoDep) {
+        try {
+            isoDep.timeout = maxOf(isoDep.timeout, 60_000)
+            Log.d(TAG, "IsoDep connected. Timeout=${isoDep.timeout}")
+            val signed = sdk.signPdfWithNfc(
+                request.pdf ?: ByteArray(0),
+                request.pin,
+                request.appearance!!,
+                isoDep,
+                request.outputPath?.let(::File)
+            )
+            mainHandler.post {
+                pending.set(null)
+                disableReaderMode()
+                request.result.success(signed)
+            }
+            emitEvent("completed", mapOf("bytes" to signed.size))
+        } catch (ex: Exception) {
+            Log.e(TAG, "NFC signing failed", ex)
+            mainHandler.post {
+                pending.set(null)
+                disableReaderMode()
+                request.result.error("nfc_sign_failed", ex.message, null)
+            }
+            emitError("nfc_sign_failed", ex.message ?: "NFC signing failed")
+        } finally {
             try {
-                isoDep.timeout = maxOf(isoDep.timeout, 60_000)
-                Log.d(TAG, "IsoDep connected. Timeout=${isoDep.timeout}")
-                val signed = sdk.signPdfWithNfc(
-                    request.pdf,
-                    request.pin,
-                    request.appearance,
-                    isoDep,
-                    request.outputPath?.let(::File)
-                )
-                mainHandler.post {
-                    pending.set(null)
-                    disableReaderMode()
-                    request.result.success(signed)
-                }
-                emitEvent("completed", mapOf("bytes" to signed.size))
-            } catch (ex: Exception) {
-                Log.e(TAG, "NFC signing failed", ex)
-                mainHandler.post {
-                    pending.set(null)
-                    disableReaderMode()
-                    request.result.error("nfc_sign_failed", ex.message, null)
-                }
-                emitError("nfc_sign_failed", ex.message ?: "NFC signing failed")
-            } finally {
-                try {
-                    isoDep.close()
-                } catch (_: Exception) {
-                }
+                isoDep.close()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun performVerification(request: PendingRequest, isoDep: IsoDep) {
+        try {
+            isoDep.timeout = maxOf(isoDep.timeout, 60_000)
+            val success = sdk.verifyPinWithNfc(request.pin, isoDep)
+            mainHandler.post {
+                pending.set(null)
+                disableReaderMode()
+                request.result.success(success)
+            }
+            emitEvent("completed", mapOf("verified" to success))
+        } catch (ex: Exception) {
+            Log.e(TAG, "NFC pin verification failed", ex)
+            mainHandler.post {
+                pending.set(null)
+                disableReaderMode()
+                request.result.error("nfc_verify_failed", ex.message, null)
+            }
+            emitError("nfc_verify_failed", ex.message ?: "NFC verification failed")
+        } finally {
+            try {
+                isoDep.close()
+            } catch (_: Exception) {
             }
         }
     }
@@ -307,10 +402,16 @@ class CieSignFlutterPlugin :
         eventSink.set(null)
     }
 
+    private enum class Operation {
+        SIGN,
+        VERIFY
+    }
+
     private data class PendingRequest(
-        val pdf: ByteArray,
+        val operation: Operation,
+        val pdf: ByteArray?,
         val pin: String,
-        val appearance: PdfAppearanceOptions,
+        val appearance: PdfAppearanceOptions?,
         val outputPath: String?,
         val result: MethodChannel.Result
     )

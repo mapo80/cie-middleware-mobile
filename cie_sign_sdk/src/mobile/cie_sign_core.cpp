@@ -741,6 +741,55 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
     return status;
 }
 
+cie_status cie_sign_verify_pin(cie_sign_ctx *public_ctx,
+                               const char *pin,
+                               size_t pin_len)
+{
+    auto *ctx = reinterpret_cast<cie_sign_ctx_impl *>(public_ctx);
+    if (!ctx) {
+        return CIE_STATUS_INVALID_INPUT;
+    }
+
+    ScopedLoggerBinding logger_binding(&ctx->platform_logger);
+
+    if (!pin || pin_len == 0 || (!ctx->mock_mode && !ctx->ias)) {
+        ctx->last_error = "Invalid input arguments";
+        log_message(ctx->platform_logger, ctx->last_error);
+        return CIE_STATUS_INVALID_INPUT;
+    }
+
+    SensitiveString pin_value;
+    pin_value.value.assign(pin, pin + pin_len);
+    pin_value.value.push_back('\0');
+
+    try {
+        if (ctx->mock_mode) {
+            return CIE_STATUS_OK;
+        }
+
+        std::unique_ptr<CCIESigner> signer = std::make_unique<CCIESigner>(ctx->ias.get());
+        signer->SetLogger(signer_logger_callback, &ctx->platform_logger);
+        log_message(ctx->platform_logger, "Starting IAS initialization");
+        long initRes = signer->Init(pin_value.value.c_str());
+        if (initRes != 0) {
+            std::string initMsg = "IAS Init failed with " + format_sw(initRes);
+            log_message(ctx->platform_logger, initMsg.c_str());
+            return map_error(ctx, "CIE initialization", initRes);
+        }
+        log_message(ctx->platform_logger, "IAS initialization completed");
+        signer->Close();
+        return CIE_STATUS_OK;
+    } catch (const std::exception &ex) {
+        ctx->last_error = ex.what();
+        log_message(ctx->platform_logger, ctx->last_error);
+        return CIE_STATUS_INTERNAL_ERROR;
+    } catch (...) {
+        ctx->last_error = "Unexpected error";
+        log_message(ctx->platform_logger, ctx->last_error);
+        return CIE_STATUS_INTERNAL_ERROR;
+    }
+}
+
 const char *cie_sign_get_last_error(cie_sign_ctx *public_ctx)
 {
     auto *ctx = reinterpret_cast<cie_sign_ctx_impl *>(public_ctx);

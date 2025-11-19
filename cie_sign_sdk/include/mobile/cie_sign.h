@@ -83,6 +83,10 @@ cie_status cie_sign_execute(cie_sign_ctx *ctx,
                             const cie_sign_request *request,
                             cie_sign_result *result);
 
+cie_status cie_sign_verify_pin(cie_sign_ctx *ctx,
+                               const char *pin,
+                               size_t pin_len);
+
 const char *cie_sign_get_last_error(cie_sign_ctx *ctx);
 
 #ifdef __cplusplus

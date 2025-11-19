@@ -42,7 +42,7 @@ class CieSignSdk {
         )
     }
 
-    fun signPdfWithNfc(
+  fun signPdfWithNfc(
         pdfBytes: ByteArray,
         pin: String,
         appearance: PdfAppearanceOptions,
@@ -57,26 +57,38 @@ class CieSignSdk {
         }
         val atr = buildAtr(isoDep)
         val path = outputFile?.absolutePath
-        return NativeBridge.signPdfWithNfc(
-            pdfBytes,
-            pin,
-            appearance.pageIndex,
-            appearance.left,
-            appearance.bottom,
-            appearance.width,
-            appearance.height,
-            appearance.reason,
-            appearance.location,
-            appearance.name,
-            appearance.fieldIds?.toTypedArray(),
-            appearance.signatureImage,
-            appearance.signatureImageWidth,
-            appearance.signatureImageHeight,
-            isoDep,
-            atr,
-            path
-        )
+    return NativeBridge.signPdfWithNfc(
+      pdfBytes,
+      pin,
+      appearance.pageIndex,
+      appearance.left,
+      appearance.bottom,
+      appearance.width,
+      appearance.height,
+      appearance.reason,
+      appearance.location,
+      appearance.name,
+      appearance.fieldIds?.toTypedArray(),
+      appearance.signatureImage,
+      appearance.signatureImageWidth,
+      appearance.signatureImageHeight,
+      isoDep,
+      atr,
+      path
+    )
+  }
+
+  fun verifyPinWithNfc(
+    pin: String,
+    isoDep: IsoDep,
+  ): Boolean {
+    require(pin.isNotBlank()) { "PIN cannot be empty" }
+    if (!isoDep.isConnected) {
+      isoDep.connect()
     }
+    val atr = buildAtr(isoDep)
+    return NativeBridge.verifyPinWithNfc(pin, isoDep, atr)
+  }
 
     private fun buildAtr(isoDep: IsoDep): ByteArray {
         isoDep.historicalBytes?.takeIf { it.isNotEmpty() }?.let { return it }

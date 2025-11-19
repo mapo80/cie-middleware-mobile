@@ -37,6 +37,10 @@ void main() {
               expect(appearance['reason'], 'Motivo');
               expect(appearance['fieldIds'], ['FieldB']);
               return Uint8List.fromList([7, 8, 9]);
+            case 'verifyPinWithNfc':
+              final args = methodCall.arguments as Map;
+              expect(args['pin'], '25051980');
+              return true;
             case 'cancelNfcSigning':
               return true;
             default:
@@ -94,6 +98,12 @@ void main() {
     final canceled = await platform.cancelNfcSigning();
     expect(canceled, isTrue);
     expect(lastCall?.method, 'cancelNfcSigning');
+  });
+
+  test('verifyPinWithNfc via method channel', () async {
+    final verified = await platform.verifyPinWithNfc(pin: '25051980');
+    expect(verified, isTrue);
+    expect(lastCall?.method, 'verifyPinWithNfc');
   });
 
   test('watchNfcEvents emits mapped events', () async {

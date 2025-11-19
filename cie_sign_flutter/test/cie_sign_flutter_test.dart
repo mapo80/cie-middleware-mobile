@@ -17,6 +17,7 @@ class MockCieSignFlutterPlatform
   PdfSignatureAppearance? lastAppearance;
   bool signCalled = false;
   bool cancelCalled = false;
+  bool verifyCalled = false;
   final StreamController<NfcSessionEvent> controller =
       StreamController<NfcSessionEvent>.broadcast();
 
@@ -46,6 +47,12 @@ class MockCieSignFlutterPlatform
   @override
   Future<bool> cancelNfcSigning() async {
     cancelCalled = true;
+    return true;
+  }
+
+  @override
+  Future<bool> verifyPinWithNfc({required String pin}) async {
+    verifyCalled = true;
     return true;
   }
 
@@ -104,6 +111,15 @@ void main() {
     expect(fakePlatform.cancelCalled, isTrue);
   });
 
+  test('verifyPinWithNfc proxies to platform', () async {
+    final plugin = CieSignFlutter();
+    final fakePlatform = MockCieSignFlutterPlatform();
+    CieSignFlutterPlatform.instance = fakePlatform;
+    final ok = await plugin.verifyPinWithNfc(pin: '25051980');
+    expect(ok, isTrue);
+    expect(fakePlatform.verifyCalled, isTrue);
+  });
+
   test('watchNfcEvents exposes platform stream', () async {
     final plugin = CieSignFlutter();
     final fakePlatform = MockCieSignFlutterPlatform();
@@ -133,5 +149,10 @@ void main() {
       () => plugin.signPdfWithNfc(Uint8List.fromList([1, 2, 3]), pin: ''),
       throwsArgumentError,
     );
+  });
+
+  test('verifyPinWithNfc validates pin', () async {
+    final plugin = CieSignFlutter();
+    expect(() => plugin.verifyPinWithNfc(pin: ''), throwsArgumentError);
   });
 }

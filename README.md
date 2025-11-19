@@ -1,71 +1,87 @@
 # CIE Mobile Signing SDK
 
-Questo repository contiene il lavoro di modernizzazione e porting mobile dello stack di firma per Carta d'Identità Elettronica (CIE). L'obiettivo è fornire un **SDK nativo comune** per iOS e Android, con API allineate e riusabili da un plugin Flutter. Di seguito una panoramica delle componenti principali e delle attività completate/da completare.
+Modernizzazione completa dello stack di firma per Carta d’Identità Elettronica (CIE) con obiettivo di offrire:
 
-## Obiettivi principali
+- un **core nativo comune** (C/C++) che gestisce APDU IAS, firme PKCS#7/PDF/XML e validazioni;
+- bridge Kotlin/Swift per piattaforme mobili con API simmetriche;
+- un **plugin Flutter headless** riutilizzabile in qualsiasi applicazione multipiattaforma.
 
-1. **Core C/C++ condiviso** – rifattorizzare `cie_sign_sdk` in una libreria portabile (`ciesign_core`) che implementa la firma PKCS#7/PDF e offre callback per NFC, storage e logging.
-2. **Bridge piattaforma** – fornire wrapper Kotlin (Android) e Swift (iOS) che espongono la stessa interfaccia (`CieSignSdk`), convertendo errori e modelli dati in strutture idiomatiche.
-3. **Plugin Flutter** – progettare un pacchetto `cie_sign_flutter` che usi MethodChannel/FFI per interagire con i bridge nativi e offra API Dart asincrone per la firma.
-4. **Test e automazione** – predisporre pipeline per buildare le dipendenze (vcpkg), compilare librerie native (AAR/XCFramework), eseguire test mock su emulatori/simulatori e produrre i PDF firmati da validare.
+## Architettura
 
-## Struttura del repository
+```mermaid
+graph TD
+    App["Flutter App di esempio"] -->|UI| Plugin["CieSignFlutter plugin"]
+    Plugin -->|MethodChannel| AndroidBridge["Kotlin MethodChannel handler"]
+    Plugin -->|MethodChannel| IosBridge["ObjC/Swift handler"]
+    AndroidBridge --> KotlinSdk["CieSignSdk (Kotlin)"]
+    KotlinSdk --> NativeBridgeJNI["JNI NativeBridge"]
+    IosBridge --> MobileBridge["CieSignMobileBridge"]
+    NativeBridgeJNI --> Core["ciesign_core (C/C++)"]
+    MobileBridge --> Core
+    Core --> IAS["IAS / NFC adapters"]
+    Core --> Pdf["PdfSignatureGenerator & PKCS#7"]
+    Core --> Tools["CLI utility & mock transports"]
+```
+
+## Funzionalità implementate
+
+- Firma PDF/PKCS#7 mock e via NFC reale (Android già collaudato, iOS mock-only in attesa di test hardware).
+- **Verifica PIN via NFC** esposta da Flutter/Android/iOS con UI dedicata nell’app di esempio.
+- Gestione completa dell’apparenza grafica (firma disegnata, motivi, field IDs, posizionamento).
+- Tool CLI `pdf_signature_check` per estrarre i CMS da un PDF e validare il certificato utilizzato.
+- Streaming di eventi NFC (stato, ascolto, tag letto, completamento/cancellazione) consumabili dal front-end Flutter.
+- Suite di test:
+  - `cie_sign_sdk` (C++) esercita sia il mock signer sia la nuova `cie_sign_verify_pin`.
+  - `android/CieSignMockApp` instrumentation test genera PDF firmati anche su emulatori.
+  - `cie_sign_flutter` unit/widget test coprono MethodChannel, eventi e UI mock NFC.
+
+## Layout del repository
 
 ```
-├── android/                  # Progetto Gradle con moduli "cieSignSdk" e "CieSignMockApp"
-├── ios/                      # Progetto Xcode per i test iOS
-├── cie_sign_sdk/             # Sorgenti C/C++ e script vcpkg
-├── sdk_unified_plan.md       # Piano architetturale per lo SDK unificato
-└── README.md                 # Questo documento
+├── android/                  # Modulo Gradle con SDK Kotlin, JNI e app di test
+├── ios/                      # Progetto Xcode (XCFramework + XCTest mock)
+├── cie_sign_sdk/             # Core C/C++ + dipendenze vcpkg + tool CLI
+├── cie_sign_flutter/         # Plugin Flutter e app dimostrativa
+├── docs/                     # Guide build/test (desktop, Android, iOS)
+└── README.md
 ```
 
-### Modulo Android
-- `android/cieSignSdk`: contiene il codice JNI (`mock_sign_android.cpp`) più le classi Kotlin `CieSignSdk`/`NativeBridge`.
-- `android/CieSignMockApp`: host app di test con instrumentation `MockSignInstrumentedTest` che firma `sample.pdf` sia in memoria sia su disco. Il PDF prodotto è salvato in `android/mock_signed_android.pdf` per analisi.
+## Build & test rapidi
 
-### Modulo iOS
-- `ios/CieSignIosTests.xcodeproj`: progetto Xcode con target `CieSignIosTests` e host app `CieSignIosHost`. Il test Swift (`MockSignTests`) usa la stessa pipeline mock e produce il PDF `mock_signed_ios.pdf`.
+| Target | Comando principale | Note |
+| ------ | ------------------ | ---- |
+| Core host | `cd cie_sign_sdk && PATH="/opt/homebrew/bin:$PATH" cmake --build build/host && cd build/host && ctest --output-on-failure` | produce librerie/test host + `pdf_signature_check`. |
+| Android SDK/app | `cd android && JAVA_HOME=<jdk17> ./gradlew CieSignMockApp:connectedDebugAndroidTest` | richiede emulator API34 con NFC. |
+| Plugin/app Flutter | `cd cie_sign_flutter && flutter test`<br>`cd cie_sign_flutter/example && flutter test integration_test/mock_nfc_ui_test.dart` | su macOS con Flutter SDK e Java17. |
+| iOS mock tests | `cd ios && xcodebuild test -scheme CieSignIosTests -destination 'platform=iOS Simulator,name=iPhone 15'` | attualmente mock-only. |
 
-### Plugin Flutter + API headless
-- Cartella `cie_sign_flutter/`: plugin MethodChannel che espone solo API logiche (`mockSignPdf`, `signPdfWithNfc`, `cancelNfcSigning`). Tramite `PdfSignatureAppearance` è possibile passare tutte le informazioni geometriche, i metadati (motivo, luogo, nome) e l'immagine della firma come `Uint8List` senza alcuna UI preconfezionata.
-- L'app di esempio (`cie_sign_flutter/example/`) funge da guscio dimostrativo e mostra come costruire l'interfaccia Flutter (PIN, loader, visualizzazione PDF) usando il plugin headless.
-- Il plugin Android sfrutta il bridge Kotlin/NDK (`CieSignSdk.signPdfWithNfc`) già collegato alla libreria C++; il canale iOS usa `CieSignMobileBridge` + `CoreNFC` per offrire lo stesso metodo `signPdfWithNfc` (con fallback mock su simulatore).
-- Test automatizzati:
-  - `flutter test` sotto `cie_sign_flutter/` valida i MethodChannel e le API pubbliche.
-  - `cie_sign_flutter/example/test/mock_nfc_ui_test.dart` sostituisce PathProvider e il plugin con mock per simulare un giro completo di UI + NFC, utile su CI/emulatori privi di lettore.
+## Strumenti utili
 
-### Core native (`cie_sign_sdk/`)
-- `CMakeLists.txt` aggiornata per funzionare in ambienti cross (Android/iOS) e saltare i test quando richiesto (`CIE_SIGN_SDK_SKIP_TESTS`).
-- Script vcpkg:
-  - `scripts/bootstrap_vcpkg.sh`
-  - `scripts/build_dependencies.sh` (triplet desktop)
-  - `scripts/build_ios_dependencies.sh`
-  - `scripts/build_android_dependencies.sh`
-- Documentazione:
-  - `docs/build_mobile.md` – guida generale
-  - `docs/tests_ios.md` – istruzioni per XCTest
-  - `docs/tests_android.md` – istruzioni per AVD/test strumentali
+- **Verifica PIN via NFC**: nell’app esempio basta inserire il PIN e toccare “Verifica PIN” per avviare lo stesso flusso di lettura carta utilizzato dalla firma.
+- **CLI `pdf_signature_check`**:
+  ```bash
+  cmake --build cie_sign_sdk/build/host --target pdf_signature_check
+  ./cie_sign_sdk/build/host/pdf_signature_check signed.pdf "CN atteso"
+  ```
+  utile per validare i PDF estratti dal device (`adb shell run-as ... cat > file.pdf`).
+- **Deployment Android**: `cie_sign_flutter/scripts/deploy_android_device.sh <deviceId>` builda le dipendenze native, installa l’esempio Flutter e apre il logcat pronto per i test NFC.
 
-## Stato attuale
+## Stato & prossimi passi
 
-- ✅ Aggiornamento PoDoFo/OpenSSL e supporto PDF signing mock.
-- ✅ Progetto iOS con test che verifica ByteRange e certificato mock.
-- ✅ Progetto Android con JNI, instrumentation test e PDF esportato.
-- ✅ Script per dipendenze iOS/Android e pipeline manuale di build (Gradle/Xcode).
-- 🔄 In corso: definizione interfaccia unificata e plugin Flutter (`sdk_unified_plan.md`).
+| Stato | Dettagli |
+| ----- | -------- |
+| ✅ Core C/C++ modernizzato | PoDoFo 1.x, toolkit mock, CLI, API `cie_sign_verify_pin`. |
+| ✅ Plugin Flutter headless | mock signing, firma NFC Android, verifica PIN + eventi NFC. |
+| ✅ Documentazione build/test | `docs/build_mobile.md`, `docs/tests_android.md`, `docs/tests_ios.md`. |
+| 🔄 Integrazione iOS reale | CoreNFC bridge e API Swift sono pronti ma mancano test su dispositivo reale e ottimizzazione della UX (richiesta esplicita del chip, handling errori hardware). |
+| 🔜 Automazione CI | resta da introdurre pipeline macOS che esegua build host + test Flutter/Android. |
 
-## Prossimi passi
+## Contribuire
 
-1. Consolidare l’API C (`cie_sign_platform.h`) con hook NFC/log/storage e implementare versioni mock per i test automatici.
-2. Pubblicare wrapper Kotlin/Swift con interfacce identiche, includendo conversione degli errori, callback di stato e parametri di configurazione (policy, TSA, appearance).
-3. Realizzare il plugin Flutter (channel) e l’app di esempio, sfruttando i build artefacts prodotti dai moduli native.
-4. Automatizzare la CI (macOS host) per compilare, testare e allegare gli artefatti (PDF firmati) a ogni release/tag.
-5. Pianificare l’integrazione NFC reale (Android `NfcAdapter`, iOS `CoreNFC`) con inserimento del codice specifico tramite interfacce condivise.
+1. Installa gli strumenti necessari (Xcode, Android SDK+NDK r26, Flutter SDK, vcpkg).
+2. Segui gli script in `cie_sign_sdk/scripts/` per compilare le dipendenze native (arm64 host/ios/android).
+3. Verifica sempre i test pertinenti (`ctest`, `flutter test`, `gradlew connectedAndroidTest`) prima della PR.
+4. Non committare output generati (`Dependencies-*`, `.cxx`, `build/`, PDF firmati, ecc.).
+5. Documenta le novità qui nel README quando impattano il flusso (nuove API, strumenti, requisiti).
 
-## Come contribuire
-
-1. Assicurati di avere le dipendenze installate (vcpkg, Android SDK/NDK, Xcode).
-2. Segui le guide in `docs/` per buildare host/iOS/Android.
-3. Apri una PR con descrizione dettagliata, screenshot/log dei test e PDF generati. Ricordati di non committare directory generate (`cie_sign_sdk/.vcpkg`, `Dependencies-*`, `android/cieSignSdk/.cxx`).
-
-Grazie per contribuire allo sviluppo dello SDK CIE mobile!
+Il contributo di ciascuno aiuta ad arrivare rapidamente all’integrazione completa, in particolare lato **CoreNFC iOS**: se hai accesso a dispositivi fisici o puoi lavorare sull’UX di avvicinamento carta, sei il benvenuto.

@@ -40,6 +40,9 @@ NS_SWIFT_NAME(CieSignMobileBridge)
                    appearance:(CieSignPdfParameters *)appearance
                         error:(NSError * _Nullable * _Nullable)error NS_SWIFT_NAME(sign(pdf:pin:appearance:));
 
+- (BOOL)verifyPin:(NSString *)pin
+            error:(NSError * _Nullable * _Nullable)error NS_SWIFT_NAME(verify(pin:));
+
 - (void)cancelActiveSession;
 
 @end
