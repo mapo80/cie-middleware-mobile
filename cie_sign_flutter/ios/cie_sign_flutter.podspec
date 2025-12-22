@@ -3,29 +3,22 @@ require 'pathname'
 
 plugin_ios_dir = File.realpath(__dir__)
 sdk_root = File.expand_path('../../cie_sign_sdk', plugin_ios_dir)
+vcpkg_device_lib = File.join(sdk_root, '.vcpkg/installed/arm64-ios/lib')
+sim_podofo_lib = File.join(sdk_root, 'Dependencies-ios-sim/podofo/lib')
+
 device_lib_paths = [
+  File.join(sdk_root, 'build/ios'),
+  File.join(sdk_root, 'build/ios/Debug-iphoneos'),
   File.join(sdk_root, 'build/ios/Release-iphoneos'),
-  File.join(sdk_root, 'Dependencies-ios/openssl/lib'),
+  vcpkg_device_lib,
   File.join(sdk_root, 'Dependencies-ios/libcurl/lib'),
-  File.join(sdk_root, 'Dependencies-ios/libxml2/lib'),
-  File.join(sdk_root, 'Dependencies-ios/zlib/lib'),
-  File.join(sdk_root, 'Dependencies-ios/libpng/lib'),
-  File.join(sdk_root, 'Dependencies-ios/freetype/lib'),
-  File.join(sdk_root, 'Dependencies-ios/fontconfig/lib'),
-  File.join(sdk_root, 'Dependencies-ios/podofo/lib'),
-  File.join(sdk_root, 'Dependencies-ios/bzip2/lib'),
-  File.join(sdk_root, 'Dependencies-ios/brotli/lib'),
-  File.join(sdk_root, 'Dependencies-ios/libjpeg/lib'),
-  File.join(sdk_root, 'Dependencies-ios/libtiff/lib'),
-  File.join(sdk_root, 'Dependencies-ios/liblzma/lib'),
-  File.join(sdk_root, 'Dependencies-ios/utf8proc/lib'),
-  File.join(sdk_root, 'Dependencies-ios/expat/lib'),
-  File.join(sdk_root, 'Dependencies-ios/cryptopp/lib'),
-  File.join(sdk_root, 'Dependencies-ios/libiconv/lib')
+  File.join(sdk_root, 'Dependencies-ios/cryptopp/lib')
 ]
 
 sim_lib_paths = [
+  File.join(sdk_root, 'build/ios-sim'),
   File.join(sdk_root, 'build/ios-sim/Release-iphonesimulator'),
+  File.join(sdk_root, 'build/ios-sim/Debug-iphonesimulator'),
   File.join(sdk_root, 'Dependencies-ios-sim/openssl/lib'),
   File.join(sdk_root, 'Dependencies-ios-sim/libcurl/lib'),
   File.join(sdk_root, 'Dependencies-ios-sim/libxml2/lib'),
@@ -42,10 +35,20 @@ sim_lib_paths = [
   File.join(sdk_root, 'Dependencies-ios-sim/utf8proc/lib'),
   File.join(sdk_root, 'Dependencies-ios-sim/expat/lib'),
   File.join(sdk_root, 'Dependencies-ios-sim/cryptopp/lib'),
-  File.join(sdk_root, 'Dependencies-ios-sim/libiconv/lib')
+  File.join(sdk_root, 'Dependencies-ios-sim/libiconv/lib'),
+  File.join(sdk_root, 'Dependencies-ios-sim/date-tz/lib'),
+  File.join(sdk_root, 'Dependencies-ios-sim/fmt/lib')
 ]
 
-link_flags = %w[
+# Force-load podofo, fmt, and freetype libraries - separate paths for device and simulator
+# This ensures all symbols are included even if not directly referenced
+force_load_libs = %w[libpodofo.a libpodofo_private.a libpodofo_3rdparty.a libfmt.a libfreetype.a libfontconfig.a]
+podofo_force_load_device = force_load_libs.map { |lib| "-force_load #{File.join(vcpkg_device_lib, lib)}" }.join(' ')
+podofo_force_load_sim = force_load_libs.map { |lib| "-force_load #{File.join(sim_podofo_lib, lib)}" }.join(' ')
+
+# Common link flags (without force-loaded libraries)
+common_link_flags = %W[
+  -ObjC
   -lciesign_core
   -lcie_sign_sdk
   -lcrypto
@@ -54,11 +57,6 @@ link_flags = %w[
   -lxml2
   -lz
   -lpng16
-  -lfreetype
-  -lfontconfig
-  -lpodofo
-  -lpodofo_private
-  -lpodofo_3rdparty
   -lbz2
   -lbrotlienc
   -lbrotlidec
@@ -72,7 +70,13 @@ link_flags = %w[
   -lcryptopp
   -liconv
   -lcharset
+  -ldate-tz
+  -lc++
+  -lc++abi
 ].join(' ')
+
+device_link_flags = "$(inherited) #{common_link_flags} #{podofo_force_load_device}"
+sim_link_flags = "$(inherited) #{common_link_flags} #{podofo_force_load_sim}"
 
 header_paths = [
   File.join(sdk_root, 'include'),
@@ -104,7 +108,8 @@ Pod::Spec.new do |s|
     'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -std=gnu++17',
     'LIBRARY_SEARCH_PATHS[sdk=iphoneos*]' => ([ '$(inherited)' ] + device_lib_paths).join(' '),
     'LIBRARY_SEARCH_PATHS[sdk=iphonesimulator*]' => ([ '$(inherited)' ] + sim_lib_paths).join(' '),
-    'OTHER_LDFLAGS' => "$(inherited) #{link_flags}"
+    'OTHER_LDFLAGS[sdk=iphoneos*]' => device_link_flags,
+    'OTHER_LDFLAGS[sdk=iphonesimulator*]' => sim_link_flags
   }
 
   s.user_target_xcconfig = {
