@@ -137,15 +137,130 @@ cie-middleware-linux/
 │   ├── CieSignIosTests/              # Test suite iOS
 │   └── CieSignIosTests.xcodeproj/
 │
-├── docs/                             # Documentazione
-│   ├── build_mobile.md
-│   ├── tests_android.md
-│   └── tests_ios.md
-│
 ├── scripts/                          # Script helper
-│   └── deploy_android_device.sh
+│   ├── build_ios_libs.sh             # Compila librerie native iOS
+│   ├── deploy_ios_device.sh          # Deploy su iPhone
+│   └── deploy_android_device.sh      # Deploy su Android
 │
 └── README.md
+```
+
+### Mappa delle Directory
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              REPOSITORY ROOT                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        cie_sign_sdk/                                 │   │
+│  │  CORE C/C++ - Motore di firma digitale                              │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  src/                                                                │   │
+│  │  ├── ASN1/          → Parser strutture ASN.1 per certificati       │   │
+│  │  ├── Crypto/        → AES, DES3, SHA*, MD5, MAC                    │   │
+│  │  ├── RSA/           → Firma RSA e gestione chiavi                  │   │
+│  │  ├── CSP/           → Comunicazione IAS con smart card CIE         │   │
+│  │  ├── PCSC/          → Protocollo PC/SC per lettori NFC             │   │
+│  │  ├── Util/          → Logging, TLV, utilities                      │   │
+│  │  ├── mobile/        → Bridge per Android/iOS (cie_sign_core.cpp)   │   │
+│  │  ├── PdfSignatureGenerator.cpp  → Genera firme PDF                 │   │
+│  │  ├── PdfVerifier.cpp            → Verifica firme esistenti         │   │
+│  │  └── SignatureGenerator.cpp     → PKCS#7 / CMS                     │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  include/mobile/    → Header pubblici (cie_sign.h)                  │   │
+│  │  tests/tools/       → CLI pdf_signature_check                       │   │
+│  │  Dependencies*/     → Librerie precompilate (OpenSSL, PoDoFo...)   │   │
+│  │  cmake/toolchains/  → Cross-compilation iOS/Android                 │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                      │
+│                                      ▼                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                       cie_sign_flutter/                              │   │
+│  │  PLUGIN FLUTTER - Wrapper Dart per il core nativo                   │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  lib/                                                                │   │
+│  │  ├── cie_sign_flutter.dart      → API pubblica Dart                │   │
+│  │  ├── *_method_channel.dart      → Bridge MethodChannel             │   │
+│  │  └── src/                       → Eventi NFC, appearance firma     │   │
+│  │                                                                      │   │
+│  │  android/                       → Plugin Android (Kotlin)           │   │
+│  │  ios/Classes/                   → Plugin iOS (Objective-C)          │   │
+│  │  ios/Classes/Bridge/            → CoreNFC bridge                    │   │
+│  │                                                                      │   │
+│  │  example/                       → App demo completa                 │   │
+│  │  └── lib/main.dart              → UI con PDF viewer + firma        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  ┌───────────────────────┐    ┌───────────────────────┐                   │
+│  │      android/         │    │        ios/           │                   │
+│  │  SDK Kotlin standalone │    │  Test Xcode standalone│                   │
+│  ├───────────────────────┤    ├───────────────────────┤                   │
+│  │  cieSignSdk/          │    │  CieSignIosHost/      │                   │
+│  │  ├── JNI bindings     │    │  └── App test nativa  │                   │
+│  │  └── Kotlin wrapper   │    │  CieSignIosTests/     │                   │
+│  │  CieSignMockApp/      │    │  └── XCTest suite     │                   │
+│  │  └── App test         │    │                       │                   │
+│  └───────────────────────┘    └───────────────────────┘                   │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                          scripts/                                    │   │
+│  │  AUTOMAZIONE - Script per build e deploy                            │   │
+│  ├─────────────────────────────────────────────────────────────────────┤   │
+│  │  build_ios_libs.sh      → Compila ciesign_core per iOS arm64       │   │
+│  │  deploy_ios_device.sh   → Build Flutter + deploy su iPhone         │   │
+│  │  deploy_android_device.sh → Build Flutter + deploy su Android      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Descrizione Moduli
+
+| Directory | Tipo | Contenuto | Output |
+|-----------|------|-----------|--------|
+| `cie_sign_sdk/` | C/C++ | Core firma digitale | `libcie_sign_sdk.a`, `libciesign_core.a` |
+| `cie_sign_flutter/` | Dart | Plugin Flutter | Package `cie_sign_flutter` |
+| `cie_sign_flutter/example/` | Flutter | App demo | APK / IPA |
+| `android/` | Kotlin | SDK Android standalone | AAR library |
+| `ios/` | ObjC/Swift | Test iOS standalone | XCTest bundle |
+| `scripts/` | Bash | Automazione | - |
+
+### Dipendenze tra Moduli
+
+```
+┌──────────────┐
+│ Flutter App  │  (cie_sign_flutter/example)
+└──────┬───────┘
+       │ dipende da
+       ▼
+┌──────────────┐
+│Flutter Plugin│  (cie_sign_flutter)
+└──────┬───────┘
+       │ dipende da
+       ├─────────────────┬─────────────────┐
+       ▼                 ▼                 ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│Android Plugin│  │  iOS Plugin  │  │    (test)    │
+│   (Kotlin)   │  │   (ObjC)     │  │              │
+└──────┬───────┘  └──────┬───────┘  └──────────────┘
+       │                 │
+       └────────┬────────┘
+                │ link statico
+                ▼
+       ┌──────────────┐
+       │ ciesign_core │  (C++)
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │cie_sign_sdk  │  (C/C++)
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │   Vendors    │  (OpenSSL, PoDoFo, Crypto++, libxml2...)
+       └──────────────┘
 ```
 
 ---
@@ -301,7 +416,7 @@ Flutter App (Stream<NfcSessionEvent>)
 
 ## Funzionalita Implementate
 
-- Firma PDF/PKCS#7 mock e via NFC reale (Android gia collaudato, iOS mock-only in attesa test hardware)
+- Firma PDF/PKCS#7 mock e via NFC reale (Android e iOS testati su device fisici)
 - **Verifica PIN via NFC** esposta da Flutter/Android/iOS con UI dedicata nell'app di esempio
 - Gestione completa dell'apparenza grafica (firma disegnata, motivi, field IDs, posizionamento)
 - Tool CLI `pdf_signature_check` per estrarre i CMS da un PDF e validare il certificato utilizzato
@@ -317,14 +432,15 @@ Flutter App (Stream<NfcSessionEvent>)
 
 ### Requisiti
 
-| Tool | Versione Minima |
-|------|-----------------|
-| CMake | 3.15+ |
-| Java | 17 |
-| Android SDK | API 34 |
-| Android NDK | r26 |
-| Flutter | 3.3+ |
-| Xcode | 15+ (per iOS) |
+| Tool | Versione Minima | Installazione |
+|------|-----------------|---------------|
+| CMake | 3.15+ | `brew install cmake` |
+| Java | 17 | `brew install openjdk@17` |
+| Android SDK | API 34 | Android Studio |
+| Android NDK | r26 | Android Studio SDK Manager |
+| Flutter | 3.3+ | [flutter.dev](https://flutter.dev) |
+| Xcode | 15+ | App Store |
+| CocoaPods | latest | `sudo gem install cocoapods` |
 
 ### Comandi Principali
 
@@ -335,6 +451,116 @@ Flutter App (Stream<NfcSessionEvent>)
 | **Flutter plugin** | `cd cie_sign_flutter && flutter test` | Unit/widget test |
 | **Flutter integration** | `cd cie_sign_flutter/example && flutter test integration_test/mock_nfc_ui_test.dart` | Test integrazione |
 | **iOS mock tests** | `cd ios && xcodebuild test -scheme CieSignIosTests -destination 'platform=iOS Simulator,name=iPhone 15'` | Mock-only |
+
+---
+
+## Deploy su Device Fisici
+
+### iOS - Deploy su iPhone
+
+#### Prerequisiti iOS
+
+1. **Xcode** installato con command line tools
+2. **Certificato sviluppatore** Apple configurato
+3. **iPhone** connesso via USB e "trusted"
+4. **Dipendenze native** in `cie_sign_sdk/Dependencies-ios/`
+
+#### Metodo Rapido (Script)
+
+```bash
+# Build librerie native + deploy app Flutter
+./scripts/deploy_ios_device.sh
+
+# Solo build librerie native (senza deploy)
+./scripts/build_ios_libs.sh device
+
+# Build per simulator
+./scripts/build_ios_libs.sh simulator
+
+# Build per entrambi
+./scripts/build_ios_libs.sh all
+```
+
+#### Metodo Manuale
+
+```bash
+# 1. Compila librerie native per iOS arm64
+cd cie_sign_sdk
+cmake -B build/ios-arm64 \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-arm64.cmake \
+  -DDEPENDENCIES_DIR="$(pwd)/Dependencies-ios" \
+  -DCIE_SIGN_SDK_SKIP_TESTS=ON
+cmake --build build/ios-arm64 --target ciesign_core -j8
+
+# 2. Copia librerie nella directory attesa dal podspec
+mkdir -p build/ios
+cp build/ios-arm64/*.a build/ios/
+
+# 3. Aggiorna CocoaPods
+cd ../cie_sign_flutter/example/ios
+pod install
+
+# 4. Deploy con Flutter
+cd ..
+flutter run
+```
+
+#### Apertura in Xcode
+
+```bash
+# Apri il workspace (non il .xcodeproj!)
+open cie_sign_flutter/example/ios/Runner.xcworkspace
+```
+
+In Xcode:
+1. Seleziona il tuo iPhone come target
+2. Verifica Signing & Capabilities (Team, Provisioning Profile)
+3. Clicca **Run** (Cmd+R)
+
+#### Troubleshooting iOS
+
+| Problema | Soluzione |
+|----------|-----------|
+| `Library 'ciesign_core' not found` | Esegui `./scripts/build_ios_libs.sh device` |
+| Errore signing | Configura Team ID in Xcode |
+| Pod install fallisce | `cd ios && rm -rf Pods Podfile.lock && pod install` |
+| Build fallisce | `flutter clean && flutter pub get` |
+
+### Android - Deploy su Device
+
+```bash
+# Build e deploy
+./scripts/deploy_android_device.sh <device_id>
+
+# Lista device disponibili
+adb devices
+```
+
+---
+
+## Script Disponibili
+
+Gli script si trovano in `scripts/`:
+
+| Script | Descrizione | Uso |
+|--------|-------------|-----|
+| `build_ios_libs.sh` | Compila librerie native iOS | `./scripts/build_ios_libs.sh [device\|simulator\|all]` |
+| `deploy_ios_device.sh` | Build + deploy su iPhone | `./scripts/deploy_ios_device.sh [device_id] [--release]` |
+| `deploy_android_device.sh` | Build + deploy su Android | `./scripts/deploy_android_device.sh [device_id] [--release]` |
+
+### Esempi
+
+```bash
+# iOS
+./scripts/build_ios_libs.sh                    # Compila device + simulator
+./scripts/build_ios_libs.sh device             # Solo device fisico
+./scripts/deploy_ios_device.sh                 # Deploy debug
+./scripts/deploy_ios_device.sh --release       # Deploy release
+
+# Android
+./scripts/deploy_android_device.sh             # Deploy sul primo device
+./scripts/deploy_android_device.sh AE6RUT47    # Deploy su device specifico
+```
 
 ---
 
@@ -417,8 +643,9 @@ cieSign.watchNfcEvents().listen((event) {
 |-------|----------|
 | ✅ Core C/C++ modernizzato | PoDoFo 1.x, toolkit mock, CLI, API `cie_sign_verify_pin` |
 | ✅ Plugin Flutter headless | Mock signing, firma NFC Android, verifica PIN + eventi NFC |
-| ✅ Documentazione build/test | `docs/build_mobile.md`, `docs/tests_android.md`, `docs/tests_ios.md` |
-| 🔄 Integrazione iOS reale | CoreNFC bridge e API Swift pronti, mancano test su dispositivo reale |
+| ✅ Deploy iOS su device | App Flutter testata su iPhone fisico con mock signing funzionante |
+| ✅ Script automazione | `build_ios_libs.sh`, `deploy_ios_device.sh`, `deploy_android_device.sh` |
+| 🔄 Firma NFC iOS reale | CoreNFC bridge pronto, da testare con carta CIE fisica |
 | 🔜 Automazione CI | Pipeline macOS per build host + test Flutter/Android |
 
 ---
