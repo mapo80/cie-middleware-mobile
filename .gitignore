@@ -56,3 +56,16 @@ packages/**/*.rpm
 libcie_sign_sdk.a
 cie_sign_sdk/.vcpkg/
 cie_sign_sdk/Dependencies-*/
+
+# Dart/Flutter generated files
+.dart_tool/
+**/.dart_tool/
+
+# Xcode user-specific files
+xcuserdata/
+**/xcuserdata/
+*.xcworkspace/
+project.xcworkspace/
+
+# Compiled binaries
+cie_sign_sdk/tests/podofo_macos_test/podofo_test
