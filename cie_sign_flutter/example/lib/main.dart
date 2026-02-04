@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:cie_sign_flutter/cie_sign_flutter.dart';
+import 'package:cie_sign_flutter/cie_sign_flutter_method_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:hand_signature/signature.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'pdf_preview_page.dart';
@@ -45,20 +44,25 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
+/// Represents a sample PDF available for signing
+class SamplePdfItem {
+  final String name;
+  final String assetPath;
+
+  const SamplePdfItem({required this.name, required this.assetPath});
+}
+
 class _MyAppState extends State<MyApp> {
   final _plugin = CieSignFlutter();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   final TextEditingController _pinController = TextEditingController(
     text: '25051980',
   );
-  final HandSignatureControl _signatureControl = HandSignatureControl(
-    initialSetup: const SignaturePathSetup(
-      threshold: 3.0,
-      smoothRatio: 0.65,
-      velocityRange: 2.0,
-      pressureRatio: 0.0,
-    ),
-  );
+
+  /// List of available sample PDFs
+  static const List<SamplePdfItem> _availablePdfs = [
+    SamplePdfItem(name: 'Sample.pdf', assetPath: 'assets/sample.pdf'),
+  ];
 
   String _status = 'Premi il pulsante per firmare il PDF di esempio.';
   String? _outputPath;
@@ -67,10 +71,82 @@ class _MyAppState extends State<MyApp> {
   String? _viewerPath;
   StreamSubscription<NfcSessionEvent>? _nfcSubscription;
 
+  /// Currently selected PDF
+  SamplePdfItem _selectedPdf = _availablePdfs.first;
+
+  /// Cached bytes of the selected PDF
+  Uint8List? _selectedPdfBytes;
+
+  /// Signature fields extracted from the selected PDF
+  List<PdfSignatureFieldInfo> _signatureFields = [];
+
+  /// Selected field IDs to sign (checkboxlist state)
+  Set<String> _selectedFieldIds = {};
+
   @override
   void initState() {
     super.initState();
     _nfcSubscription = _plugin.watchNfcEvents().listen(_handleNfcEvent);
+    _loadSelectedPdfAndExtractFields();
+  }
+
+  /// Loads the selected PDF and extracts its signature fields
+  Future<void> _loadSelectedPdfAndExtractFields() async {
+    try {
+      final bytes = await _loadPdfFromAsset(_selectedPdf.assetPath);
+      _selectedPdfBytes = bytes;
+
+      // Extract signature fields
+      final fields = await _plugin.extractSignatureFields(bytes);
+
+      if (mounted) {
+        setState(() {
+          _signatureFields = fields;
+          // Pre-select unsigned fields
+          _selectedFieldIds = fields
+              .where((f) => !f.isSigned)
+              .map((f) => f.name)
+              .toSet();
+          if (fields.isNotEmpty) {
+            final unsigned = fields.where((f) => !f.isSigned).length;
+            final signed = fields.length - unsigned;
+            _status =
+                'PDF caricato: ${fields.length} campi firma trovati ($unsigned da firmare, $signed firmati).';
+          } else {
+            _status =
+                'PDF caricato: nessun campo firma trovato. La firma sarà posizionata in basso a destra dell\'ultima pagina.';
+          }
+        });
+      }
+    } catch (err) {
+      if (mounted) {
+        setState(() {
+          _signatureFields = [];
+          _selectedFieldIds = {};
+          _status = 'Errore nel caricamento del PDF: $err';
+        });
+      }
+    }
+  }
+
+  /// Loads PDF bytes from the given asset path
+  Future<Uint8List> _loadPdfFromAsset(String assetPath) async {
+    final data = await rootBundle.load(assetPath);
+    return data.buffer.asUint8List();
+  }
+
+  /// Called when the user selects a different PDF from the dropdown
+  void _onPdfSelected(SamplePdfItem? pdf) {
+    if (pdf == null || pdf == _selectedPdf) return;
+    setState(() {
+      _selectedPdf = pdf;
+      _selectedPdfBytes = null;
+      _signatureFields = [];
+      _selectedFieldIds = {};
+      _outputPath = null;
+      _viewerPath = null;
+    });
+    _loadSelectedPdfAndExtractFields();
   }
 
   Future<File> _createOutputFile(String prefix) async {
@@ -84,15 +160,17 @@ class _MyAppState extends State<MyApp> {
     if (loader != null) {
       return loader();
     }
-    final data = await rootBundle.load('assets/sample.pdf');
-    return data.buffer.asUint8List();
+    // Use cached bytes if available
+    if (_selectedPdfBytes != null) {
+      return _selectedPdfBytes!;
+    }
+    return _loadPdfFromAsset(_selectedPdf.assetPath);
   }
 
   @override
   void dispose() {
     _nfcSubscription?.cancel();
     _pinController.dispose();
-    _signatureControl.dispose();
     super.dispose();
   }
 
@@ -161,32 +239,44 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  Future<void> _saveSignatureFromPad() async {
-    if (!_signatureControl.isFilled) {
-      setState(() {
-        _status = 'Disegna la tua firma prima di salvarla.';
-      });
-      return;
-    }
-    final byteData = await _signatureControl.toImage(
-      width: 600,
-      height: 200,
-      format: ui.ImageByteFormat.png,
-      background: Colors.transparent,
-      color: Colors.black,
-      fit: true,
-    );
-    if (byteData == null) {
-      setState(() {
-        _status = 'Impossibile convertire la firma. Riprova.';
-      });
-      return;
-    }
+  void _onSignatureSaved(Uint8List pngBytes) {
     setState(() {
-      _signatureImage = byteData.buffer.asUint8List();
-      _persistSignatureImage(_signatureImage!);
+      _signatureImage = pngBytes;
       _status = 'Firma salvata. Ora puoi firmare il PDF.';
     });
+    _persistSignatureImage(pngBytes);
+  }
+
+  void _onSignatureCleared() {
+    setState(() {
+      _signatureImage = null;
+    });
+  }
+
+  Future<void> _openFullscreenSignature() async {
+    final navContext = _navigatorKey.currentContext;
+    if (navContext == null) return;
+
+    final bytes = await CieHandSignature.openFullscreen(
+      navContext,
+      initialImage: _signatureImage,
+      config: const CieHandSignatureConfig(
+        strokeColor: Colors.black,
+        outputWidth: 600,
+        outputHeight: 200,
+      ),
+      orientation: SignatureOrientation.landscape,
+      title: 'Firma qui',
+      saveButtonText: 'Salva',
+      cancelButtonText: 'Annulla',
+    );
+
+    if (bytes != null && bytes.isNotEmpty && mounted) {
+      _onSignatureSaved(bytes);
+    } else if (bytes != null && bytes.isEmpty && mounted) {
+      // User cleared the signature and saved
+      _onSignatureCleared();
+    }
   }
 
   Future<void> _persistSignatureImage(Uint8List image) async {
@@ -218,21 +308,29 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void _clearSignaturePad() {
-    _signatureControl.clear();
-    setState(() {
-      _signatureImage = null;
-    });
-  }
 
   Future<PdfSignatureAppearance> _buildAppearance() async {
     final image = await _resolveSignatureImage();
+
+    // If user selected specific fields, use them
+    if (_selectedFieldIds.isNotEmpty) {
+      return PdfSignatureAppearance(
+        reason: 'Flutter demo',
+        location: 'Mobile SDK',
+        name: 'CIE Sign',
+        fieldIds: _selectedFieldIds.toList(),
+        signatureImageBytes: image,
+      );
+    }
+
+    // No fields selected: sign at bottom-right of last page
+    // pageIndex: 0 with no fieldIds defaults to last page in the SDK
     return PdfSignatureAppearance(
-      pageIndex: 0,
-      left: 0.2,
-      bottom: 0.65,
-      width: 0.5,
-      height: 0.2,
+      pageIndex: 0, // Will use last page when no fieldIds specified
+      left: 0.55, // 55% from left (toward right)
+      bottom: 0.05, // 5% from bottom (near margin)
+      width: 0.40, // 40% width
+      height: 0.10, // 10% height
       reason: 'Flutter demo',
       location: 'Mobile SDK',
       name: 'CIE Sign',
@@ -257,14 +355,14 @@ class _MyAppState extends State<MyApp> {
         outputPath: output.path,
         appearance: appearance,
       );
-      await output.writeAsBytes(signed, flush: true);
+      await output.writeAsBytes(signed.bytes, flush: true);
       await _updateViewerPath(output.path);
-      final header = String.fromCharCodes(signed.take(4));
+      final header = String.fromCharCodes(signed.bytes.take(4));
       setState(() {
         _busy = false;
         _outputPath = output.path;
         _status = header.startsWith('%PDF')
-            ? 'Firma mock completata (${signed.length} bytes).'
+            ? 'Firma mock completata (${signed.sizeInBytes} bytes).'
             : 'Output non riconosciuto.';
       });
       if (mounted) {
@@ -308,12 +406,12 @@ class _MyAppState extends State<MyApp> {
         appearance: appearance,
         outputPath: output.path,
       );
-      await output.writeAsBytes(signed, flush: true);
+      await output.writeAsBytes(signed.bytes, flush: true);
       await _updateViewerPath(output.path);
       setState(() {
         _busy = false;
         _outputPath = output.path;
-        _status = 'Firma con NFC completata (${signed.length} bytes).';
+        _status = 'Firma con NFC completata (${signed.sizeInBytes} bytes).';
       });
       if (mounted) {
         await _showPdfPreview(output.path);
@@ -413,6 +511,244 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _runPodofoTest() async {
+    setState(() {
+      _busy = true;
+      _status = 'Caricamento PDF e esecuzione test PoDoFo...';
+    });
+
+    try {
+      // Load sample PDF
+      final pdfBytes = await _loadSamplePdf();
+      setState(() {
+        _status = 'Esecuzione test PoDoFo con PDF di ${pdfBytes.length} bytes...';
+      });
+
+      final methodChannel = MethodChannelCieSignFlutter();
+      final result = await methodChannel.testPodofo(pdfBytes);
+      final success = result['success'] as bool? ?? false;
+      final message = result['message'] as String? ?? 'Unknown result';
+      setState(() {
+        _busy = false;
+        _status = success
+            ? 'Test PoDoFo PASSATO: $message'
+            : 'Test PoDoFo FALLITO: $message';
+      });
+    } catch (err) {
+      setState(() {
+        _busy = false;
+        _status = 'Test PoDoFo errore: $err';
+      });
+    }
+  }
+
+  /// Builds the PDF selector dropdown with preview button
+  Widget _buildPdfSelector() {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Documento PDF',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<SamplePdfItem>(
+                    key: const Key('pdfDropdown'),
+                    value: _selectedPdf,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: _availablePdfs.map((pdf) {
+                      return DropdownMenuItem<SamplePdfItem>(
+                        value: pdf,
+                        child: Text(pdf.name),
+                      );
+                    }).toList(),
+                    onChanged: _busy ? null : _onPdfSelected,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  key: const Key('previewPdfButton'),
+                  onPressed: _busy || _selectedPdfBytes == null
+                      ? null
+                      : _previewSelectedPdf,
+                  icon: const Icon(Icons.visibility),
+                  label: const Text('Anteprima'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Shows preview of the currently selected (unsigned) PDF
+  Future<void> _previewSelectedPdf() async {
+    if (_selectedPdfBytes == null) return;
+
+    try {
+      // Write the PDF to a temp file for preview
+      final cacheDir = await getTemporaryDirectory();
+      final fileName = 'preview_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      final tempFile = File('${cacheDir.path}/$fileName');
+      await tempFile.writeAsBytes(_selectedPdfBytes!, flush: true);
+      await _showPdfPreview(tempFile.path);
+    } catch (err) {
+      setState(() {
+        _status = 'Errore nell\'anteprima: $err';
+      });
+    }
+  }
+
+  /// Builds the signature fields checkboxlist
+  Widget _buildSignatureFieldsList() {
+    if (_signatureFields.isEmpty) {
+      return Card(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Campi Firma',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Nessun campo firma trovato nel PDF.\n'
+                        'La firma sarà posizionata in basso a destra dell\'ultima pagina.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Campi Firma',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: _busy ? null : _toggleAllFields,
+                  child: Text(
+                    _selectedFieldIds.length ==
+                            _signatureFields.where((f) => !f.isSigned).length
+                        ? 'Deseleziona tutti'
+                        : 'Seleziona tutti',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${_selectedFieldIds.length} campo/i selezionato/i',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            ..._signatureFields.map((field) => _buildFieldCheckbox(field)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds a single checkbox item for a signature field
+  Widget _buildFieldCheckbox(PdfSignatureFieldInfo field) {
+    final isSelected = _selectedFieldIds.contains(field.name);
+    final isDisabled = field.isSigned || _busy;
+
+    return CheckboxListTile(
+      key: Key('fieldCheckbox_${field.name}'),
+      value: isSelected,
+      onChanged: isDisabled
+          ? null
+          : (bool? value) {
+              setState(() {
+                if (value == true) {
+                  _selectedFieldIds.add(field.name);
+                } else {
+                  _selectedFieldIds.remove(field.name);
+                }
+              });
+            },
+      title: Text(
+        field.name,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: field.isSigned ? Colors.grey : null,
+        ),
+      ),
+      subtitle: Text(
+        'Pagina ${field.pageIndex + 1} • '
+        '${field.width.toStringAsFixed(0)}×${field.height.toStringAsFixed(0)} pt • '
+        '${field.isSigned ? "Già firmato" : "Da firmare"}',
+        style: TextStyle(
+          fontSize: 12,
+          color: field.isSigned ? Colors.grey : Colors.grey.shade600,
+        ),
+      ),
+      secondary: Icon(
+        field.isSigned ? Icons.check_circle : Icons.edit_note,
+        color: field.isSigned ? Colors.green : Colors.orange,
+      ),
+      controlAffinity: ListTileControlAffinity.leading,
+      dense: true,
+    );
+  }
+
+  /// Toggles selection of all unsigned fields
+  void _toggleAllFields() {
+    setState(() {
+      final unsignedFields =
+          _signatureFields.where((f) => !f.isSigned).map((f) => f.name).toSet();
+      if (_selectedFieldIds.length == unsignedFields.length) {
+        // All selected -> deselect all
+        _selectedFieldIds.clear();
+      } else {
+        // Not all selected -> select all unsigned
+        _selectedFieldIds = unsignedFields;
+      }
+    });
+  }
+
   Widget _buildViewer() {
     final path = _viewerPath ?? _outputPath;
     if (path == null) {
@@ -432,76 +768,61 @@ class _MyAppState extends State<MyApp> {
   }
 
   Widget _buildSignaturePad() {
-    return AnimatedBuilder(
-      animation: _signatureControl,
-      builder: (context, _) {
-        final canSave = _signatureControl.isFilled;
-        final hasSavedSignature = _signatureImage != null;
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Firma con il dito',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                AspectRatio(
-                  aspectRatio: 3,
-                  child: DecoratedBox(
-                    key: const Key('signaturePad'),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade400),
-                    ),
-                    child: HandSignature(
-                      control: _signatureControl,
-                      color: Colors.black,
-                      width: 2,
-                      maxWidth: 6,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
+    final hasSavedSignature = _signatureImage != null;
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Firma con il dito',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            CieHandSignature(
+              key: const Key('signaturePad'),
+              signatureImage: _signatureImage,
+              readOnly: true,
+              config: const CieHandSignatureConfig(
+                strokeColor: Colors.black,
+                backgroundColor: Color(0xFFF5F5F5),
+                minStrokeWidth: 2.0,
+                maxStrokeWidth: 6.0,
+                outputWidth: 600,
+                outputHeight: 200,
+              ),
+              onSignatureSaved: _onSignatureSaved,
+              showFullscreenButton: true,
+              fullscreenOrientation: SignatureOrientation.landscape,
+              fullscreenTitle: 'Firma qui',
+              fullscreenSaveText: 'Salva',
+              fullscreenCancelText: 'Annulla',
+              emptyPlaceholder: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextButton(
-                      onPressed: !_busy && (canSave || hasSavedSignature)
-                          ? _clearSignaturePad
-                          : null,
-                      child: const Text('Pulisci'),
-                    ),
-                    const Spacer(),
-                    ElevatedButton(
-                      key: const Key('saveSignatureButton'),
-                      onPressed: (!_busy && canSave)
-                          ? _saveSignatureFromPad
-                          : null,
-                      child: const Text('Salva firma'),
+                    Icon(Icons.draw_outlined, size: 32, color: Colors.grey),
+                    SizedBox(height: 8),
+                    Text(
+                      'Tocca per creare la firma',
+                      style: TextStyle(color: Colors.grey),
                     ),
                   ],
                 ),
-                if (hasSavedSignature) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Firma salvata (sarà applicata al PDF):',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-                  SizedBox(
-                    height: 80,
-                    child: Image.memory(_signatureImage!, fit: BoxFit.contain),
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
-        );
-      },
+            if (hasSavedSignature) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Firma salvata (sarà applicata al PDF)',
+                style: TextStyle(fontSize: 12, color: Colors.green),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -522,6 +843,11 @@ class _MyAppState extends State<MyApp> {
                 const Center(child: CircularProgressIndicator()),
                 const SizedBox(height: 12),
               ],
+              // PDF Selector dropdown with preview button
+              _buildPdfSelector(),
+              // Signature fields checkboxlist
+              _buildSignatureFieldsList(),
+              const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -599,6 +925,14 @@ class _MyAppState extends State<MyApp> {
                   onPressed: _busy ? _cancelNfcSigning : null,
                   child: const Text('Annulla NFC'),
                 ),
+              ),
+              const SizedBox(height: 20),
+              const Divider(),
+              ElevatedButton(
+                key: const Key('testPodofoButton'),
+                onPressed: _busy ? null : _runPodofoTest,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                child: const Text('Test PoDoFo iOS'),
               ),
             ],
           ),
