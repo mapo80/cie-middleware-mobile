@@ -49,5 +49,13 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>NFCReaderUsageDescription</key>
+	<string>L'app utilizza NFC per leggere la Carta d'Identità Elettronica (CIE) e firmare documenti digitalmente.</string>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A0000000308000000009816200</string>
+		<string>A0000000000000</string>
+		<string>D2760000850101</string>
+	</array>
 </dict>
 </plist>

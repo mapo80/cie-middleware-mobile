@@ -2,6 +2,7 @@
 
 #include "PdfVerifier.h"
 #include "UUCLogger.h"
+#include "mobile/cie_mobile_log.h"
 
 #include "podofo/main/PdfAnnotation.h"
 #include "podofo/main/PdfAnnotationCollection.h"
@@ -16,6 +17,7 @@
 
 #include <algorithm>
 #include <array>
+#include <set>
 #include <stdexcept>
 #include <vector>
 #include <cstdio>
@@ -171,20 +173,24 @@ void ApplyAppearanceImage(PdfSignature& signature,
                           uint32_t imageWidth,
                           uint32_t imageHeight)
 {
-#ifdef ANDROID
-    __android_log_print(ANDROID_LOG_DEBUG, "CieSignNative",
-        "ApplyAppearanceImage len=%zu width=%u height=%u rect=%.2f %.2f %.2f %.2f",
-        imageLen, imageWidth, imageHeight,
-        rect.GetLeft(), rect.GetBottom(), rect.Width, rect.Height);
-#endif
+    cie_mobile_logf("[CIE] ApplyAppearanceImage: len=%zu width=%u height=%u rect=(%.2f,%.2f,%.2f,%.2f)",
+                    imageLen, imageWidth, imageHeight,
+                    rect.GetLeft(), rect.GetBottom(), rect.Width, rect.Height);
+
     const double rectWidth = rect.Width;
     const double rectHeight = rect.Height;
-    if (!imageData || imageLen == 0 || rectWidth <= 0 || rectHeight <= 0)
+    if (!imageData || imageLen == 0 || rectWidth <= 0 || rectHeight <= 0) {
+        cie_mobile_logf("[CIE] ApplyAppearanceImage: early return - invalid params (imageData=%p, len=%zu, rectW=%.2f, rectH=%.2f)",
+                        (void *)imageData, imageLen, rectWidth, rectHeight);
         return;
+    }
 
     const bool hasRawDimensions = imageWidth > 0 && imageHeight > 0;
-    if (hasRawDimensions && imageLen < static_cast<size_t>(imageWidth) * static_cast<size_t>(imageHeight) * 4)
+    if (hasRawDimensions && imageLen < static_cast<size_t>(imageWidth) * static_cast<size_t>(imageHeight) * 4) {
+        cie_mobile_logf("[CIE] ApplyAppearanceImage: early return - raw dimensions but buffer too small");
         return;
+    }
+    cie_mobile_logf("[CIE] ApplyAppearanceImage: hasRawDimensions=%d, proceeding with image embedding", hasRawDimensions ? 1 : 0);
 
     try
     {
@@ -204,7 +210,16 @@ void ApplyAppearanceImage(PdfSignature& signature,
                 scaleX = 1.0;
             if (scaleY <= 0.0)
                 scaleY = 1.0;
-            painter.DrawImage(*image, 0.0, 0.0, scaleX, scaleY);
+            // Use uniform scale to preserve aspect ratio
+            double scale = std::min(scaleX, scaleY);
+            double scaledWidth = static_cast<double>(imageWidth) * scale;
+            double scaledHeight = static_cast<double>(imageHeight) * scale;
+            // Center the image within the rectangle
+            double offsetX = (rectWidth - scaledWidth) / 2.0;
+            double offsetY = (rectHeight - scaledHeight) / 2.0;
+            cie_mobile_logf("[CIE] ApplyAppearanceImage: aspect ratio preserved - scale=%.4f offset=(%.2f,%.2f) scaledSize=(%.2f,%.2f)",
+                            scale, offsetX, offsetY, scaledWidth, scaledHeight);
+            painter.DrawImage(*image, offsetX, offsetY, scale, scale);
         }
         else
         {
@@ -217,7 +232,16 @@ void ApplyAppearanceImage(PdfSignature& signature,
                 scaleX = 1.0;
             if (scaleY <= 0.0)
                 scaleY = 1.0;
-            painter.DrawImage(*image, 0.0, 0.0, scaleX, scaleY);
+            // Use uniform scale to preserve aspect ratio
+            double scale = std::min(scaleX, scaleY);
+            double scaledWidth = static_cast<double>(image->GetWidth()) * scale;
+            double scaledHeight = static_cast<double>(image->GetHeight()) * scale;
+            // Center the image within the rectangle
+            double offsetX = (rectWidth - scaledWidth) / 2.0;
+            double offsetY = (rectHeight - scaledHeight) / 2.0;
+            cie_mobile_logf("[CIE] ApplyAppearanceImage: aspect ratio preserved (encoded) - scale=%.4f offset=(%.2f,%.2f) scaledSize=(%.2f,%.2f)",
+                            scale, offsetX, offsetY, scaledWidth, scaledHeight);
+            painter.DrawImage(*image, offsetX, offsetY, scale, scale);
         }
 
         painter.FinishDrawing();
@@ -311,10 +335,13 @@ int PdfSignatureGenerator::Load(const char* pdf, int len)
 {
     try
     {
+        cie_mobile_logf("[CIE] PdfSignatureGenerator::Load - len=%d", len);
         m_pPdfDocument = std::make_unique<PdfMemDocument>();
         bufferview buffer(pdf, static_cast<size_t>(len));
         m_pPdfDocument->LoadFromBuffer(buffer);
-        int nSigns = PDFVerifier::GetNumberOfSignatures(m_pPdfDocument.get());
+        cie_mobile_logf("[CIE] PdfSignatureGenerator::Load - PDF loaded successfully");
+        // Skip page count and signature count on iOS due to PoDoFo compatibility issues
+        int nSigns = 0;
         m_actualLen = len;
         m_originalPdfData.assign(pdf, pdf + len);
         m_streamBuffer = m_originalPdfData;
@@ -368,17 +395,21 @@ void PdfSignatureGenerator::SetSignatureImage(const uint8_t* signatureImageData,
     uint32_t width,
     uint32_t height)
 {
+    cie_mobile_logf("[CIE] SetSignatureImage: ptr=%p len=%zu width=%u height=%u",
+                    (void *)signatureImageData, signatureImageLen, width, height);
     if (signatureImageData && signatureImageLen > 0)
     {
         m_signatureImage.assign(signatureImageData, signatureImageData + signatureImageLen);
         m_signatureImageWidth = width;
         m_signatureImageHeight = height;
+        cie_mobile_logf("[CIE] SetSignatureImage: stored %zu bytes", m_signatureImage.size());
     }
     else
     {
         m_signatureImage.clear();
         m_signatureImageWidth = 0;
         m_signatureImageHeight = 0;
+        cie_mobile_logf("[CIE] SetSignatureImage: cleared (no image data)");
     }
 }
 
@@ -394,15 +425,44 @@ void PdfSignatureGenerator::InitSignature(int pageIndex, float left, float botto
     if (!m_pPdfDocument)
         throw std::runtime_error("PDF document not loaded");
 
+    cie_mobile_logf("[CIE] InitSignature: INPUT pageIndex=%d left=%.2f bottom=%.2f width=%.2f height=%.2f",
+                    pageIndex, left, bottom, width, height);
+
     PdfPage& page = m_pPdfDocument->GetPages().GetPageAt(pageIndex);
     Rect cropBox = page.GetCropBox();
+    Rect mediaBox = page.GetMediaBox();
+
+    cie_mobile_logf("[CIE] InitSignature: cropBox=(%.2f,%.2f,%.2f,%.2f) mediaBox=(%.2f,%.2f,%.2f,%.2f)",
+                    cropBox.GetLeft(), cropBox.GetBottom(), cropBox.Width, cropBox.Height,
+                    mediaBox.GetLeft(), mediaBox.GetBottom(), mediaBox.Width, mediaBox.Height);
 
     const double pageLeft = cropBox.GetLeft();
     const double pageBottom = cropBox.GetBottom();
-    const double left0 = pageLeft + (left * cropBox.Width);
-    const double bottom0 = pageBottom + (bottom * cropBox.Height);
-    const double width0 = width * cropBox.Width;
-    const double height0 = height * cropBox.Height;
+    const double pageWidth = cropBox.Width;
+    const double pageHeight = cropBox.Height;
+
+    // Detect if coordinates are fractional (0-1) or absolute (in points).
+    // If ALL values are <= 1.0, treat as fractional; otherwise treat as absolute.
+    const bool useFractionalCoords = (left <= 1.0f && bottom <= 1.0f && width <= 1.0f && height <= 1.0f);
+
+    double left0, bottom0, width0, height0;
+    if (useFractionalCoords) {
+        // Fractional coordinates (0-1) - scale to page dimensions
+        left0 = pageLeft + (left * pageWidth);
+        bottom0 = pageBottom + (bottom * pageHeight);
+        width0 = width * pageWidth;
+        height0 = height * pageHeight;
+        cie_mobile_logf("[CIE] InitSignature: using FRACTIONAL -> FINAL left=%.2f bottom=%.2f width=%.2f height=%.2f",
+                        left0, bottom0, width0, height0);
+    } else {
+        // Absolute coordinates (points) - use directly
+        left0 = left;
+        bottom0 = bottom;
+        width0 = width;
+        height0 = height;
+        cie_mobile_logf("[CIE] InitSignature: using ABSOLUTE -> FINAL left=%.2f bottom=%.2f width=%.2f height=%.2f",
+                        left0, bottom0, width0, height0);
+    }
 
     Rect rect(left0, bottom0, width0, height0);
 
@@ -565,6 +625,99 @@ std::vector<std::string> PdfSignatureGenerator::ListUnsignedSignatureFieldNames(
     return names;
 }
 
+std::vector<SignatureFieldInfo> PdfSignatureGenerator::ListAllSignatureFields() const
+{
+    std::vector<SignatureFieldInfo> fields;
+    if (!m_pPdfDocument)
+        return fields;
+
+    // Track field names we've already seen to avoid duplicates
+    std::set<std::string> seenNames;
+
+    try
+    {
+        auto iterable = m_pPdfDocument->GetFieldsIterator();
+        for (auto it = iterable.begin(); it != iterable.end(); ++it)
+        {
+            PdfField* field = *it;
+            if (!field || field->GetType() != PdfFieldType::Signature)
+                continue;
+            auto* signature = dynamic_cast<PdfSignature*>(field);
+            if (!signature)
+                continue;
+
+            SignatureFieldInfo info;
+            info.name = getFieldName(field);
+            if (info.name.empty())
+                continue;
+
+            // Skip if we've already seen this field
+            if (seenNames.count(info.name) > 0)
+                continue;
+            seenNames.insert(info.name);
+
+            info.isSigned = IsFieldSigned(*signature);
+
+            // Get widget annotation for position info
+            try
+            {
+                auto* widget = signature->GetWidget();
+                if (widget)
+                {
+                    Rect rect = widget->GetRect();
+                    info.left = rect.GetLeft();
+                    info.bottom = rect.GetBottom();
+                    info.width = rect.Width;
+                    info.height = rect.Height;
+
+                    // Get page index
+                    auto* page = widget->GetPage();
+                    info.pageIndex = page ? static_cast<int>(page->GetIndex()) : 0;
+                }
+            }
+            catch (...)
+            {
+                // If we can't get rect, use default values
+                info.left = 0.0;
+                info.bottom = 0.0;
+                info.width = 0.0;
+                info.height = 0.0;
+                info.pageIndex = 0;
+            }
+
+            fields.push_back(std::move(info));
+        }
+    }
+    catch (const PdfError&)
+    {
+    }
+    catch (...)
+    {
+    }
+
+    // Also extract legacy fields
+    auto legacy = ExtractLegacySignatureFields();
+    for (const auto& legacyInfo : legacy)
+    {
+        // Skip if we've already seen this field name
+        if (seenNames.count(legacyInfo.name) > 0)
+            continue;
+
+        SignatureFieldInfo info;
+        info.name = legacyInfo.name;
+        info.pageIndex = legacyInfo.pageIndex;
+        info.left = legacyInfo.rect.GetLeft();
+        info.bottom = legacyInfo.rect.GetBottom();
+        info.width = legacyInfo.rect.Width;
+        info.height = legacyInfo.rect.Height;
+        info.isSigned = false; // Legacy fields are always unsigned (that's why they're legacy)
+
+        fields.push_back(std::move(info));
+    }
+
+    return fields;
+}
+
 PdfSignature* PdfSignatureGenerator::FindSignatureField(const std::string& fieldName,
     bool requireUnsigned)
 {
@@ -693,8 +846,12 @@ bool PdfSignatureGenerator::PrepareSignatureField(PdfSignature& signature,
     }
 
     m_pSignatureField = &signature;
+    cie_mobile_logf("[CIE] PrepareSignatureField: m_signatureImage.size()=%zu rectValid=%d rect=(%.2f,%.2f,%.2f,%.2f)",
+                    m_signatureImage.size(), rectValid ? 1 : 0,
+                    rect.GetLeft(), rect.GetBottom(), rect.Width, rect.Height);
     if (!m_signatureImage.empty() && rectValid)
     {
+        cie_mobile_logf("[CIE] PrepareSignatureField: calling ApplyAppearanceImage");
         ApplyAppearanceImage(signature,
                               *m_pPdfDocument,
                               rect,
@@ -702,6 +859,11 @@ bool PdfSignatureGenerator::PrepareSignatureField(PdfSignature& signature,
             m_signatureImage.size(),
             m_signatureImageWidth,
             m_signatureImageHeight);
+    }
+    else
+    {
+        cie_mobile_logf("[CIE] PrepareSignatureField: skipping ApplyAppearanceImage (image empty=%d, rectValid=%d)",
+                        m_signatureImage.empty() ? 1 : 0, rectValid ? 1 : 0);
     }
     m_subFilter = szSubFilter && szSubFilter[0] ? szSubFilter : kDefaultSubFilter;
     return true;
@@ -850,4 +1012,11 @@ const double PdfSignatureGenerator::getHeight(int pageIndex)
         return 0.0;
     PdfPage& page = m_pPdfDocument->GetPages().GetPageAt(pageIndex);
     return page.GetMediaBox().Height;
+}
+
+int PdfSignatureGenerator::getPageCount() const
+{
+    if (!m_pPdfDocument)
+        return 0;
+    return static_cast<int>(m_pPdfDocument->GetPages().GetCount());
 }

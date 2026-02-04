@@ -59,6 +59,21 @@ class MockCieSignFlutterPlatform
   @override
   Stream<NfcSessionEvent> watchNfcEvents() => controller.stream;
 
+  @override
+  Future<List<PdfSignatureFieldInfo>> extractSignatureFields(
+          Uint8List pdfBytes) =>
+      Future.value([
+        PdfSignatureFieldInfo(
+          name: 'MockField1',
+          pageIndex: 0,
+          left: 100.0,
+          bottom: 200.0,
+          width: 150.0,
+          height: 50.0,
+          isSigned: false,
+        ),
+      ]);
+
   void emitEvent(NfcSessionEvent event) {
     controller.add(event);
   }
@@ -85,7 +100,7 @@ void main() {
     expect(fakePlatform.lastInput, equals(input));
     expect(fakePlatform.lastPath, '/tmp/result.pdf');
     expect(fakePlatform.lastAppearance?.pageIndex, 1);
-    expect(result, equals(Uint8List.fromList([4, 3, 2, 1])));
+    expect(result.bytes, equals(Uint8List.fromList([4, 3, 2, 1])));
   });
 
   test('signPdfWithNfc uses platform implementation', () async {
@@ -98,7 +113,7 @@ void main() {
       pin: '25051980',
       appearance: const PdfSignatureAppearance(pageIndex: 2),
     );
-    expect(result, equals(input));
+    expect(result.bytes, equals(input));
     expect(fakePlatform.signCalled, isTrue);
   });
 
@@ -154,5 +169,23 @@ void main() {
   test('verifyPinWithNfc validates pin', () async {
     final plugin = CieSignFlutter();
     expect(() => plugin.verifyPinWithNfc(pin: ''), throwsArgumentError);
+  });
+
+  test('extractSignatureFields proxies to platform', () async {
+    final plugin = CieSignFlutter();
+    final fakePlatform = MockCieSignFlutterPlatform();
+    CieSignFlutterPlatform.instance = fakePlatform;
+    final input = Uint8List.fromList([1, 2, 3, 4]);
+    final fields = await plugin.extractSignatureFields(input);
+    expect(fields, hasLength(1));
+    expect(fields[0].name, equals('MockField1'));
+    expect(fields[0].pageIndex, equals(0));
+    expect(fields[0].isSigned, isFalse);
+  });
+
+  test('extractSignatureFields validates non-empty input', () async {
+    final plugin = CieSignFlutter();
+    expect(
+        () => plugin.extractSignatureFields(Uint8List(0)), throwsArgumentError);
   });
 }

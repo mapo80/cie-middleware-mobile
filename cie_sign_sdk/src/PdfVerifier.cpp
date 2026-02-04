@@ -31,9 +31,11 @@ namespace {
 const PdfObject* resolveObject(const PdfMemDocument* doc, const PdfObject* obj)
 {
     if (!doc || !obj)
-        return obj;
-    if (obj->IsReference())
-        return doc->GetObjects().GetObject(obj->GetReference());
+        return nullptr;
+    if (obj->IsReference()) {
+        const PdfObject* resolved = doc->GetObjects().GetObject(obj->GetReference());
+        return resolved; // may be nullptr if reference is invalid
+    }
     return obj;
 }
 
@@ -273,10 +275,15 @@ bool collectSignatureFields(const PdfMemDocument* doc,
     const PdfArray& array = fieldsValue->GetArray();
     for (unsigned int i = 0; i < array.GetSize(); ++i)
     {
-        const PdfObject& entry = array[i];
-        const PdfObject* resolved = resolveObject(doc, &entry);
-        if (isSignatureFieldObject(doc, resolved))
-            fields.push_back(resolved);
+        try {
+            const PdfObject& entry = array[i];
+            const PdfObject* resolved = resolveObject(doc, &entry);
+            if (resolved && isSignatureFieldObject(doc, resolved))
+                fields.push_back(resolved);
+        } catch (...) {
+            // Skip invalid entries
+            continue;
+        }
     }
     return true;
 }

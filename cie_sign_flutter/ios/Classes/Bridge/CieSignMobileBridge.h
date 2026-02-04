@@ -45,6 +45,11 @@ NS_SWIFT_NAME(CieSignMobileBridge)
 
 - (void)cancelActiveSession;
 
+/// Extract signature fields from a PDF document.
+/// Returns an array of dictionaries with keys: name, pageIndex, left, bottom, width, height, isSigned
+- (NSArray<NSDictionary *> * _Nullable)extractSignatureFields:(NSData *)pdf
+                                                        error:(NSError * _Nullable * _Nullable)error NS_SWIFT_NAME(extractSignatureFields(pdf:));
+
 @end
 
 NS_ASSUME_NONNULL_END

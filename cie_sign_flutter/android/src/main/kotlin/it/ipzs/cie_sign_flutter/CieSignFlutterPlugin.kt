@@ -61,6 +61,7 @@ class CieSignFlutterPlugin :
             "signPdfWithNfc" -> handleSignWithNfc(call, result)
             "verifyPinWithNfc" -> handleVerifyPin(call, result)
             "cancelNfcSigning" -> handleCancel(result)
+            "extractSignatureFields" -> handleExtractSignatureFields(call, result)
             else -> result.notImplemented()
         }
     }
@@ -222,6 +223,32 @@ class CieSignFlutterPlugin :
         }
         emitEvent("canceled", emptyMap())
         result.success(true)
+    }
+
+    private fun handleExtractSignatureFields(call: MethodCall, result: MethodChannel.Result) {
+        val args = call.arguments
+        if (args !is Map<*, *>) {
+            result.error("invalid_args", "Expected map arguments", null)
+            return
+        }
+        val pdf = args["pdf"]
+        if (pdf !is ByteArray || pdf.isEmpty()) {
+            result.error("invalid_pdf", "Argument 'pdf' must be a non-empty Uint8List", null)
+            return
+        }
+        executor.execute {
+            try {
+                val fields = sdk.extractSignatureFields(pdf)
+                mainHandler.post {
+                    result.success(fields)
+                }
+            } catch (ex: Exception) {
+                Log.e(TAG, "Failed to extract signature fields", ex)
+                mainHandler.post {
+                    result.error("extraction_failed", ex.message, null)
+                }
+            }
+        }
     }
 
     private fun currentNfcStatus(): String {

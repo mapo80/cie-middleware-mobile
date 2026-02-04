@@ -89,6 +89,40 @@ cie_status cie_sign_verify_pin(cie_sign_ctx *ctx,
 
 const char *cie_sign_get_last_error(cie_sign_ctx *ctx);
 
+/* ============================================================
+ * PDF Signature Field Extraction API
+ * ============================================================ */
+
+/// Information about a single signature field in a PDF.
+typedef struct {
+    const char *name;       ///< Field name (caller must NOT free)
+    int page_index;         ///< Page index (0-based)
+    float left;             ///< X position in PDF points
+    float bottom;           ///< Y position in PDF points
+    float width;            ///< Width in PDF points
+    float height;           ///< Height in PDF points
+    int is_signed;          ///< 1 if signed, 0 if unsigned
+} cie_signature_field_info;
+
+/// Result containing all signature fields from a PDF.
+typedef struct {
+    cie_signature_field_info *fields;   ///< Array of fields (owned by this struct)
+    size_t count;                        ///< Number of fields
+} cie_signature_fields_result;
+
+/// Extract signature fields from a PDF document.
+/// @param pdf_data Raw PDF bytes
+/// @param pdf_len Length of PDF data
+/// @param result Output structure (caller must call cie_signature_fields_free)
+/// @return CIE_STATUS_OK on success
+cie_status cie_pdf_extract_signature_fields(
+    const uint8_t *pdf_data,
+    size_t pdf_len,
+    cie_signature_fields_result *result);
+
+/// Free memory allocated by cie_pdf_extract_signature_fields.
+void cie_signature_fields_free(cie_signature_fields_result *result);
+
 #ifdef __cplusplus
 }
 #endif

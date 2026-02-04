@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'cie_sign_flutter_platform_interface.dart';
 import 'src/nfc_session_event.dart';
 import 'src/pdf_signature_appearance.dart';
+import 'src/pdf_signature_field_info.dart';
 
 class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
   @visibleForTesting
@@ -84,5 +85,33 @@ class MethodChannelCieSignFlutter extends CieSignFlutterPlatform {
         )
         .asBroadcastStream();
     return _eventStream!;
+  }
+
+  /// Run PoDoFo iOS test suite (iOS only, for debugging)
+  Future<Map<String, dynamic>> testPodofo(Uint8List pdfBytes) async {
+    final result = await methodChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'testPodofo',
+      <String, dynamic>{'pdf': pdfBytes},
+    );
+    if (result == null) {
+      return {'success': false, 'message': 'testPodofo returned null'};
+    }
+    return Map<String, dynamic>.from(result);
+  }
+
+  @override
+  Future<List<PdfSignatureFieldInfo>> extractSignatureFields(
+      Uint8List pdfBytes) async {
+    final List<dynamic>? response = await methodChannel.invokeMethod<List>(
+      'extractSignatureFields',
+      <String, dynamic>{'pdf': pdfBytes},
+    );
+    if (response == null) {
+      return [];
+    }
+    return response
+        .whereType<Map>()
+        .map((m) => PdfSignatureFieldInfo.fromMap(Map<dynamic, dynamic>.from(m)))
+        .toList();
   }
 }

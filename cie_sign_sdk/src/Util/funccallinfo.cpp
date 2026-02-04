@@ -2,8 +2,18 @@
 #include "funccallinfo.h"
 #include <stdio.h>
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
+// iOS static library linking has issues with thread_local variables (dyld: missing symbol)
+#if defined(__APPLE__) && TARGET_OS_IOS
+static size_t tlsCallDepth = 0;
+static std::unique_ptr<CFuncCallInfoList> callQueue = nullptr;
+#else
 thread_local size_t tlsCallDepth = 0;
 thread_local std::unique_ptr<CFuncCallInfoList> callQueue = nullptr;
+#endif
 extern bool FunctionLog;
 extern unsigned int GlobalDepth;
 extern bool GlobalParam;

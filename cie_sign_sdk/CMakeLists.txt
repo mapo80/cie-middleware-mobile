@@ -16,10 +16,40 @@ if(NOT DEFINED CIE_SIGN_SDK_SKIP_TESTS)
     set(CIE_SIGN_SDK_SKIP_TESTS OFF)
 endif()
 
+set(IS_IOS FALSE)
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(IS_IOS TRUE)
+elseif(APPLE AND DEFINED CMAKE_OSX_SYSROOT)
+    if(CMAKE_OSX_SYSROOT MATCHES "iPhone(OS)?")
+        set(IS_IOS TRUE)
+    elseif(CMAKE_OSX_SYSROOT MATCHES "iPhoneSimulator")
+        set(IS_IOS TRUE)
+    endif()
+endif()
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+function(append_if_exists list_var)
+    foreach(path ${ARGN})
+        if(EXISTS ${path})
+            list(APPEND ${list_var} ${path})
+        endif()
+    endforeach()
+    set(${list_var} "${${list_var}}" PARENT_SCOPE)
+endfunction()
+
+function(append_first_existing out_var)
+    foreach(path ${ARGN})
+        if(EXISTS ${path})
+            list(APPEND ${out_var} ${path})
+            set(${out_var} "${${out_var}}" PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+endfunction()
 
 if(ANDROID)
     add_compile_options(-Wno-format-security -Wno-mismatched-new-delete -Wno-tautological-constant-out-of-range-compare)
@@ -145,47 +175,139 @@ set(INCLUDE_LIST
     ${SOURCE_DIR}/Util
     ${SOURCE_DIR}/Crypto
     ${SOURCE_DIR}/cryptopp
-    ${DEPENDENCIES_DIR}/freetype/include/freetype2
+    /usr/include/PCSC
+    /usr/include/
+ )
+
+append_if_exists(INCLUDE_LIST
+    ${DEPENDENCIES_DIR}/include
+    ${DEPENDENCIES_DIR}/include/freetype
+    ${DEPENDENCIES_DIR}/include/freetype2
+    ${DEPENDENCIES_DIR}/include/libpng16
+    ${DEPENDENCIES_DIR}/include/libxml2
+    ${DEPENDENCIES_DIR}/include/openssl
+    ${DEPENDENCIES_DIR}/include/podofo
+    ${DEPENDENCIES_DIR}/include/podofo/podofo
+    ${DEPENDENCIES_DIR}/include/cryptopp
     ${DEPENDENCIES_DIR}/libcurl/include
+    ${DEPENDENCIES_DIR}/freetype/include/freetype2
     ${DEPENDENCIES_DIR}/libpng/include
     ${DEPENDENCIES_DIR}/openssl/include
     ${DEPENDENCIES_DIR}/podofo/include
     ${DEPENDENCIES_DIR}/podofo/include/podofo
-    /usr/include/PCSC
-    /usr/include/
     ${DEPENDENCIES_DIR}/zlib/include
     ${DEPENDENCIES_DIR}/libxml2/include/libxml2
     ${DEPENDENCIES_DIR}/libiconv/include
     ${DEPENDENCIES_DIR}/cryptopp/include
- )
+)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE_LIST})
 
-set(LIBICONV_LIB_PATH ${DEPENDENCIES_DIR}/libiconv/lib/libiconv.a)
+set(LIBICONV_LIB_PATH "")
+foreach(iconv_candidate
+    ${DEPENDENCIES_DIR}/lib/libiconv.a
+    ${DEPENDENCIES_DIR}/libiconv/lib/libiconv.a
+)
+    if(EXISTS ${iconv_candidate})
+        set(LIBICONV_LIB_PATH ${iconv_candidate})
+        break()
+    endif()
+endforeach()
 
-set(CIESIGN_THIRD_PARTY_LIBS
+set(CIESIGN_THIRD_PARTY_LIBS)
+
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libcrypto.a
     ${DEPENDENCIES_DIR}/openssl/lib/libcrypto.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libssl.a
     ${DEPENDENCIES_DIR}/openssl/lib/libssl.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libcurl.a
     ${DEPENDENCIES_DIR}/libcurl/lib/libcurl.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libxml2.a
     ${DEPENDENCIES_DIR}/libxml2/lib/libxml2.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libz.a
     ${DEPENDENCIES_DIR}/zlib/lib/libz.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libpng16.a
+    ${DEPENDENCIES_DIR}/lib/libpng.a
     ${DEPENDENCIES_DIR}/libpng/lib/libpng16.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libfreetype.a
     ${DEPENDENCIES_DIR}/freetype/lib/libfreetype.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libfontconfig.a
     ${DEPENDENCIES_DIR}/fontconfig/lib/libfontconfig.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libpodofo.a
     ${DEPENDENCIES_DIR}/podofo/lib/libpodofo.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libpodofo_private.a
     ${DEPENDENCIES_DIR}/podofo/lib/libpodofo_private.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libpodofo_3rdparty.a
     ${DEPENDENCIES_DIR}/podofo/lib/libpodofo_3rdparty.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libbz2.a
     ${DEPENDENCIES_DIR}/bzip2/lib/libbz2.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libbrotlienc.a
     ${DEPENDENCIES_DIR}/brotli/lib/libbrotlienc.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libbrotlidec.a
     ${DEPENDENCIES_DIR}/brotli/lib/libbrotlidec.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libbrotlicommon.a
     ${DEPENDENCIES_DIR}/brotli/lib/libbrotlicommon.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libjpeg.a
     ${DEPENDENCIES_DIR}/libjpeg/lib/libjpeg.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libturbojpeg.a
     ${DEPENDENCIES_DIR}/libjpeg/lib/libturbojpeg.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libtiff.a
     ${DEPENDENCIES_DIR}/libtiff/lib/libtiff.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/liblzma.a
     ${DEPENDENCIES_DIR}/liblzma/lib/liblzma.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libutf8proc.a
     ${DEPENDENCIES_DIR}/utf8proc/lib/libutf8proc.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libexpat.a
     ${DEPENDENCIES_DIR}/expat/lib/libexpat.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libcryptopp.a
     ${DEPENDENCIES_DIR}/cryptopp/lib/libcryptopp.a
+)
+append_first_existing(CIESIGN_THIRD_PARTY_LIBS
+    ${DEPENDENCIES_DIR}/lib/libuuid.a
+    ${DEPENDENCIES_DIR}/uuid/lib/libuuid.a
 )
 
 if(EXISTS ${LIBICONV_LIB_PATH})
@@ -210,6 +332,7 @@ endif()
 
 add_library(ciesign_core STATIC
     ${SOURCE_DIR}/mobile/cie_sign_core.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/tests/podofo_ios_test/podofo_test.cpp
 )
 
 target_include_directories(ciesign_core
@@ -228,7 +351,7 @@ install(FILES
     ${INCLUDE_DIR}/mobile/cie_platform.h
     DESTINATION ${INSTALL_DIR}/mobile)
 
-if(NOT ANDROID)
+if(NOT ANDROID AND NOT IS_IOS)
     add_library(cie_sign_host_bridge SHARED
         ${SOURCE_DIR}/mobile/cie_sign_host_bridge.cpp
         tests/mock/mock_transport.cpp
@@ -243,7 +366,7 @@ if(NOT ANDROID)
     set_target_properties(cie_sign_host_bridge PROPERTIES OUTPUT_NAME "cie_sign_host_bridge")
 endif()
 
-if(NOT CIE_SIGN_SDK_SKIP_TESTS AND NOT ANDROID)
+if(NOT CIE_SIGN_SDK_SKIP_TESTS AND NOT ANDROID AND NOT IS_IOS)
     enable_testing()
 
     add_executable(mock_sign_test

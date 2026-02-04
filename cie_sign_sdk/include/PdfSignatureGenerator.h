@@ -27,6 +27,17 @@ class PdfSigner;
 class StreamDevice;
 }
 
+/// Information about a signature field in a PDF document.
+struct SignatureFieldInfo {
+    std::string name;       ///< Field name (e.g., "SignatureField1")
+    int pageIndex;          ///< Page index (0-based)
+    double left;            ///< X position in PDF points
+    double bottom;          ///< Y position in PDF points
+    double width;           ///< Width in PDF points
+    double height;          ///< Height in PDF points
+    bool isSigned;          ///< true if the field already contains a signature
+};
+
 class PdfSignatureGenerator
 {
 public:
@@ -54,6 +65,10 @@ public:
         const char* szSubFilter);
 
     std::vector<std::string> ListUnsignedSignatureFieldNames() const;
+
+    /// Returns information about all signature fields in the PDF.
+    /// Includes both signed and unsigned fields with their positions.
+    std::vector<SignatureFieldInfo> ListAllSignatureFields() const;
 	
 	void SetSignatureImage(const uint8_t* signatureImageData, size_t signatureImageLen, uint32_t width, uint32_t height);
 	
@@ -66,8 +81,10 @@ public:
 	void AddFont(const char* szFontName, const char* szFontPath);
 	
 	const double getWidth(int pageIndex);
-	
+
 	const double getHeight(int pageIndex);
+
+	int getPageCount() const;
 	
 private:
     struct LegacyFieldInfo {

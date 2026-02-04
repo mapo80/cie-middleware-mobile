@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:cie_sign_flutter/cie_sign_flutter.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -32,14 +31,14 @@ void main() {
       appearance: appearance,
     );
 
-    final text = ascii.decode(signed, allowInvalid: true);
+    final text = ascii.decode(signed.bytes, allowInvalid: true);
     expect(text.contains('/Type/Sig'), isTrue);
     expect(text.contains('/AP'), isTrue, reason: 'Signed PDF missing appearance dictionary');
 
     final downloadDir = Directory('/sdcard/Download');
     if (await downloadDir.exists()) {
       try {
-        await File('${downloadDir.path}/mock_signed_fullstack.pdf').writeAsBytes(signed, flush: true);
+        await File('${downloadDir.path}/mock_signed_fullstack.pdf').writeAsBytes(signed.bytes, flush: true);
       } catch (_) {
         // scoped storage può bloccare la scrittura durante i test; ignoriamo l'errore
       }

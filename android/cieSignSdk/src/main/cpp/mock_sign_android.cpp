@@ -382,3 +382,142 @@ Java_it_ipzs_ciesign_sdk_NativeBridge_mockSignPdf(
     }
     return nullptr;
 }
+
+extern "C"
+JNIEXPORT jobjectArray JNICALL
+Java_it_ipzs_ciesign_sdk_NativeBridge_extractSignatureFields(
+    JNIEnv* env,
+    jclass,
+    jbyteArray inputPdf)
+{
+    if (inputPdf == nullptr)
+    {
+        throw_java_exception(env, "PDF input is null");
+        return nullptr;
+    }
+
+    std::vector<uint8_t> pdf_bytes = to_vector(env, inputPdf);
+    if (pdf_bytes.empty())
+    {
+        throw_java_exception(env, "PDF input is empty");
+        return nullptr;
+    }
+
+    try
+    {
+        cie_signature_fields_result result = {};
+        cie_status status = cie_pdf_extract_signature_fields(
+            pdf_bytes.data(),
+            pdf_bytes.size(),
+            &result);
+
+        if (status != CIE_STATUS_OK)
+        {
+            throw_java_exception(env, "Failed to extract signature fields from PDF");
+            return nullptr;
+        }
+
+        // Find Java Map class
+        jclass mapClass = env->FindClass("java/util/HashMap");
+        if (!mapClass)
+        {
+            cie_signature_fields_free(&result);
+            throw_java_exception(env, "Cannot find HashMap class");
+            return nullptr;
+        }
+
+        jmethodID mapInit = env->GetMethodID(mapClass, "<init>", "()V");
+        jmethodID mapPut = env->GetMethodID(mapClass, "put",
+            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+        // Create output array of Map objects
+        jobjectArray resultArray = env->NewObjectArray(
+            static_cast<jsize>(result.count),
+            env->FindClass("java/util/Map"),
+            nullptr);
+
+        if (!resultArray)
+        {
+            cie_signature_fields_free(&result);
+            throw_java_exception(env, "Cannot allocate result array");
+            return nullptr;
+        }
+
+        // Boxing classes
+        jclass intClass = env->FindClass("java/lang/Integer");
+        jmethodID intValueOf = env->GetStaticMethodID(intClass, "valueOf", "(I)Ljava/lang/Integer;");
+        jclass floatClass = env->FindClass("java/lang/Float");
+        jmethodID floatValueOf = env->GetStaticMethodID(floatClass, "valueOf", "(F)Ljava/lang/Float;");
+        jclass boolClass = env->FindClass("java/lang/Boolean");
+        jmethodID boolValueOf = env->GetStaticMethodID(boolClass, "valueOf", "(Z)Ljava/lang/Boolean;");
+
+        for (size_t i = 0; i < result.count; ++i)
+        {
+            const cie_signature_field_info& info = result.fields[i];
+
+            jobject map = env->NewObject(mapClass, mapInit);
+
+            // Add entries to map
+            jstring keyName = env->NewStringUTF("name");
+            jstring valName = env->NewStringUTF(info.name ? info.name : "");
+            env->CallObjectMethod(map, mapPut, keyName, valName);
+            env->DeleteLocalRef(keyName);
+            env->DeleteLocalRef(valName);
+
+            jstring keyPageIndex = env->NewStringUTF("pageIndex");
+            jobject valPageIndex = env->CallStaticObjectMethod(intClass, intValueOf, info.page_index);
+            env->CallObjectMethod(map, mapPut, keyPageIndex, valPageIndex);
+            env->DeleteLocalRef(keyPageIndex);
+            env->DeleteLocalRef(valPageIndex);
+
+            jstring keyLeft = env->NewStringUTF("left");
+            jobject valLeft = env->CallStaticObjectMethod(floatClass, floatValueOf, info.left);
+            env->CallObjectMethod(map, mapPut, keyLeft, valLeft);
+            env->DeleteLocalRef(keyLeft);
+            env->DeleteLocalRef(valLeft);
+
+            jstring keyBottom = env->NewStringUTF("bottom");
+            jobject valBottom = env->CallStaticObjectMethod(floatClass, floatValueOf, info.bottom);
+            env->CallObjectMethod(map, mapPut, keyBottom, valBottom);
+            env->DeleteLocalRef(keyBottom);
+            env->DeleteLocalRef(valBottom);
+
+            jstring keyWidth = env->NewStringUTF("width");
+            jobject valWidth = env->CallStaticObjectMethod(floatClass, floatValueOf, info.width);
+            env->CallObjectMethod(map, mapPut, keyWidth, valWidth);
+            env->DeleteLocalRef(keyWidth);
+            env->DeleteLocalRef(valWidth);
+
+            jstring keyHeight = env->NewStringUTF("height");
+            jobject valHeight = env->CallStaticObjectMethod(floatClass, floatValueOf, info.height);
+            env->CallObjectMethod(map, mapPut, keyHeight, valHeight);
+            env->DeleteLocalRef(keyHeight);
+            env->DeleteLocalRef(valHeight);
+
+            jstring keyIsSigned = env->NewStringUTF("isSigned");
+            jobject valIsSigned = env->CallStaticObjectMethod(boolClass, boolValueOf, info.is_signed != 0);
+            env->CallObjectMethod(map, mapPut, keyIsSigned, valIsSigned);
+            env->DeleteLocalRef(keyIsSigned);
+            env->DeleteLocalRef(valIsSigned);
+
+            env->SetObjectArrayElement(resultArray, static_cast<jsize>(i), map);
+            env->DeleteLocalRef(map);
+        }
+
+        cie_signature_fields_free(&result);
+
+        __android_log_print(ANDROID_LOG_DEBUG, kLogTag,
+            "extractSignatureFields: found %zu fields", result.count);
+
+        return resultArray;
+    }
+    catch (const std::exception& ex)
+    {
+        throw_java_exception(env, ex.what());
+    }
+    catch (...)
+    {
+        throw_java_exception(env, "Unknown error while extracting signature fields");
+    }
+    return nullptr;
+}

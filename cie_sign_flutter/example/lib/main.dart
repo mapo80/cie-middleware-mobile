@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cie_sign_flutter/cie_sign_flutter.dart';
-import 'package:cie_sign_flutter/cie_sign_flutter_method_channel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
@@ -511,37 +510,6 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  Future<void> _runPodofoTest() async {
-    setState(() {
-      _busy = true;
-      _status = 'Caricamento PDF e esecuzione test PoDoFo...';
-    });
-
-    try {
-      // Load sample PDF
-      final pdfBytes = await _loadSamplePdf();
-      setState(() {
-        _status = 'Esecuzione test PoDoFo con PDF di ${pdfBytes.length} bytes...';
-      });
-
-      final methodChannel = MethodChannelCieSignFlutter();
-      final result = await methodChannel.testPodofo(pdfBytes);
-      final success = result['success'] as bool? ?? false;
-      final message = result['message'] as String? ?? 'Unknown result';
-      setState(() {
-        _busy = false;
-        _status = success
-            ? 'Test PoDoFo PASSATO: $message'
-            : 'Test PoDoFo FALLITO: $message';
-      });
-    } catch (err) {
-      setState(() {
-        _busy = false;
-        _status = 'Test PoDoFo errore: $err';
-      });
-    }
-  }
-
   /// Builds the PDF selector dropdown with preview button
   Widget _buildPdfSelector() {
     return Card(
@@ -925,14 +893,6 @@ class _MyAppState extends State<MyApp> {
                   onPressed: _busy ? _cancelNfcSigning : null,
                   child: const Text('Annulla NFC'),
                 ),
-              ),
-              const SizedBox(height: 20),
-              const Divider(),
-              ElevatedButton(
-                key: const Key('testPodofoButton'),
-                onPressed: _busy ? null : _runPodofoTest,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                child: const Text('Test PoDoFo iOS'),
               ),
             ],
           ),

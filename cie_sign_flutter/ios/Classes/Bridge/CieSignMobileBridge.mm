@@ -266,6 +266,10 @@ static void ios_nfc_close(void *user_data) {
                        appearance:(CieSignPdfParameters *)appearance
                         lastError:(NSError *)lastError
                              error:(NSError * _Nullable __autoreleasing *)error {
+    NSLog(@"[CIE] runSigningWithContext - PDF size: %lu bytes", (unsigned long)pdf.length);
+    if (pdf.length < 10) {
+        NSLog(@"[CIE] ERROR: PDF data is too small or empty!");
+    }
     std::string pinUtf8(pin.UTF8String ?: "");
     std::string reason(appearance.reason.UTF8String ?: "");
     std::string location(appearance.location.UTF8String ?: "");
@@ -307,13 +311,20 @@ static void ios_nfc_close(void *user_data) {
         }
     }
 
-    if (appearance.signatureImage.length > 0 &&
-        appearance.signatureImageWidth > 0 &&
-        appearance.signatureImageHeight > 0) {
+    // Pass signature image to C++ layer. Width/height can be 0 for encoded formats
+    // (JPEG/PNG) - PoDoFo will extract dimensions from the image buffer.
+    // Width/height > 0 indicates raw RGBA pixel data.
+    if (appearance.signatureImage.length > 0) {
         request.pdf.signature_image = static_cast<const uint8_t *>(appearance.signatureImage.bytes);
         request.pdf.signature_image_len = appearance.signatureImage.length;
         request.pdf.signature_image_width = (uint32_t)appearance.signatureImageWidth;
         request.pdf.signature_image_height = (uint32_t)appearance.signatureImageHeight;
+        NSLog(@"[CIE] Signature image passed to C++: %lu bytes, width=%u, height=%u",
+              (unsigned long)appearance.signatureImage.length,
+              (unsigned int)appearance.signatureImageWidth,
+              (unsigned int)appearance.signatureImageHeight);
+    } else {
+        NSLog(@"[CIE] No signature image to pass to C++");
     }
 
     size_t capacity = pdf.length + 65536;
@@ -375,6 +386,47 @@ static void ios_nfc_close(void *user_data) {
     if (self.session) {
         [self.session invalidate];
     }
+}
+
+- (NSArray<NSDictionary *> *)extractSignatureFields:(NSData *)pdf
+                                              error:(NSError * _Nullable __autoreleasing *)error {
+    if (pdf.length == 0) {
+        if (error) {
+            *error = MakeError(CieSignMobileErrorDomain, CieSignMobileErrorExecution, @"PDF non valido.");
+        }
+        return nil;
+    }
+
+    cie_signature_fields_result result = {};
+    cie_status status = cie_pdf_extract_signature_fields(
+        static_cast<const uint8_t *>(pdf.bytes),
+        pdf.length,
+        &result);
+
+    if (status != CIE_STATUS_OK) {
+        if (error) {
+            *error = MakeError(CieSignMobileErrorDomain, CieSignMobileErrorExecution, @"Impossibile estrarre i campi firma.");
+        }
+        return nil;
+    }
+
+    NSMutableArray<NSDictionary *> *fields = [NSMutableArray arrayWithCapacity:result.count];
+    for (size_t i = 0; i < result.count; ++i) {
+        const cie_signature_field_info &info = result.fields[i];
+        NSDictionary *fieldDict = @{
+            @"name": info.name ? [NSString stringWithUTF8String:info.name] : @"",
+            @"pageIndex": @(info.page_index),
+            @"left": @(info.left),
+            @"bottom": @(info.bottom),
+            @"width": @(info.width),
+            @"height": @(info.height),
+            @"isSigned": @(info.is_signed != 0)
+        };
+        [fields addObject:fieldDict];
+    }
+
+    cie_signature_fields_free(&result);
+    return [fields copy];
 }
 
 @end

@@ -5,6 +5,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'cie_sign_flutter_method_channel.dart';
 import 'src/nfc_session_event.dart';
 import 'src/pdf_signature_appearance.dart';
+import 'src/pdf_signature_field_info.dart';
 
 abstract class CieSignFlutterPlatform extends PlatformInterface {
   CieSignFlutterPlatform() : super(token: _token);
@@ -47,5 +48,11 @@ abstract class CieSignFlutterPlatform extends PlatformInterface {
 
   Stream<NfcSessionEvent> watchNfcEvents() {
     throw UnimplementedError('watchNfcEvents() has not been implemented.');
+  }
+
+  Future<List<PdfSignatureFieldInfo>> extractSignatureFields(
+      Uint8List pdfBytes) {
+    throw UnimplementedError(
+        'extractSignatureFields() has not been implemented.');
   }
 }

@@ -2,6 +2,10 @@
 #include "mobile/cie_sign_version.h"
 #include "mobile/cie_mobile_log.h"
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 #include "CSP/IAS.h"
 #include "CIESigner.h"
 #include "SignatureGenerator.h"
@@ -149,7 +153,12 @@ struct LoggerState {
     cie_platform_logger logger{};
 };
 
+// iOS static library linking has issues with thread_local variables (dyld: missing symbol)
+#if defined(__APPLE__) && TARGET_OS_IOS
+static LoggerState* g_thread_logger = nullptr;
+#else
 thread_local LoggerState* g_thread_logger = nullptr;
+#endif
 
 struct ScopedLoggerBinding {
     LoggerState* previous = nullptr;
@@ -376,6 +385,9 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
     const char *name = request->pdf.name ? request->pdf.name : "";
     const uint8_t *signatureImage = request->pdf.signature_image;
     size_t signatureImageLen = request->pdf.signature_image_len;
+    cie_mobile_logf("[CIE] sign_pdf signature_image: ptr=%p len=%zu width=%u height=%u",
+                    (void *)signatureImage, signatureImageLen,
+                    request->pdf.signature_image_width, request->pdf.signature_image_height);
     pdfGenerator.SetSignatureImage(signatureImage,
                                    signatureImageLen,
                                    request->pdf.signature_image_width,
@@ -431,9 +443,21 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
     };
 
     auto prepareNewField = [&]() -> bool {
+        // Determine target page: use page_index if specified (non-zero or explicit),
+        // otherwise default to last page when creating a new field without field_ids
+        int pageCount = pdfGenerator.getPageCount();
+        int targetPage = static_cast<int>(request->pdf.page_index);
+
+        // If page_index is 0 and field_ids is empty, use last page as fallback
+        if (targetPage == 0 && requestedFields.empty() && pageCount > 0) {
+            targetPage = pageCount - 1;  // 0-indexed, so last page is count-1
+            cie_mobile_logf("[CIE] prepareNewField: no field_ids, using last page %d (of %d)",
+                            targetPage, pageCount);
+        }
+
         if (request->pdf.width > 0 && request->pdf.height > 0) {
             pdfGenerator.InitSignature(
-                static_cast<int>(request->pdf.page_index),
+                targetPage,
                 request->pdf.left,
                 request->pdf.bottom,
                 request->pdf.width,
@@ -448,7 +472,7 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
                 DISIGON_PDF_SUBFILTER_PKCS_DETACHED);
         } else {
             pdfGenerator.InitSignature(
-                static_cast<int>(request->pdf.page_index),
+                targetPage,
                 reason,
                 "",
                 name,
@@ -478,6 +502,18 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
             }
         }
     } else {
+        // On iOS, PoDoFo field iteration crashes, so we skip existing field search
+        // and always create a new signature field
+#if defined(__APPLE__) && defined(__arm64__)
+        if (!prepareNewField()) {
+            ctx->last_error = "Failed to initialize signature field";
+            return CIE_STATUS_INTERNAL_ERROR;
+        }
+        cie_status rcStatus = finalizeSignature(false);
+        if (rcStatus != CIE_STATUS_OK) {
+            return rcStatus;
+        }
+#else
         size_t signedExisting = 0;
         while (pdfGenerator.InitFirstUnsignedSignatureField(
             reason,
@@ -501,6 +537,7 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
                 return rcStatus;
             }
         }
+#endif
     }
 
     if (latestSignedPdf.getLength() == 0) {
@@ -797,4 +834,103 @@ const char *cie_sign_get_last_error(cie_sign_ctx *public_ctx)
         return "Invalid context";
     }
     return ctx->last_error.c_str();
+}
+
+/* ============================================================
+ * PDF Signature Field Extraction
+ * ============================================================ */
+
+cie_status cie_pdf_extract_signature_fields(
+    const uint8_t *pdf_data,
+    size_t pdf_len,
+    cie_signature_fields_result *result)
+{
+    if (!result) {
+        return CIE_STATUS_INVALID_INPUT;
+    }
+
+    // Initialize result
+    result->fields = nullptr;
+    result->count = 0;
+
+    if (!pdf_data || pdf_len == 0) {
+        return CIE_STATUS_INVALID_INPUT;
+    }
+
+    try {
+        // Load PDF and extract fields
+        PdfSignatureGenerator pdfGen;
+        int loadResult = pdfGen.Load(reinterpret_cast<const char*>(pdf_data),
+                                     static_cast<int>(pdf_len));
+        if (loadResult != 0) {
+            cie_mobile_logf("[CIE] cie_pdf_extract_signature_fields: Load failed with %d", loadResult);
+            return CIE_STATUS_INVALID_INPUT;
+        }
+
+        auto fieldInfos = pdfGen.ListAllSignatureFields();
+        cie_mobile_logf("[CIE] cie_pdf_extract_signature_fields: found %zu fields", fieldInfos.size());
+
+        if (fieldInfos.empty()) {
+            return CIE_STATUS_OK;
+        }
+
+        // Allocate memory for fields array
+        result->fields = static_cast<cie_signature_field_info*>(
+            malloc(fieldInfos.size() * sizeof(cie_signature_field_info)));
+        if (!result->fields) {
+            return CIE_STATUS_INTERNAL_ERROR;
+        }
+
+        result->count = fieldInfos.size();
+
+        // Copy field data
+        for (size_t i = 0; i < fieldInfos.size(); ++i) {
+            auto& src = fieldInfos[i];
+            auto& dst = result->fields[i];
+
+            // Duplicate the name string
+            dst.name = strdup(src.name.c_str());
+            dst.page_index = src.pageIndex;
+            dst.left = static_cast<float>(src.left);
+            dst.bottom = static_cast<float>(src.bottom);
+            dst.width = static_cast<float>(src.width);
+            dst.height = static_cast<float>(src.height);
+            dst.is_signed = src.isSigned ? 1 : 0;
+
+            cie_mobile_logf("[CIE]   field[%zu]: name=%s page=%d rect=(%.2f,%.2f,%.2f,%.2f) signed=%d",
+                           i, dst.name, dst.page_index,
+                           dst.left, dst.bottom, dst.width, dst.height,
+                           dst.is_signed);
+        }
+
+        return CIE_STATUS_OK;
+    } catch (const std::exception& ex) {
+        cie_mobile_logf("[CIE] cie_pdf_extract_signature_fields exception: %s", ex.what());
+        cie_signature_fields_free(result);
+        return CIE_STATUS_INTERNAL_ERROR;
+    } catch (...) {
+        cie_mobile_logf("[CIE] cie_pdf_extract_signature_fields unknown exception");
+        cie_signature_fields_free(result);
+        return CIE_STATUS_INTERNAL_ERROR;
+    }
+}
+
+void cie_signature_fields_free(cie_signature_fields_result *result)
+{
+    if (!result) {
+        return;
+    }
+
+    if (result->fields) {
+        // Free each duplicated name string
+        for (size_t i = 0; i < result->count; ++i) {
+            if (result->fields[i].name) {
+                free(const_cast<char*>(result->fields[i].name));
+            }
+        }
+        free(result->fields);
+    }
+
+    result->fields = nullptr;
+    result->count = 0;
 }

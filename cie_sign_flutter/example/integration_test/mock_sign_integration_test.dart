@@ -36,15 +36,15 @@ void main() {
       outputPath: output.path,
       appearance: appearance,
     );
-    expect(String.fromCharCodes(signed.take(4)), startsWith('%PDF'));
-    expect(String.fromCharCodes(signed), contains('/Type/Sig'));
+    expect(String.fromCharCodes(signed.bytes.take(4)), startsWith('%PDF'));
+    expect(String.fromCharCodes(signed.bytes), contains('/Type/Sig'));
     expect(await output.exists(), isTrue);
-    expect(await output.length(), signed.length);
+    expect(await output.length(), signed.sizeInBytes);
     final downloads = Directory('/sdcard/Download');
     if (await downloads.exists()) {
       try {
         final external = File('${downloads.path}/mock_signed_flutter.pdf');
-        await external.writeAsBytes(signed, flush: true);
+        await external.writeAsBytes(signed.bytes, flush: true);
       } catch (_) {
         // scoped storage may deny direct access during integration tests
       }

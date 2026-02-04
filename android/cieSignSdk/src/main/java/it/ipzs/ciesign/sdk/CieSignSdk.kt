@@ -90,6 +90,15 @@ class CieSignSdk {
     return NativeBridge.verifyPinWithNfc(pin, isoDep, atr)
   }
 
+    /**
+     * Extract signature fields from a PDF document.
+     * Returns a list of maps with field information (name, pageIndex, position, etc.)
+     */
+    fun extractSignatureFields(pdfBytes: ByteArray): List<Map<String, Any>> {
+        require(pdfBytes.isNotEmpty()) { "PDF input cannot be empty" }
+        return NativeBridge.extractSignatureFields(pdfBytes).toList()
+    }
+
     private fun buildAtr(isoDep: IsoDep): ByteArray {
         isoDep.historicalBytes?.takeIf { it.isNotEmpty() }?.let { return it }
         isoDep.hiLayerResponse?.takeIf { it.isNotEmpty() }?.let { return it }

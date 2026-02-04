@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cie_sign_flutter/cie_sign_flutter_platform_interface.dart';
 import 'package:cie_sign_flutter/src/nfc_session_event.dart';
 import 'package:cie_sign_flutter/src/pdf_signature_appearance.dart';
+import 'package:cie_sign_flutter/src/pdf_signature_field_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -36,6 +37,11 @@ class _NoTokenPlatform extends PlatformInterface
   @override
   Stream<NfcSessionEvent> watchNfcEvents() =>
       const Stream<NfcSessionEvent>.empty();
+
+  @override
+  Future<List<PdfSignatureFieldInfo>> extractSignatureFields(
+          Uint8List pdfBytes) =>
+      Future.value([]);
 }
 
 class _FakePlatform extends CieSignFlutterPlatform {
@@ -88,6 +94,10 @@ void main() {
       throwsA(isA<UnimplementedError>()),
     );
     expect(() => platform.watchNfcEvents(), throwsA(isA<UnimplementedError>()));
+    await expectLater(
+      () => platform.extractSignatureFields(Uint8List(0)),
+      throwsA(isA<UnimplementedError>()),
+    );
   });
 
   test('instance setter enforces token', () {

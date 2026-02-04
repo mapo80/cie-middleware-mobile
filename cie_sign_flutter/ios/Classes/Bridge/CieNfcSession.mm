@@ -1,4 +1,5 @@
 #import "CieNfcSession.h"
+#import <TargetConditionals.h>
 
 #if __has_include(<CoreNFC/CoreNFC.h>) && !TARGET_OS_SIMULATOR
 #import <CoreNFC/CoreNFC.h>
@@ -143,11 +144,11 @@ NSString * const CieSignNfcErrorDomain = @"it.ipzs.ciesign.nfc";
         return NO;
     }
 
-    NSMutableData *mutable = responseData ? [responseData mutableCopy] : [NSMutableData data];
+    NSMutableData *result = responseData ? [responseData mutableCopy] : [NSMutableData data];
     uint8_t sw[] = { sw1, sw2 };
-    [mutable appendBytes:sw length:sizeof(sw)];
+    [result appendBytes:sw length:sizeof(sw)];
     if (response) {
-        *response = mutable;
+        *response = result;
     }
     return YES;
 #endif
@@ -168,7 +169,7 @@ NSString * const CieSignNfcErrorDomain = @"it.ipzs.ciesign.nfc";
 
 #pragma mark - NFCTagReaderSessionDelegate
 
-- (void)readerSession:(NFCTagReaderSession *)session didInvalidateWithError:(NSError *)error {
+- (void)tagReaderSession:(NFCTagReaderSession *)session didInvalidateWithError:(NSError *)error {
     self.lastError = error;
     if (self.connectSemaphore) {
         dispatch_semaphore_signal(self.connectSemaphore);
@@ -178,18 +179,18 @@ NSString * const CieSignNfcErrorDomain = @"it.ipzs.ciesign.nfc";
     }
 }
 
-- (void)readerSessionDidBecomeActive:(NFCTagReaderSession *)session {
+- (void)tagReaderSessionDidBecomeActive:(NFCTagReaderSession *)session {
     session.alertMessage = NSLocalizedString(@"Avvicina la CIE al lettore.", nil);
 }
 
-- (void)readerSession:(NFCTagReaderSession *)session didDetectTags:(NSArray<NFCTag *> *)tags {
+- (void)tagReaderSession:(NFCTagReaderSession *)session didDetectTags:(NSArray<__kindof id<NFCTag>> *)tags {
     if (tags.count > 1) {
         session.alertMessage = NSLocalizedString(@"Troppe carte rilevate. Allontanare le altre tessere.", nil);
         [session restartPolling];
         return;
     }
 
-    NFCTag *tag = tags.firstObject;
+    id<NFCTag> tag = tags.firstObject;
     if (tag.type != NFCTagTypeISO7816Compatible) {
         session.alertMessage = NSLocalizedString(@"Carta non compatibile con ISO7816.", nil);
         [session restartPolling];
