@@ -287,7 +287,9 @@ class CieSignFlutterPlugin :
         val name = (map["name"] as? String)?.takeIf { it.isNotBlank() }
         val fieldIds = (map["fieldIds"] as? List<*>)?.mapNotNull { (it as? String)?.takeIf { it.isNotBlank() } }
         val payload = (map["signatureImage"] as? ByteArray)?.takeIf { it.isNotEmpty() }
-        Log.d(TAG, "appearance: fieldIds=${fieldIds?.joinToString()} bytes=${payload?.size ?: 0} width=0 height=0")
+        val useAutoSignature = (map["useAutoSignature"] as? Boolean) ?: false
+        val signerNameOverride = (map["signerNameOverride"] as? String)?.takeIf { it.isNotBlank() }
+        Log.d(TAG, "appearance: fieldIds=${fieldIds?.joinToString()} bytes=${payload?.size ?: 0} useAutoSignature=$useAutoSignature")
         return PdfAppearanceOptions(
             pageIndex,
             left,
@@ -300,7 +302,9 @@ class CieSignFlutterPlugin :
             fieldIds,
             payload,
             0,
-            0
+            0,
+            useAutoSignature,
+            signerNameOverride
         )
     }
 
