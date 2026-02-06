@@ -46,7 +46,7 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
 
 SPEC CHECKSUMS:
-  cie_sign_flutter: 30129aea6be5e4d24fa3f200fa3d3dbf3626cd15
+  cie_sign_flutter: 03ce0fa3de8914939e6010298ee7dc0fc9fb2c39
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   open_filex: 432f3cd11432da3e39f47fcc0df2b1603854eff1

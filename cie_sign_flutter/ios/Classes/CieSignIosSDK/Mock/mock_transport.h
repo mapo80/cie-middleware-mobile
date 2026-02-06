@@ -4,7 +4,7 @@
 #if __has_include("mobile/cie_sign.h")
 #include "mobile/cie_sign.h"
 #else
-#include "../../../../cie_sign_sdk/include/mobile/cie_sign.h"
+#include <mobile/cie_sign.h>
 #endif
 #else
 #include "../../include/mobile/cie_sign.h"

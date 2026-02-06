@@ -105,7 +105,15 @@ Pod::Spec.new do |s|
     cp -R "$IOS_SDK_ROOT/Bridge" "$DEST/"
     cp -R "$IOS_SDK_ROOT/Mock" "$DEST/"
 
-    echo "Copied cie_sign_ios_sdk to $DEST"
+    # Fix include paths: ../../../../cie_sign_sdk/include/mobile/cie_sign.h -> <mobile/cie_sign.h>
+    # The header_paths already includes cie_sign_sdk/include
+    find "$DEST" -name "*.mm" -o -name "*.cpp" -o -name "*.h" | while read f; do
+      sed -i '' 's|"../../../../cie_sign_sdk/include/mobile/cie_sign.h"|<mobile/cie_sign.h>|g' "$f"
+      sed -i '' 's|"../Mock/mock_transport.h"|"mock_transport.h"|g' "$f"
+      sed -i '' 's|"../Mock/mock_apdu_sequence.h"|"mock_apdu_sequence.h"|g' "$f"
+    done
+
+    echo "Copied cie_sign_ios_sdk to $DEST and fixed include paths"
   CMD
 
   # Flutter plugin core + copied external SDK

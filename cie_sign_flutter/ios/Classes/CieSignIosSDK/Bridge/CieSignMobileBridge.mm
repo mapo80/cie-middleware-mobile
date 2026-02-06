@@ -5,10 +5,10 @@
 #import <string>
 
 extern "C" {
-#include "../../../../cie_sign_sdk/include/mobile/cie_sign.h"
+#include <mobile/cie_sign.h>
 }
-#if __has_include("../Mock/mock_transport.h")
-#include "../Mock/mock_transport.h"
+#if __has_include("mock_transport.h")
+#include "mock_transport.h"
 #else
 #include "../../../../cie_sign_sdk/tests/mock/mock_transport.h"
 #endif
