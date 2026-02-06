@@ -91,13 +91,25 @@ Pod::Spec.new do |s|
   s.author           = { 'IPZS' => 'info@ipzs.it' }
   s.source           = { :http => 'https://github.com/italia/cie-middleware/archive/master.zip' }
 
-  # Flutter plugin core + symlinked external SDK (Classes/CieSignIosSDK -> cie_sign_ios_sdk)
-  # The symlink is committed in git for simplicity
-  s.source_files     = [
-    'Classes/**/*',
-    'Classes/CieSignIosSDK/Bridge/**/*.{h,m,mm}',
-    'Classes/CieSignIosSDK/Mock/**/*.{h,cpp}'
-  ]
+  # Copy external iOS SDK files into Classes/ during pod install
+  s.prepare_command = <<-CMD
+    set -e
+    IOS_SDK_ROOT="#{ios_sdk_root}"
+    DEST="Classes/CieSignIosSDK"
+
+    # Remove old copied files
+    rm -rf "$DEST"
+
+    # Copy Bridge and Mock sources
+    mkdir -p "$DEST"
+    cp -R "$IOS_SDK_ROOT/Bridge" "$DEST/"
+    cp -R "$IOS_SDK_ROOT/Mock" "$DEST/"
+
+    echo "Copied cie_sign_ios_sdk to $DEST"
+  CMD
+
+  # Flutter plugin core + copied external SDK
+  s.source_files     = 'Classes/**/*'
   s.private_header_files = 'Classes/CieSignIosSDK/Mock/**/*.h'
   s.dependency 'Flutter'
   s.platform         = :ios, '13.0'
