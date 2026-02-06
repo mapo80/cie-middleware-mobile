@@ -39,6 +39,8 @@ typedef struct {
     float height;
     const char *const *field_ids;
     size_t field_ids_len;
+    int use_auto_signature;             ///< If 1 and signature_image is NULL, generate from signer name
+    const char *signer_name_override;   ///< Override signer name for auto signature (optional)
 } cie_pdf_options;
 
 typedef struct {
@@ -122,6 +124,24 @@ cie_status cie_pdf_extract_signature_fields(
 
 /// Free memory allocated by cie_pdf_extract_signature_fields.
 void cie_signature_fields_free(cie_signature_fields_result *result);
+
+/* ============================================================
+ * Signer Information API
+ * ============================================================ */
+
+/// Information about the signer extracted from the CIE certificate.
+typedef struct {
+    char given_name[128];   ///< First name (from certificate OID 2.5.4.42)
+    char surname[128];      ///< Last name (from certificate OID 2.5.4.4)
+    char common_name[256];  ///< Full name (from certificate OID 2.5.4.3)
+} cie_signer_info;
+
+/// Get signer information from the CIE certificate.
+/// Must be called after successful PIN verification.
+/// @param ctx Signing context
+/// @param info Output structure for signer information
+/// @return CIE_STATUS_OK on success
+cie_status cie_get_signer_info(cie_sign_ctx *ctx, cie_signer_info *info);
 
 #ifdef __cplusplus
 }

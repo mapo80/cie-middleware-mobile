@@ -11,7 +11,10 @@
 #include "SignatureGenerator.h"
 #include "PdfSignatureGenerator.h"
 #include "XAdESGenerator.h"
+#include "TextSignatureGenerator.h"
 #include "ASN1/UUCByteArray.h"
+#include "ASN1/Name.h"
+#include "ASN1/Certificate.h"
 #include "Util/Array.h"
 #include "disigonsdk.h"
 
@@ -19,7 +22,9 @@
 #include <array>
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <limits>
 #include <memory>
 #include <new>
@@ -45,6 +50,11 @@ constexpr HRESULT kTransmitOk = 0;
 constexpr std::array<uint8_t, 4> kMockAtrPrefix = {'M', 'O', 'C', 'K'};
 
 using namespace cie::mobile::mock_signer;
+
+// Mock names for auto-signature in mock mode
+static const char* kMockFirstNames[] = {"Mario", "Giulia", "Luca", "Francesca", "Alessandro"};
+static const char* kMockLastNames[] = {"Rossi", "Bianchi", "Verdi", "Russo", "Ferrari"};
+static constexpr size_t kMockNameCount = 5;
 
 std::string bytes_to_hex(const ByteDynArray &bytes) {
     static const char *hex = "0123456789ABCDEF";
@@ -235,6 +245,12 @@ struct cie_sign_ctx_impl {
     std::unique_ptr<MockSigner> mock_signer;
     std::unique_ptr<AdapterState> adapter_state;
     LoggerState platform_logger;
+
+    // Signer info cache (populated after authentication)
+    bool signer_info_valid = false;
+    std::string signer_given_name;
+    std::string signer_surname;
+    std::string signer_common_name;
 };
 
 struct SensitiveString {
@@ -385,13 +401,71 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
     const char *name = request->pdf.name ? request->pdf.name : "";
     const uint8_t *signatureImage = request->pdf.signature_image;
     size_t signatureImageLen = request->pdf.signature_image_len;
+    uint32_t signatureImageWidth = request->pdf.signature_image_width;
+    uint32_t signatureImageHeight = request->pdf.signature_image_height;
+
+    // Auto-generate signature image from signer name if requested
+    std::vector<uint8_t> autoSignatureBuffer;
+    if (request->pdf.use_auto_signature && (!signatureImage || signatureImageLen == 0)) {
+        cie_mobile_logf("[CIE] sign_pdf: auto-signature enabled, generating from name");
+
+        // Determine signer name
+        std::string signerName;
+        if (request->pdf.signer_name_override && request->pdf.signer_name_override[0]) {
+            signerName = request->pdf.signer_name_override;
+        } else if (ctx->signer_info_valid) {
+            signerName = ctx->signer_given_name + " " + ctx->signer_surname;
+        } else if (ctx->mock_mode) {
+            // Generate random name for mock mode
+            static bool seeded = false;
+            if (!seeded) {
+                srand(static_cast<unsigned>(time(nullptr)));
+                seeded = true;
+            }
+            size_t idx = static_cast<size_t>(rand()) % kMockNameCount;
+            signerName = std::string(kMockFirstNames[idx]) + " " + kMockLastNames[idx];
+            ctx->signer_given_name = kMockFirstNames[idx];
+            ctx->signer_surname = kMockLastNames[idx];
+            ctx->signer_common_name = signerName;
+            ctx->signer_info_valid = true;
+        } else {
+            signerName = "CIE Signer";  // Fallback
+        }
+
+        cie_mobile_logf("[CIE] sign_pdf: generating signature for '%s'", signerName.c_str());
+
+        // Generate signature image using TextSignatureGenerator
+        cie::TextSignatureGenerator textGen;
+        cie_mobile_logf("[CIE] sign_pdf: attempting to load default font");
+        if (textGen.LoadDefaultFont()) {
+            cie_mobile_logf("[CIE] sign_pdf: font loaded successfully");
+            uint32_t outWidth = 0, outHeight = 0;
+            // Use reasonable dimensions for signature appearance
+            uint32_t maxWidth = 400;
+            uint32_t maxHeight = 100;
+            if (textGen.GenerateSignatureRGBA(signerName, maxWidth, maxHeight,
+                                               autoSignatureBuffer, outWidth, outHeight)) {
+                signatureImage = autoSignatureBuffer.data();
+                signatureImageLen = autoSignatureBuffer.size();
+                signatureImageWidth = outWidth;
+                signatureImageHeight = outHeight;
+                cie_mobile_logf("[CIE] sign_pdf: auto-signature generated %ux%u (%zu bytes)",
+                                outWidth, outHeight, signatureImageLen);
+            } else {
+                cie_mobile_logf("[CIE] sign_pdf: failed to generate auto-signature");
+            }
+        } else {
+            cie_mobile_logf("[CIE] sign_pdf: failed to load default font for auto-signature");
+        }
+    }
+
     cie_mobile_logf("[CIE] sign_pdf signature_image: ptr=%p len=%zu width=%u height=%u",
                     (void *)signatureImage, signatureImageLen,
-                    request->pdf.signature_image_width, request->pdf.signature_image_height);
+                    signatureImageWidth, signatureImageHeight);
     pdfGenerator.SetSignatureImage(signatureImage,
                                    signatureImageLen,
-                                   request->pdf.signature_image_width,
-                                   request->pdf.signature_image_height);
+                                   signatureImageWidth,
+                                   signatureImageHeight);
 
     std::vector<std::string> requestedFields = collect_field_ids(&request->pdf);
 #ifdef ANDROID
@@ -435,8 +509,8 @@ cie_status sign_pdf(cie_sign_ctx_impl *ctx,
             }
             pdfGenerator.SetSignatureImage(signatureImage,
                                            signatureImageLen,
-                                           request->pdf.signature_image_width,
-                                           request->pdf.signature_image_height);
+                                           signatureImageWidth,
+                                           signatureImageHeight);
         }
 
         return CIE_STATUS_OK;
@@ -744,6 +818,27 @@ cie_status cie_sign_execute(cie_sign_ctx *public_ctx,
         char aliasBuf[] = "CIE";
         generator.SetAlias(aliasBuf);
 
+        // Extract signer name from certificate if not already available
+        if (!ctx->signer_info_valid && !ctx->mock_mode) {
+            CCertificate *pCertificate = nullptr;
+            if (generator.GetCertificate(&pCertificate) == 0 && pCertificate) {
+                try {
+                    std::string givenName = pCertificate->getSubject().getField(OID_GIVEN_NAME);
+                    std::string surname = pCertificate->getSubject().getField(OID_SURNAME);
+                    if (!givenName.empty() || !surname.empty()) {
+                        ctx->signer_given_name = givenName;
+                        ctx->signer_surname = surname;
+                        ctx->signer_common_name = givenName + " " + surname;
+                        ctx->signer_info_valid = true;
+                        cie_mobile_logf("[CIE] Extracted signer info from certificate: '%s %s'",
+                                        givenName.c_str(), surname.c_str());
+                    }
+                } catch (...) {
+                    cie_mobile_logf("[CIE] Warning: failed to extract signer info from certificate");
+                }
+            }
+        }
+
         if (request->tsa.url && request->tsa.url[0]) {
             generator.SetTSA(
                 const_cast<char *>(request->tsa.url),
@@ -933,4 +1028,56 @@ void cie_signature_fields_free(cie_signature_fields_result *result)
 
     result->fields = nullptr;
     result->count = 0;
+}
+
+/* ============================================================
+ * Signer Information API
+ * ============================================================ */
+
+cie_status cie_get_signer_info(cie_sign_ctx *public_ctx, cie_signer_info *info)
+{
+    auto *ctx = reinterpret_cast<cie_sign_ctx_impl *>(public_ctx);
+    if (!ctx || !info) {
+        return CIE_STATUS_INVALID_INPUT;
+    }
+
+    // Clear output
+    memset(info, 0, sizeof(cie_signer_info));
+
+    // If signer info is already cached, return it
+    if (ctx->signer_info_valid) {
+        strncpy(info->given_name, ctx->signer_given_name.c_str(), sizeof(info->given_name) - 1);
+        strncpy(info->surname, ctx->signer_surname.c_str(), sizeof(info->surname) - 1);
+        strncpy(info->common_name, ctx->signer_common_name.c_str(), sizeof(info->common_name) - 1);
+        return CIE_STATUS_OK;
+    }
+
+    // Mock mode: generate random name
+    if (ctx->mock_mode) {
+        static bool seeded = false;
+        if (!seeded) {
+            srand(static_cast<unsigned>(time(nullptr)));
+            seeded = true;
+        }
+        size_t idx = static_cast<size_t>(rand()) % kMockNameCount;
+
+        ctx->signer_given_name = kMockFirstNames[idx];
+        ctx->signer_surname = kMockLastNames[idx];
+        ctx->signer_common_name = ctx->signer_given_name + " " + ctx->signer_surname;
+        ctx->signer_info_valid = true;
+
+        strncpy(info->given_name, ctx->signer_given_name.c_str(), sizeof(info->given_name) - 1);
+        strncpy(info->surname, ctx->signer_surname.c_str(), sizeof(info->surname) - 1);
+        strncpy(info->common_name, ctx->signer_common_name.c_str(), sizeof(info->common_name) - 1);
+
+        cie_mobile_logf("[CIE] cie_get_signer_info (mock): %s %s",
+                        info->given_name, info->surname);
+        return CIE_STATUS_OK;
+    }
+
+    // Real mode: extract from certificate
+    // Note: This requires the certificate to be already read during authentication
+    // For now, we return an error if not authenticated yet
+    ctx->last_error = "Signer info not available - authenticate first";
+    return CIE_STATUS_CARD_ERROR;
 }

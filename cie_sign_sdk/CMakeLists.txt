@@ -190,8 +190,10 @@ append_if_exists(INCLUDE_LIST
     ${DEPENDENCIES_DIR}/include/podofo/podofo
     ${DEPENDENCIES_DIR}/include/cryptopp
     ${DEPENDENCIES_DIR}/libcurl/include
+    ${DEPENDENCIES_DIR}/freetype/include
     ${DEPENDENCIES_DIR}/freetype/include/freetype2
     ${DEPENDENCIES_DIR}/libpng/include
+    ${DEPENDENCIES_DIR}/libpng/include/libpng16
     ${DEPENDENCIES_DIR}/openssl/include
     ${DEPENDENCIES_DIR}/podofo/include
     ${DEPENDENCIES_DIR}/podofo/include/podofo
@@ -332,11 +334,13 @@ endif()
 
 add_library(ciesign_core STATIC
     ${SOURCE_DIR}/mobile/cie_sign_core.cpp
+    ${SOURCE_DIR}/TextSignatureGenerator.cpp
     ${CMAKE_CURRENT_LIST_DIR}/tests/podofo_ios_test/podofo_test.cpp
 )
 
 target_include_directories(ciesign_core
     PRIVATE ${INCLUDE_LIST}
+    PRIVATE ${INCLUDE_DIR}
     PUBLIC ${INCLUDE_DIR}/mobile
 )
 

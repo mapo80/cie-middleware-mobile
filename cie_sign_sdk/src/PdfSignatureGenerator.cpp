@@ -15,6 +15,8 @@
 #include "podofo/main/PdfSignature.h"
 #include "podofo/main/PdfXObjectForm.h"
 
+#include <png.h>
+
 #include <algorithm>
 #include <array>
 #include <set>
@@ -33,6 +35,79 @@ namespace {
 
 constexpr const char* kDefaultFilter = "Adobe.PPKLite";
 constexpr const char* kDefaultSubFilter = "ETSI.CAdES.detached";
+
+// Helper struct for PNG write callback
+struct PngWriteContext {
+    std::vector<uint8_t>* output;
+};
+
+static void PngWriteCallback(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    auto* ctx = static_cast<PngWriteContext*>(png_get_io_ptr(png_ptr));
+    if (ctx && ctx->output) {
+        ctx->output->insert(ctx->output->end(), data, data + length);
+    }
+}
+
+static void PngFlushCallback(png_structp /*png_ptr*/)
+{
+    // No-op for memory buffer
+}
+
+// Convert RGBA raw bytes to PNG format
+static bool ConvertRGBAtoPNG(const uint8_t* rgbaData, uint32_t width, uint32_t height,
+                              std::vector<uint8_t>& pngOutput)
+{
+    if (!rgbaData || width == 0 || height == 0) {
+        return false;
+    }
+
+    png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png_ptr) {
+        cie_mobile_logf("[CIE] ConvertRGBAtoPNG: failed to create png_struct");
+        return false;
+    }
+
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+    if (!info_ptr) {
+        png_destroy_write_struct(&png_ptr, nullptr);
+        cie_mobile_logf("[CIE] ConvertRGBAtoPNG: failed to create png_info");
+        return false;
+    }
+
+    if (setjmp(png_jmpbuf(png_ptr))) {
+        png_destroy_write_struct(&png_ptr, &info_ptr);
+        cie_mobile_logf("[CIE] ConvertRGBAtoPNG: libpng error during encoding");
+        return false;
+    }
+
+    pngOutput.clear();
+    pngOutput.reserve(width * height * 4 / 2); // Estimate compressed size
+
+    PngWriteContext writeCtx;
+    writeCtx.output = &pngOutput;
+    png_set_write_fn(png_ptr, &writeCtx, PngWriteCallback, PngFlushCallback);
+
+    png_set_IHDR(png_ptr, info_ptr, width, height, 8,
+                 PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+    png_write_info(png_ptr, info_ptr);
+
+    // Write rows
+    std::vector<png_bytep> row_pointers(height);
+    for (uint32_t y = 0; y < height; ++y) {
+        row_pointers[y] = const_cast<png_bytep>(rgbaData + y * width * 4);
+    }
+    png_write_image(png_ptr, row_pointers.data());
+    png_write_end(png_ptr, nullptr);
+
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+
+    cie_mobile_logf("[CIE] ConvertRGBAtoPNG: converted %ux%u RGBA to %zu bytes PNG",
+                    width, height, pngOutput.size());
+    return true;
+}
 
 static std::string getFieldName(PdfField* field)
 {
@@ -201,23 +276,31 @@ void ApplyAppearanceImage(PdfSignature& signature,
 
         if (hasRawDimensions)
         {
+            // Convert RGBA to PNG format because PoDoFo may not support raw RGBA with transparency
+            std::vector<uint8_t> pngData;
+            if (!ConvertRGBAtoPNG(imageData, imageWidth, imageHeight, pngData)) {
+                cie_mobile_logf("[CIE] ApplyAppearanceImage: RGBA to PNG conversion failed, skipping image");
+                painter.FinishDrawing();
+                return;
+            }
+
             auto image = document.CreateImage();
-            bufferview buffer(reinterpret_cast<const char*>(imageData), imageLen);
-            image->SetData(buffer, imageWidth, imageHeight, PdfPixelFormat::RGBA);
-            double scaleX = rectWidth / static_cast<double>(imageWidth);
-            double scaleY = rectHeight / static_cast<double>(imageHeight);
+            bufferview buffer(reinterpret_cast<const char*>(pngData.data()), pngData.size());
+            image->LoadFromBuffer(buffer);
+            double scaleX = rectWidth / static_cast<double>(image->GetWidth());
+            double scaleY = rectHeight / static_cast<double>(image->GetHeight());
             if (scaleX <= 0.0)
                 scaleX = 1.0;
             if (scaleY <= 0.0)
                 scaleY = 1.0;
             // Use uniform scale to preserve aspect ratio
             double scale = std::min(scaleX, scaleY);
-            double scaledWidth = static_cast<double>(imageWidth) * scale;
-            double scaledHeight = static_cast<double>(imageHeight) * scale;
+            double scaledWidth = static_cast<double>(image->GetWidth()) * scale;
+            double scaledHeight = static_cast<double>(image->GetHeight()) * scale;
             // Center the image within the rectangle
             double offsetX = (rectWidth - scaledWidth) / 2.0;
             double offsetY = (rectHeight - scaledHeight) / 2.0;
-            cie_mobile_logf("[CIE] ApplyAppearanceImage: aspect ratio preserved - scale=%.4f offset=(%.2f,%.2f) scaledSize=(%.2f,%.2f)",
+            cie_mobile_logf("[CIE] ApplyAppearanceImage: aspect ratio preserved (PNG) - scale=%.4f offset=(%.2f,%.2f) scaledSize=(%.2f,%.2f)",
                             scale, offsetX, offsetY, scaledWidth, scaledHeight);
             painter.DrawImage(*image, offsetX, offsetY, scale, scale);
         }
