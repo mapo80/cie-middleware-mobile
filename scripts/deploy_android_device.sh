@@ -160,7 +160,7 @@ deploy() {
         log_step "Build e deploy in modalita DEBUG..."
     fi
 
-    (cd "$FLUTTER_ROOT/example" && flutter run "${flutter_args[@]}")
+    (cd "$FLUTTER_ROOT/example" && flutter run ${flutter_args[@]+"${flutter_args[@]}"})
 }
 
 # Main
