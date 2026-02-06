@@ -28,12 +28,16 @@ sim_lib_paths = [
   vcpkg_sim_lib
 ]
 
-# Force-load podofo, fmt, and freetype libraries
-force_load_libs = %w[libpodofo.a libpodofo_private.a libpodofo_3rdparty.a libfmt.a libfreetype.a libfontconfig.a]
-podofo_force_load_device = force_load_libs.map { |lib| "-force_load #{File.join(vcpkg_device_lib, lib)}" }.join(' ')
-podofo_force_load_sim = force_load_libs.map { |lib| "-force_load #{File.join(vcpkg_sim_lib, lib)}" }.join(' ')
+# Force-load podofo, fmt, and freetype libraries (only if they exist)
+force_load_candidates = %w[libpodofo.a libpodofo_private.a libpodofo_3rdparty.a libfmt.a libfreetype.a libfontconfig.a]
+device_force_load_libs = force_load_candidates.select { |lib| File.exist?(File.join(vcpkg_device_lib, lib)) }
+sim_force_load_libs = force_load_candidates.select { |lib| File.exist?(File.join(vcpkg_sim_lib, lib)) }
+
+podofo_force_load_device = device_force_load_libs.map { |lib| "-force_load #{File.join(vcpkg_device_lib, lib)}" }.join(' ')
+podofo_force_load_sim = sim_force_load_libs.map { |lib| "-force_load #{File.join(vcpkg_sim_lib, lib)}" }.join(' ')
 
 # Common link flags (without force-loaded libraries)
+# Note: iconv/charset may be system-provided on some triplets
 common_link_flags = %W[
   -ObjC
   -lciesign_core
@@ -55,12 +59,16 @@ common_link_flags = %W[
   -lutf8proc
   -lexpat
   -lcryptopp
-  -liconv
-  -lcharset
   -ldate-tz
   -lc++
   -lc++abi
 ].join(' ')
+
+# Add iconv/charset if available in vcpkg, otherwise use system version
+iconv_libs = []
+iconv_libs << '-liconv' if File.exist?(File.join(vcpkg_device_lib, 'libiconv.a'))
+iconv_libs << '-lcharset' if File.exist?(File.join(vcpkg_device_lib, 'libcharset.a'))
+common_link_flags += ' ' + iconv_libs.join(' ') unless iconv_libs.empty?
 
 device_link_flags = "$(inherited) #{common_link_flags} #{podofo_force_load_device}"
 sim_link_flags = "$(inherited) #{common_link_flags} #{podofo_force_load_sim}"
