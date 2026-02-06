@@ -91,6 +91,23 @@ setup_environment() {
         fi
     fi
 
+    # Android SDK platform-tools (per adb)
+    if ! command -v adb &> /dev/null; then
+        local android_sdk_dirs=(
+            "$HOME/Library/Android/sdk"
+            "${ANDROID_HOME:-}"
+            "${ANDROID_SDK_ROOT:-}"
+        )
+
+        for sdk_dir in "${android_sdk_dirs[@]}"; do
+            if [[ -n "$sdk_dir" && -x "$sdk_dir/platform-tools/adb" ]]; then
+                export PATH="$sdk_dir/platform-tools:$PATH"
+                log_info "ADB aggiunto al PATH da: $sdk_dir/platform-tools"
+                break
+            fi
+        done
+    fi
+
     log_info "JAVA_HOME: ${JAVA_HOME:-non impostato}"
     log_info "ANDROID_NDK_ROOT: ${ANDROID_NDK_ROOT:-non impostato}"
 }
