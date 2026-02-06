@@ -55,7 +55,9 @@ packages/**/*.rpm
 *.so
 libcie_sign_sdk.a
 cie_sign_sdk/.vcpkg/
+cie_sign_sdk/Dependencies/
 cie_sign_sdk/Dependencies-*/
+cie_sign_sdk/build/
 
 # Dart/Flutter generated files
 .dart_tool/
@@ -69,3 +71,14 @@ project.xcworkspace/
 
 # Compiled binaries
 cie_sign_sdk/tests/podofo_macos_test/podofo_test
+
+# Gradle
+.gradle/
+**/.gradle/
+**/build/
+*.gradle.kts.metadata
+local.properties
+
+# Android SDK build artifacts
+.cxx/
+**/.cxx/
