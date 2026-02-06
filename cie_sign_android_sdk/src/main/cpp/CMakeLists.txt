@@ -13,7 +13,7 @@ if(NOT DEFINED CIE_SIGN_SDK_SKIP_TESTS)
     set(CIE_SIGN_SDK_SKIP_TESTS OFF)
 endif()
 
-set(CIE_SIGN_SDK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../cie_sign_sdk)
+set(CIE_SIGN_SDK_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../../cie_sign_sdk)
 
 add_definitions(-DANDROID)
 
