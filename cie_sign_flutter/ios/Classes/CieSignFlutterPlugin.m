@@ -1,6 +1,6 @@
 #import "CieSignFlutterPlugin.h"
 #import <TargetConditionals.h>
-#import "Bridge/CieSignMobileBridge.h"
+#import "CieSignMobileBridge.h"
 
 // PoDoFo test
 extern void podofo_test_set_pdf_data(const char* data, size_t length);

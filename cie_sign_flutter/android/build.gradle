@@ -43,7 +43,7 @@ android {
         main {
             java.srcDirs = [
                 "src/main/kotlin",
-                "../android-sdk/src/main/java"
+                "../../cie_sign_android_sdk/src/main/java"
             ]
             manifest.srcFile "src/main/AndroidManifest.xml"
         }
@@ -74,7 +74,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            path = file("../android-sdk/src/main/cpp/CMakeLists.txt")
+            path = file("../../cie_sign_android_sdk/src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
     }

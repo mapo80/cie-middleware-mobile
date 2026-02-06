@@ -3,7 +3,7 @@
 Modernizzazione completa dello stack di firma per **Carta d'Identità Elettronica (CIE)** italiana con obiettivo di offrire:
 
 - un **core nativo comune** (C/C++) che gestisce APDU IAS, firme PKCS#7/PDF/XML e validazioni;
-- bridge Kotlin/Swift per piattaforme mobili con API simmetriche;
+- **SDK nativi standalone** (Kotlin per Android, Objective-C per iOS) utilizzabili direttamente da app native;
 - un **plugin Flutter headless** riutilizzabile in qualsiasi applicazione multipiattaforma.
 
 ---
@@ -19,10 +19,15 @@ Modernizzazione completa dello stack di firma per **Carta d'Identità Elettronic
         ┌────────────┴────────────┐
         │                         │
 ┌───────▼────────────┐   ┌───────▼────────────┐
-│  Android Bridge    │   │   iOS Bridge       │
-│  (Kotlin Plugin)   │   │  (ObjC/Swift)      │
+│  Flutter Android   │   │  Flutter iOS       │
+│  Bridge (Kotlin)   │   │  Bridge (ObjC)     │
 └────────┬───────────┘   └────────┬───────────┘
-         │ JNI                    │ Native
+         │ include                │ include
+┌────────▼───────────┐   ┌───────▼────────────┐
+│cie_sign_android_sdk│   │  cie_sign_ios_sdk   │
+│  (Kotlin + JNI)    │   │  (ObjC++ + CoreNFC) │
+└────────┬───────────┘   └────────┬───────────┘
+         │ JNI                    │ Native call
          └────────────┬───────────┘
                       │
          ┌────────────▼────────────┐
@@ -53,20 +58,20 @@ Modernizzazione completa dello stack di firma per **Carta d'Identità Elettronic
 | Layer | Tecnologia | Linguaggio | Note |
 |-------|-----------|-----------|------|
 | **Core Firma** | PoDoFo 1.x + Crypto++ | C/C++ (C++17) | PDF signing, PKCS#7, ASN.1, RSA, hashing |
-| **Android** | Kotlin + JNI | Kotlin + C++ | MethodChannel → JNI → Native |
-| **iOS** | CoreNFC | Objective-C/Swift | MethodChannel → CoreNFC bridge |
-| **Flutter** | Flutter SDK 3.3+ | Dart | Plugin headless + UI demo |
+| **Android SDK** | Kotlin + JNI + CMake | Kotlin + C++ | SDK standalone nativo |
+| **iOS SDK** | CoreNFC + ObjC++ | Objective-C/C++ | SDK standalone nativo |
+| **Flutter Plugin** | Flutter SDK 3.3+ | Dart + platform bridge | Plugin headless multipiattaforma |
 | **Build** | CMake 3.15+ | CMake | Cross-compilation multipiattaforma |
-| **Dipendenze** | vcpkg | - | OpenSSL, libcurl, libxml2, zlib, freetype, libpng |
+| **Dipendenze** | vcpkg | - | OpenSSL, libcurl, libxml2, zlib, freetype, libpng, PoDoFo |
 
 ### Versioni Tools Richieste
 
 - CMake 3.15+
 - Gradle 9.2
-- Kotlin 1.9.24
-- Android Gradle Plugin 8.6.0
-- Android NDK r26
-- Xcode (per iOS)
+- Kotlin 2.2+
+- Android Gradle Plugin 8.6+
+- Android NDK r26 (26.2.11394342)
+- Xcode 15+ (per iOS)
 - Flutter SDK 3.3+ (Dart 3.10+)
 - Java 17
 
@@ -77,72 +82,146 @@ Modernizzazione completa dello stack di firma per **Carta d'Identità Elettronic
 ```
 cie-middleware-linux/
 │
-├── cie_sign_sdk/                     # Core C/C++ della libreria di firma
-│   ├── src/                          # Codice sorgente (~160 file)
-│   │   ├── ASN1/                     # Parsing/generazione strutture ASN.1
-│   │   ├── Crypto/                   # Algoritmi crittografici
-│   │   ├── PCSC/                     # Protocollo smart card
-│   │   ├── CSP/                      # IAS e gestione ATR
-│   │   ├── RSA/                      # Implementazione RSA
-│   │   ├── Util/                     # Utilita generiche
-│   │   ├── mobile/                   # Bridge mobile (cie_sign_core.cpp)
-│   │   ├── PdfSignatureGenerator.cpp # Generatore firme PDF
-│   │   ├── PdfVerifier.cpp           # Verifica firme PDF
-│   │   └── SignatureGenerator.cpp    # PKCS#7 generator
+├── cie_sign_sdk/                          # Core C/C++ della libreria di firma
+│   ├── src/                               # Codice sorgente (~160 file)
+│   │   ├── ASN1/                          # Parsing/generazione strutture ASN.1
+│   │   ├── Crypto/                        # Algoritmi crittografici (AES, DES3, SHA*, MD5, MAC)
+│   │   ├── PCSC/                          # Protocollo smart card (APDU, Token)
+│   │   ├── CSP/                           # IAS e gestione ATR
+│   │   ├── RSA/                           # Implementazione RSA
+│   │   ├── Util/                          # Logging, TLV, utilities
+│   │   ├── mobile/                        # Bridge mobile (cie_sign_core.cpp)
+│   │   ├── fonts/                         # Font embedded per firma auto-generata
+│   │   ├── PdfSignatureGenerator.cpp      # Generatore firme PDF
+│   │   ├── PdfVerifier.cpp                # Verifica firme PDF
+│   │   ├── TextSignatureGenerator.cpp     # Generatore firma testuale automatica
+│   │   └── SignatureGenerator.cpp         # PKCS#7 / CMS generator
 │   ├── include/
-│   │   ├── mobile/                   # API pubblica (cie_sign.h)
+│   │   ├── mobile/                        # API pubblica C (cie_sign.h, cie_platform.h)
+│   │   ├── PdfSignatureGenerator.h
+│   │   ├── TextSignatureGenerator.h
 │   │   └── disigonsdk.h
 │   ├── tests/
-│   │   ├── mock/                     # Test mock signer
-│   │   ├── tools/                    # CLI (pdf_signature_check.cpp)
-│   │   └── dart_host/                # Bridge Dart host
-│   ├── Dependencies/                 # Librerie precompilate host
-│   ├── Dependencies-ios/             # Librerie per iOS device
-│   ├── Dependencies-ios-sim/         # Librerie per iOS simulator
-│   ├── cmake/toolchains/             # Toolchain cross-compilation
-│   └── CMakeLists.txt                # Build configuration
+│   │   ├── mock/                          # Mock transport e APDU sequence
+│   │   ├── ios/                           # Bridge test iOS (mock_sign_ios.mm)
+│   │   ├── tools/                         # CLI (pdf_signature_check.cpp)
+│   │   ├── dart_host/                     # Bridge Dart host per test desktop
+│   │   ├── podofo_ios_test/               # Test PoDoFo su iOS
+│   │   ├── auto_signature_test.cpp        # Test firma automatica
+│   │   └── text_signature_generator_test.cpp
+│   ├── data/fixtures/                     # PDF e certificati di test
+│   ├── cmake/toolchains/                  # Toolchain cross-compilation
+│   │   ├── ios-arm64.cmake                #   iOS device
+│   │   ├── ios-sim-arm64.cmake            #   iOS simulator (Apple Silicon)
+│   │   └── android-arm64.cmake            #   Android arm64-v8a
+│   ├── scripts/                           # Script build SDK
+│   │   ├── bootstrap_vcpkg.sh             # Inizializza vcpkg
+│   │   ├── build_dependencies.sh          # Compila dipendenze via vcpkg
+│   │   ├── build_host.sh                  # Build desktop (macOS/Linux)
+│   │   ├── build_ios.sh                   # Build iOS
+│   │   ├── build_ios_sdk.sh               # Pipeline completa iOS
+│   │   ├── build_ios_dependencies.sh      # Dipendenze iOS via vcpkg
+│   │   ├── build_android.sh               # Build Android
+│   │   ├── build_android_dependencies.sh  # Dipendenze Android via vcpkg
+│   │   ├── package_ios_unified.sh         # Packaging xcframework
+│   │   └── ios/                           # Script individuali per dipendenze iOS
+│   │       ├── build_ios_openssl.sh
+│   │       ├── build_ios_podofo.sh
+│   │       └── ... (altri)
+│   ├── docs/                              # Documentazione tecnica
+│   │   ├── mobile_architecture.md         # Architettura SDK mobile
+│   │   ├── build_mobile.md                # Guida build completa
+│   │   ├── core_isolation.md              # Isolamento core C++
+│   │   ├── nfc_integration_plan.md        # Piano integrazione NFC
+│   │   ├── tests_ios.md                   # Guida test iOS
+│   │   └── tests_android.md              # Guida test Android
+│   ├── .gitignore                         # Ignora Dependencies*/ e build/
+│   └── CMakeLists.txt                     # Build configuration
 │
-├── cie_sign_flutter/                 # Plugin Flutter
+├── cie_sign_android_sdk/                  # SDK Android nativo standalone
+│   ├── build.gradle                       # Configurazione Gradle (Android Library)
+│   ├── consumer-rules.pro                 # Regole ProGuard per consumatori
+│   ├── .gitignore                         # Ignora .cxx/ e build/
+│   └── src/main/
+│       ├── AndroidManifest.xml
+│       ├── java/it/ipzs/ciesign/sdk/
+│       │   ├── CieSignSdk.kt             # API pubblica Kotlin
+│       │   ├── NativeBridge.kt            # Bridge JNI → C++
+│       │   └── PdfAppearanceOptions.kt    # Configurazione firma
+│       └── cpp/
+│           ├── CMakeLists.txt             # Build nativo (shared lib ciesign_mobile)
+│           ├── mock_sign_android.cpp      # Implementazione mock signing
+│           └── nfc_sign_android.cpp       # Implementazione NFC signing
+│
+├── cie_sign_ios_sdk/                      # SDK iOS nativo standalone
+│   ├── Bridge/                            # Wrapper Objective-C++ del core C++
+│   │   ├── CieSignMobileBridge.h          # API pubblica ObjC
+│   │   ├── CieSignMobileBridge.mm         # Implementazione bridge
+│   │   ├── CieNfcSession.h                # Wrapper CoreNFC
+│   │   └── CieNfcSession.mm              # Implementazione sessione NFC
+│   └── Mock/                              # Mock APDU transport per test
+│       ├── mock_transport.h
+│       ├── mock_transport.cpp
+│       ├── mock_apdu_sequence.h
+│       └── mock_apdu_sequence.cpp
+│
+├── cie_sign_flutter/                      # Plugin Flutter (solo bridge)
 │   ├── lib/
-│   │   ├── cie_sign_flutter.dart                    # Interfaccia pubblica
-│   │   ├── cie_sign_flutter_method_channel.dart     # MethodChannel bridge
+│   │   ├── cie_sign_flutter.dart          # API pubblica Dart (export)
+│   │   ├── cie_sign_flutter_method_channel.dart
 │   │   ├── cie_sign_flutter_platform_interface.dart
 │   │   └── src/
-│   │       ├── nfc_session_event.dart               # Eventi NFC
-│   │       ├── pdf_signature_appearance.dart        # Config firma PDF
-│   │       ├── pdf_signature_field_info.dart        # Info campi firma
-│   │       └── signed_pdf_document.dart             # Documento firmato
-│   ├── android/src/main/kotlin/.../
-│   │   └── CieSignFlutterPlugin.kt   # Handler Android
-│   ├── ios/Classes/
-│   │   ├── CieSignFlutterPlugin.m    # Handler iOS
-│   │   └── Bridge/                   # CieNfcSession.mm, CieSignMobileBridge.mm
-│   ├── example/                      # App demo Flutter
-│   │   ├── lib/main.dart             # UI principale
-│   │   ├── android/                  # Build Android
-│   │   └── ios/                      # Build iOS
-│   ├── test/                         # Unit/widget test
-│   └── pubspec.yaml                  # Dipendenze Flutter
+│   │       ├── nfc_session_event.dart      # Eventi NFC
+│   │       ├── pdf_signature_appearance.dart
+│   │       ├── pdf_signature_field_info.dart
+│   │       ├── signed_pdf_document.dart
+│   │       └── widgets/                   # Widget firma a mano
+│   │           ├── cie_hand_signature.dart
+│   │           ├── cie_hand_signature_controller.dart
+│   │           └── cie_hand_signature_config.dart
+│   ├── android/                           # Bridge Flutter → Android SDK
+│   │   ├── build.gradle                   # Include sorgenti da ../../cie_sign_android_sdk/
+│   │   └── src/main/kotlin/.../
+│   │       └── CieSignFlutterPlugin.kt    # Handler MethodChannel Android
+│   ├── ios/                               # Bridge Flutter → iOS SDK
+│   │   ├── cie_sign_flutter.podspec       # Include sorgenti da ../../cie_sign_ios_sdk/
+│   │   └── Classes/
+│   │       ├── CieSignFlutterPlugin.h
+│   │       └── CieSignFlutterPlugin.m     # Handler MethodChannel iOS
+│   ├── example/                           # App demo Flutter
+│   │   ├── lib/main.dart                  # UI principale
+│   │   ├── assets/                        # PDF e firme di test
+│   │   ├── android/                       # Build config Android
+│   │   └── ios/                           # Build config iOS
+│   ├── test/                              # Unit/widget test
+│   └── pubspec.yaml
 │
-├── android/                          # Modulo Gradle principale
-│   ├── cieSignSdk/                   # SDK Kotlin con JNI
-│   │   ├── src/main/kotlin/          # Codice Kotlin
-│   │   ├── src/main/jni/             # Bindings JNI → C++
-│   │   └── build.gradle
-│   ├── CieSignMockApp/               # App di test Android
-│   ├── build.gradle                  # Root gradle config
-│   ├── settings.gradle
-│   └── gradle.properties
+├── example-native-apps/                   # App native di test (senza Flutter)
+│   ├── android/                           # Progetto Gradle Android
+│   │   ├── settings.gradle                # Include ../../cie_sign_android_sdk
+│   │   ├── build.gradle                   # Root config
+│   │   ├── gradle/                        # Wrapper Gradle
+│   │   └── CieSignMockApp/               # App di test mock signing
+│   │       ├── build.gradle
+│   │       └── src/
+│   │           ├── main/java/.../MainActivity.kt
+│   │           └── androidTest/.../MockSignInstrumentedTest.kt
+│   └── ios/                               # Progetto Xcode iOS
+│       ├── CieSignIosHost/                # App host SwiftUI
+│       │   ├── CieSignIosHostApp.swift
+│       │   ├── ContentView.swift
+│       │   ├── SigningViewModel.swift
+│       │   └── CieSignIosHost-Bridging-Header.h  # Import da ../../cie_sign_ios_sdk/
+│       ├── CieSignIosTests/               # XCTest suite
+│       │   ├── MockSignTests.swift
+│       │   └── CieSignBridgeTests.swift
+│       └── CieSignIosTests.xcodeproj/
 │
-├── ios/                              # Progetto Xcode
-│   ├── CieSignIosHost/               # App host demo iOS
-│   ├── CieSignIosTests/              # Test suite iOS
-│   └── CieSignIosTests.xcodeproj/
-│
-├── scripts/                          # Script helper
-│   ├── build_ios_libs.sh             # Compila librerie native iOS
-│   ├── deploy_ios_device.sh          # Deploy su iPhone
-│   └── deploy_android_device.sh      # Deploy su Android
+├── scripts/                               # Script automazione deploy
+│   ├── build_ios_libs.sh                  # Compila librerie native iOS
+│   ├── deploy_ios_device.sh               # Build Flutter + deploy su iPhone
+│   ├── deploy_android_device.sh           # Build Flutter + deploy su Android
+│   └── generate_sample_pdf.py             # Genera PDF di test
 │
 └── README.md
 ```
@@ -150,71 +229,70 @@ cie-middleware-linux/
 ### Mappa delle Directory
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              REPOSITORY ROOT                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                        cie_sign_sdk/                                 │   │
-│  │  CORE C/C++ - Motore di firma digitale                              │   │
-│  ├─────────────────────────────────────────────────────────────────────┤   │
-│  │  src/                                                                │   │
-│  │  ├── ASN1/          → Parser strutture ASN.1 per certificati       │   │
-│  │  ├── Crypto/        → AES, DES3, SHA*, MD5, MAC                    │   │
-│  │  ├── RSA/           → Firma RSA e gestione chiavi                  │   │
-│  │  ├── CSP/           → Comunicazione IAS con smart card CIE         │   │
-│  │  ├── PCSC/          → Protocollo PC/SC per lettori NFC             │   │
-│  │  ├── Util/          → Logging, TLV, utilities                      │   │
-│  │  ├── mobile/        → Bridge per Android/iOS (cie_sign_core.cpp)   │   │
-│  │  ├── PdfSignatureGenerator.cpp  → Genera firme PDF                 │   │
-│  │  ├── PdfVerifier.cpp            → Verifica firme esistenti         │   │
-│  │  └── SignatureGenerator.cpp     → PKCS#7 / CMS                     │   │
-│  ├─────────────────────────────────────────────────────────────────────┤   │
-│  │  include/mobile/    → Header pubblici (cie_sign.h)                  │   │
-│  │  tests/tools/       → CLI pdf_signature_check                       │   │
-│  │  Dependencies*/     → Librerie precompilate (OpenSSL, PoDoFo...)   │   │
-│  │  cmake/toolchains/  → Cross-compilation iOS/Android                 │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                      │                                      │
-│                                      ▼                                      │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                       cie_sign_flutter/                              │   │
-│  │  PLUGIN FLUTTER - Wrapper Dart per il core nativo                   │   │
-│  ├─────────────────────────────────────────────────────────────────────┤   │
-│  │  lib/                                                                │   │
-│  │  ├── cie_sign_flutter.dart      → API pubblica Dart                │   │
-│  │  ├── *_method_channel.dart      → Bridge MethodChannel             │   │
-│  │  └── src/                       → Eventi NFC, appearance firma     │   │
-│  │                                                                      │   │
-│  │  android/                       → Plugin Android (Kotlin)           │   │
-│  │  ios/Classes/                   → Plugin iOS (Objective-C)          │   │
-│  │  ios/Classes/Bridge/            → CoreNFC bridge                    │   │
-│  │                                                                      │   │
-│  │  example/                       → App demo completa                 │   │
-│  │  └── lib/main.dart              → UI con PDF viewer + firma        │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-│  ┌───────────────────────┐    ┌───────────────────────┐                   │
-│  │      android/         │    │        ios/           │                   │
-│  │  SDK Kotlin standalone │    │  Test Xcode standalone│                   │
-│  ├───────────────────────┤    ├───────────────────────┤                   │
-│  │  cieSignSdk/          │    │  CieSignIosHost/      │                   │
-│  │  ├── JNI bindings     │    │  └── App test nativa  │                   │
-│  │  └── Kotlin wrapper   │    │  CieSignIosTests/     │                   │
-│  │  CieSignMockApp/      │    │  └── XCTest suite     │                   │
-│  │  └── App test         │    │                       │                   │
-│  └───────────────────────┘    └───────────────────────┘                   │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                          scripts/                                    │   │
-│  │  AUTOMAZIONE - Script per build e deploy                            │   │
-│  ├─────────────────────────────────────────────────────────────────────┤   │
-│  │  build_ios_libs.sh      → Compila ciesign_core per iOS arm64       │   │
-│  │  deploy_ios_device.sh   → Build Flutter + deploy su iPhone         │   │
-│  │  deploy_android_device.sh → Build Flutter + deploy su Android      │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              REPOSITORY ROOT                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        cie_sign_sdk/                                 │    │
+│  │  CORE C/C++ - Motore di firma digitale                              │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │  src/                                                                │    │
+│  │  ├── ASN1/          → Parser strutture ASN.1 per certificati       │    │
+│  │  ├── Crypto/        → AES, DES3, SHA*, MD5, MAC                    │    │
+│  │  ├── RSA/           → Firma RSA e gestione chiavi                  │    │
+│  │  ├── CSP/           → Comunicazione IAS con smart card CIE         │    │
+│  │  ├── PCSC/          → Protocollo PC/SC per lettori NFC             │    │
+│  │  ├── Util/          → Logging, TLV, utilities                      │    │
+│  │  ├── mobile/        → Bridge mobile (cie_sign_core.cpp)            │    │
+│  │  ├── PdfSignatureGenerator.cpp  → Genera firme PDF con PoDoFo      │    │
+│  │  ├── PdfVerifier.cpp            → Verifica firme esistenti         │    │
+│  │  ├── TextSignatureGenerator.cpp → Firma testuale auto-generata     │    │
+│  │  └── SignatureGenerator.cpp     → PKCS#7 / CMS                     │    │
+│  ├─────────────────────────────────────────────────────────────────────┤    │
+│  │  include/mobile/    → Header pubblici (cie_sign.h)                  │    │
+│  │  tests/             → Mock signer, CLI tool, test iOS               │    │
+│  │  scripts/           → Build e dipendenze (vcpkg, CMake)             │    │
+│  │  cmake/toolchains/  → Cross-compilation iOS/Android                 │    │
+│  │  docs/              → Documentazione architettura e build           │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                      │                                       │
+│                    ┌─────────────────┼─────────────────┐                    │
+│                    │                 │                 │                      │
+│                    ▼                 ▼                 ▼                      │
+│  ┌──────────────────────┐ ┌──────────────────┐ ┌──────────────────────┐    │
+│  │cie_sign_android_sdk/ │ │cie_sign_ios_sdk/ │ │  cie_sign_flutter/   │    │
+│  │ SDK Android nativo   │ │ SDK iOS nativo   │ │  Plugin Flutter      │    │
+│  ├──────────────────────┤ ├──────────────────┤ ├──────────────────────┤    │
+│  │ Kotlin + JNI + CMake │ │ ObjC++ + CoreNFC │ │ Dart + bridge nativi │    │
+│  │ CieSignSdk.kt        │ │ CieSignMobile-   │ │ CieSignFlutter-      │    │
+│  │ NativeBridge.kt      │ │   Bridge.mm      │ │   Plugin.kt/.m       │    │
+│  │ mock_sign_android.cpp│ │ CieNfcSession.mm │ │ example/ (app demo)  │    │
+│  │ nfc_sign_android.cpp │ │ Mock transport   │ │ test/ (unit test)    │    │
+│  └──────────────────────┘ └──────────────────┘ └──────────────────────┘    │
+│                    │                 │                                        │
+│                    ▼                 ▼                                        │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                      example-native-apps/                            │   │
+│  │  App di test nativi (senza Flutter)                                  │   │
+│  ├──────────────────────────────────────────────────────────────────────┤   │
+│  │  android/                          │  ios/                           │   │
+│  │  ├── CieSignMockApp/               │  ├── CieSignIosHost/ (SwiftUI) │   │
+│  │  │   └── MockSignInstrumentedTest  │  ├── CieSignIosTests/ (XCTest) │   │
+│  │  └── settings.gradle               │  └── CieSignIosTests.xcodeproj │   │
+│  │      (→ cie_sign_android_sdk)      │      (→ cie_sign_ios_sdk)      │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                           scripts/                                   │   │
+│  │  AUTOMAZIONE - Script per build e deploy                             │   │
+│  ├──────────────────────────────────────────────────────────────────────┤   │
+│  │  build_ios_libs.sh          → Compila ciesign_core per iOS arm64    │   │
+│  │  deploy_ios_device.sh       → Build Flutter + deploy su iPhone      │   │
+│  │  deploy_android_device.sh   → Build Flutter + deploy su Android     │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Descrizione Moduli
@@ -222,48 +300,56 @@ cie-middleware-linux/
 | Directory | Tipo | Contenuto | Output |
 |-----------|------|-----------|--------|
 | `cie_sign_sdk/` | C/C++ | Core firma digitale | `libcie_sign_sdk.a`, `libciesign_core.a` |
-| `cie_sign_flutter/` | Dart | Plugin Flutter | Package `cie_sign_flutter` |
+| `cie_sign_android_sdk/` | Kotlin + JNI | SDK Android standalone | `libciesign_mobile.so` (shared lib) |
+| `cie_sign_ios_sdk/` | Objective-C++ | SDK iOS standalone | Compilato nel pod Flutter o nel progetto Xcode |
+| `cie_sign_flutter/` | Dart | Plugin Flutter (bridge) | Package `cie_sign_flutter` |
 | `cie_sign_flutter/example/` | Flutter | App demo | APK / IPA |
-| `android/` | Kotlin | SDK Android standalone | AAR library |
-| `ios/` | ObjC/Swift | Test iOS standalone | XCTest bundle |
-| `scripts/` | Bash | Automazione | - |
+| `example-native-apps/android/` | Kotlin | App test Android nativa | APK (mock signing test) |
+| `example-native-apps/ios/` | Swift | App test iOS nativa | App + XCTest bundle |
+| `scripts/` | Bash | Automazione deploy | - |
 
 ### Dipendenze tra Moduli
 
 ```
-┌──────────────┐
-│ Flutter App  │  (cie_sign_flutter/example)
-└──────┬───────┘
-       │ dipende da
-       ▼
-┌──────────────┐
-│Flutter Plugin│  (cie_sign_flutter)
-└──────┬───────┘
-       │ dipende da
-       ├─────────────────┬─────────────────┐
-       ▼                 ▼                 ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│Android Plugin│  │  iOS Plugin  │  │    (test)    │
-│   (Kotlin)   │  │   (ObjC)     │  │              │
-└──────┬───────┘  └──────┬───────┘  └──────────────┘
-       │                 │
-       └────────┬────────┘
+┌──────────────────┐                    ┌──────────────────┐
+│ Flutter App      │  (example/)        │ Native Test Apps │  (example-native-apps/)
+└──────┬───────────┘                    └──────┬───────────┘
+       │ dipende da                            │ dipende da
+       ▼                                       │
+┌──────────────────┐                           │
+│ Flutter Plugin   │  (cie_sign_flutter/)       │
+└──────┬───────────┘                           │
+       │ include sorgenti da                   │
+       ├─────────────────┐                     │
+       ▼                 ▼                     │
+┌──────────────────┐  ┌──────────────────┐     │
+│ Android SDK      │  │   iOS SDK        │◄────┘
+│  (Kotlin + JNI)  │  │  (ObjC++ bridge) │
+└──────┬───────────┘  └──────┬───────────┘
+       │ JNI                 │ native
+       └────────┬────────────┘
                 │ link statico
                 ▼
-       ┌──────────────┐
-       │ ciesign_core │  (C++)
-       └──────┬───────┘
+       ┌──────────────────┐
+       │  ciesign_core    │  (C++ mobile wrapper)
+       └──────┬───────────┘
               │
               ▼
-       ┌──────────────┐
-       │cie_sign_sdk  │  (C/C++)
-       └──────┬───────┘
+       ┌──────────────────┐
+       │  cie_sign_sdk    │  (C/C++ core)
+       └──────┬───────────┘
               │
               ▼
-       ┌──────────────┐
-       │   Vendors    │  (OpenSSL, PoDoFo, Crypto++, libxml2...)
-       └──────────────┘
+       ┌──────────────────┐
+       │    Vendors        │  (vcpkg: OpenSSL, PoDoFo, Crypto++, libxml2...)
+       └──────────────────┘
 ```
+
+**Come il plugin Flutter include gli SDK nativi:**
+
+- **Android**: `cie_sign_flutter/android/build.gradle` referenzia i sorgenti Kotlin e il CMakeLists.txt da `../../cie_sign_android_sdk/`
+- **iOS**: `cie_sign_flutter/ios/cie_sign_flutter.podspec` include i sorgenti ObjC++ da `../../cie_sign_ios_sdk/`
+- **App native**: `example-native-apps/android/settings.gradle` punta a `../../cie_sign_android_sdk`; il progetto Xcode iOS referenzia `../../cie_sign_ios_sdk/Bridge/`
 
 ---
 
@@ -277,14 +363,17 @@ cie-middleware-linux/
 | **IAS/PCSC** | C++ | Comunicazione smart card CIE | `src/CSP/IAS.cpp`, `src/PCSC/Token.cpp` |
 | **Mobile Core** | C++ | Bridge NFC e APDU | `src/mobile/cie_sign_core.cpp` |
 | **PDF Verifier** | C++ | Estrazione e validazione firme | `PdfVerifier.cpp` |
-| **Android Plugin** | Kotlin | MethodChannel + NFC | `CieSignFlutterPlugin.kt` |
-| **iOS Plugin** | ObjC | MethodChannel + CoreNFC | `CieSignFlutterPlugin.m`, `CieNfcSession.mm` |
-| **Flutter API** | Dart | Interfaccia pubblica | `cie_sign_flutter.dart` |
+| **Text Signature** | C++ | Firma testuale auto-generata | `TextSignatureGenerator.cpp` |
+| **Android SDK** | Kotlin | API nativa Android + JNI | `CieSignSdk.kt`, `NativeBridge.kt` |
+| **iOS SDK** | ObjC++ | API nativa iOS + CoreNFC | `CieSignMobileBridge.mm`, `CieNfcSession.mm` |
+| **Flutter Plugin** | Dart | Interfaccia pubblica | `cie_sign_flutter.dart` |
 | **CLI Tool** | C++ | Verifica PDF offline | `tests/tools/pdf_signature_check.cpp` |
 
 ---
 
 ## Dipendenze Esterne (Vendor)
+
+Gestite tramite **vcpkg**. Le librerie compilate risiedono direttamente in `cie_sign_sdk/.vcpkg/installed/<triplet>/` e vengono referenziate da CMake senza copie intermedie.
 
 | Libreria | Scopo |
 |----------|-------|
@@ -296,7 +385,45 @@ cie-middleware-linux/
 | **zlib** | Compressione |
 | **libpng** | Immagini firma PNG |
 | **FreeType** | Font per firma |
+| **Fontconfig** | Gestione font |
 | **bzip2** | Compressione |
+| **Brotli** | Compressione |
+| **libjpeg-turbo** | Immagini JPEG |
+| **libtiff** | Immagini TIFF |
+| **liblzma** | Compressione LZMA |
+| **utf8proc** | Elaborazione UTF-8 |
+| **expat** | Parsing XML |
+| **date-tz** | Date e timezone |
+| **fmt** | Formattazione stringa |
+
+### Compilazione Dipendenze
+
+```bash
+# Inizializzazione vcpkg (una tantum)
+cd cie_sign_sdk
+./scripts/bootstrap_vcpkg.sh
+
+# Build dipendenze per host (macOS/Linux)
+./scripts/build_dependencies.sh
+
+# Build dipendenze per iOS
+./scripts/build_ios_dependencies.sh
+
+# Build dipendenze per Android
+./scripts/build_android_dependencies.sh
+```
+
+Le dipendenze vengono installate in `cie_sign_sdk/.vcpkg/installed/<triplet>/` con i seguenti triplet:
+
+| Triplet | Piattaforma | Note |
+|---------|-------------|------|
+| `arm64-osx` | macOS host | Build e test desktop |
+| `arm64-ios-17` | iOS device (arm64) | Include Crypto++ (preferito) |
+| `arm64-ios` | iOS device (arm64) | Senza Crypto++ |
+| `arm64-ios-simulator` | iOS simulator | |
+| `arm64-android` | Android arm64-v8a | |
+
+Lo script `build_ios_libs.sh` seleziona automaticamente il triplet piu completo disponibile (preferendo quelli con Crypto++).
 
 ---
 
@@ -411,7 +538,7 @@ Flutter App (Stream<NfcSessionEvent>)
   (macOS/Linux)    │             │
                    ▼             ▼
               arm64-v8a      arm64 device
-              (via Gradle)   (via xcframework)
+              (via Gradle)   (via podspec)
 ```
 
 ---
@@ -420,14 +547,16 @@ Flutter App (Stream<NfcSessionEvent>)
 
 - Firma PDF/PKCS#7 mock e via NFC reale (Android e iOS testati su device fisici)
 - **Verifica PIN via NFC** esposta da Flutter/Android/iOS con UI dedicata nell'app di esempio
-- **Estrazione campi firma** da PDF esistenti (`extractSignatureFields`) per analizzare quali campi sono disponibili e quali sono già firmati
+- **Estrazione campi firma** da PDF esistenti (`extractSignatureFields`) per analizzare quali campi sono disponibili e quali sono gia firmati
+- **Firma testuale auto-generata** con `TextSignatureGenerator` che crea immagini firma dal nome del firmatario
 - **Widget firma a mano** (`CieHandSignature`) con supporto inline e fullscreen, configurazione completa e callback per l'immagine PNG
 - Gestione completa dell'apparenza grafica (firma disegnata, motivi, field IDs, posizionamento)
 - Tool CLI `pdf_signature_check` per estrarre i CMS da un PDF e validare il certificato utilizzato
 - Streaming eventi NFC (stato, ascolto, tag letto, completamento/cancellazione) consumabili dal front-end Flutter
 - Suite di test:
-  - `cie_sign_sdk` (C++) esercita sia il mock signer sia la nuova `cie_sign_verify_pin`
-  - `android/CieSignMockApp` instrumentation test genera PDF firmati anche su emulatori
+  - `cie_sign_sdk` (C++) esercita sia il mock signer sia la firma auto-generata
+  - `example-native-apps/android/CieSignMockApp` instrumentation test genera PDF firmati su emulatori
+  - `example-native-apps/ios/CieSignIosTests` XCTest per mock signing e bridge
   - `cie_sign_flutter` unit/widget test coprono MethodChannel, eventi e UI mock NFC
 
 ---
@@ -441,7 +570,7 @@ Flutter App (Stream<NfcSessionEvent>)
 | CMake | 3.15+ | `brew install cmake` |
 | Java | 17 | `brew install openjdk@17` |
 | Android SDK | API 34 | Android Studio |
-| Android NDK | r26 | Android Studio SDK Manager |
+| Android NDK | r26 (26.2.11394342) | Android Studio SDK Manager |
 | Flutter | 3.3+ | [flutter.dev](https://flutter.dev) |
 | Xcode | 15+ | App Store |
 | CocoaPods | latest | `sudo gem install cocoapods` |
@@ -451,10 +580,10 @@ Flutter App (Stream<NfcSessionEvent>)
 | Target | Comando | Note |
 |--------|---------|------|
 | **Core host** | `cd cie_sign_sdk && cmake -B build/host && cmake --build build/host && ctest --test-dir build/host --output-on-failure` | Produce librerie + `pdf_signature_check` |
-| **Android SDK/app** | `cd android && JAVA_HOME=<jdk17> ./gradlew CieSignMockApp:connectedDebugAndroidTest` | Richiede emulator API34 con NFC |
+| **Android native** | `cd example-native-apps/android && JAVA_HOME=<jdk17> ./gradlew :CieSignMockApp:connectedDebugAndroidTest` | Richiede emulator API34 |
+| **iOS native** | `xcodebuild test -project example-native-apps/ios/CieSignIosTests.xcodeproj -scheme CieSignIosTests -destination 'platform=iOS Simulator,name=iPhone 15'` | Mock-only |
 | **Flutter plugin** | `cd cie_sign_flutter && flutter test` | Unit/widget test |
-| **Flutter integration** | `cd cie_sign_flutter/example && flutter test integration_test/mock_nfc_ui_test.dart` | Test integrazione |
-| **iOS mock tests** | `cd ios && xcodebuild test -scheme CieSignIosTests -destination 'platform=iOS Simulator,name=iPhone 15'` | Mock-only |
+| **Flutter integration** | `cd cie_sign_flutter/example && flutter test integration_test/` | Test integrazione |
 
 ---
 
@@ -467,7 +596,7 @@ Flutter App (Stream<NfcSessionEvent>)
 1. **Xcode** installato con command line tools
 2. **Certificato sviluppatore** Apple configurato
 3. **iPhone** connesso via USB e "trusted"
-4. **Dipendenze native** in `cie_sign_sdk/Dependencies-ios/`
+4. **Dipendenze native** compilate (vedi sezione Compilazione Dipendenze)
 
 #### Metodo Rapido (Script)
 
@@ -490,9 +619,10 @@ Flutter App (Stream<NfcSessionEvent>)
 ```bash
 # 1. Compila librerie native per iOS arm64
 cd cie_sign_sdk
+TRIPLET="arm64-ios-17"  # o arm64-ios se non serve Crypto++
 cmake -B build/ios-arm64 \
   -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-arm64.cmake \
-  -DDEPENDENCIES_DIR="$(pwd)/Dependencies-ios" \
+  -DDEPENDENCIES_DIR="$(pwd)/.vcpkg/installed/$TRIPLET" \
   -DCIE_SIGN_SDK_SKIP_TESTS=ON
 cmake --build build/ios-arm64 --target ciesign_core -j8
 
@@ -544,7 +674,7 @@ adb devices
 
 ## Script Disponibili
 
-Gli script si trovano in `scripts/`:
+### Script di deploy (`scripts/`)
 
 | Script | Descrizione | Uso |
 |--------|-------------|-----|
@@ -552,48 +682,19 @@ Gli script si trovano in `scripts/`:
 | `deploy_ios_device.sh` | Build + deploy su iPhone | `./scripts/deploy_ios_device.sh [device_id] [--release]` |
 | `deploy_android_device.sh` | Build + deploy su Android | `./scripts/deploy_android_device.sh [device_id] [--release]` |
 
-### Esempi
+### Script SDK (`cie_sign_sdk/scripts/`)
 
-```bash
-# iOS
-./scripts/build_ios_libs.sh                    # Compila device + simulator
-./scripts/build_ios_libs.sh device             # Solo device fisico
-./scripts/deploy_ios_device.sh                 # Deploy debug
-./scripts/deploy_ios_device.sh --release       # Deploy release
-
-# Android
-./scripts/deploy_android_device.sh             # Deploy sul primo device
-./scripts/deploy_android_device.sh AE6RUT47    # Deploy su device specifico
-```
-
----
-
-## Strumenti Utili
-
-### Verifica PIN via NFC
-
-Nell'app esempio basta inserire il PIN e toccare "Verifica PIN" per avviare lo stesso flusso di lettura carta utilizzato dalla firma.
-
-### CLI `pdf_signature_check`
-
-```bash
-# Compila il tool
-cmake --build cie_sign_sdk/build/host --target pdf_signature_check
-
-# Esegui verifica
-./cie_sign_sdk/build/host/pdf_signature_check signed.pdf "CN atteso"
-```
-
-Utile per validare i PDF estratti dal device (`adb shell run-as ... cat > file.pdf`).
-
-### Deployment Android
-
-```bash
-# Build e deploy su device connesso
-cie_sign_flutter/scripts/deploy_android_device.sh <deviceId>
-```
-
-Compila le dipendenze native, installa l'esempio Flutter e apre logcat pronto per i test NFC.
+| Script | Descrizione |
+|--------|-------------|
+| `bootstrap_vcpkg.sh` | Inizializza vcpkg per la prima volta |
+| `build_dependencies.sh` | Compila tutte le dipendenze via vcpkg (host) |
+| `build_ios_dependencies.sh` | Compila dipendenze per iOS via vcpkg |
+| `build_android_dependencies.sh` | Compila dipendenze per Android via vcpkg |
+| `build_host.sh` | Build SDK per macOS/Linux |
+| `build_ios.sh` | Build SDK per iOS |
+| `build_ios_sdk.sh` | Pipeline completa build iOS |
+| `build_android.sh` | Build SDK per Android |
+| `package_ios_unified.sh` | Crea xcframework unificato |
 
 ---
 
@@ -660,35 +761,7 @@ class SignedPdfDocument {
 }
 ```
 
-**Esempio di utilizzo:**
-
-```dart
-// Firma il documento
-SignedPdfDocument signedDoc = await cieSign.signPdfWithNfc(
-  pdfBytes,
-  pin: pin,
-  appearance: appearance,
-);
-
-// Ispeziona il risultato
-print('Dimensione: ${signedDoc.formattedSize}');  // "1.5 MB"
-print('Valido: ${signedDoc.isValid}');            // true
-print('Firmato: ${signedDoc.signedAt}');          // 2024-01-15 10:30:00
-
-// Salva su file
-await signedDoc.saveToFile('/path/to/contratto_firmato.pdf');
-
-// Oppure salva in una directory con nome auto-generato
-await signedDoc.saveToDirectory('/documenti');
-// Crea: /documenti/signed_1705312200000.pdf
-
-// Accedi ai bytes grezzi se necessario
-Uint8List rawBytes = signedDoc.bytes;
-```
-
 ### Estrazione Campi Firma
-
-Prima di firmare, puoi analizzare il PDF per estrarre l'elenco dei campi firma disponibili:
 
 ```dart
 final cieSign = CieSignFlutter();
@@ -704,7 +777,7 @@ for (final field in fields) {
   print('  Firmato: ${field.isSigned}');
 }
 
-// Firma solo i campi selezionati (es. quelli non firmati)
+// Firma solo i campi non ancora firmati
 final selectedFieldIds = fields
     .where((f) => !f.isSigned)
     .map((f) => f.name)
@@ -722,20 +795,6 @@ final signedDoc = await cieSign.signPdfWithNfc(
 
 ### Classe `PdfSignatureFieldInfo`
 
-Rappresenta le informazioni su un campo firma estratto dal PDF.
-
-```dart
-class PdfSignatureFieldInfo {
-  final String name;       // Nome univoco del campo (es. "SignatureField1")
-  final int pageIndex;     // Indice della pagina (0-based)
-  final double left;       // Coordinata X in punti PDF
-  final double bottom;     // Coordinata Y in punti PDF
-  final double width;      // Larghezza in punti PDF
-  final double height;     // Altezza in punti PDF
-  final bool isSigned;     // true se il campo contiene già una firma
-}
-```
-
 | Campo | Tipo | Descrizione |
 |-------|------|-------------|
 | `name` | `String` | Nome univoco del campo (es. "SignatureField1") |
@@ -744,60 +803,7 @@ class PdfSignatureFieldInfo {
 | `bottom` | `double` | Coordinata Y in punti PDF |
 | `width` | `double` | Larghezza in punti PDF |
 | `height` | `double` | Altezza in punti PDF |
-| `isSigned` | `bool` | `true` se il campo contiene già una firma |
-
-**Metodi disponibili:**
-
-```dart
-// Crea da mappa (usato internamente dal MethodChannel)
-final field = PdfSignatureFieldInfo.fromMap(map);
-
-// Converte in mappa
-final map = field.toMap();
-
-// Supporta equality e hashCode
-field1 == field2;
-```
-
-**Esempio di flusso completo:**
-
-```dart
-// 1. Carica il PDF
-final pdfBytes = await File('documento.pdf').readAsBytes();
-
-// 2. Estrai i campi firma
-final fields = await cieSign.extractSignatureFields(pdfBytes);
-
-// 3. Mostra all'utente quali campi sono disponibili
-for (final field in fields) {
-  print('${field.name}: ${field.isSigned ? "già firmato" : "da firmare"}');
-}
-
-// 4. L'utente seleziona i campi da firmare
-final selectedFields = fields.where((f) => !f.isSigned).toList();
-
-// 5. Se non ci sono campi, la firma andrà in basso a destra dell'ultima pagina
-final appearance = selectedFields.isEmpty
-    ? PdfSignatureAppearance(
-        left: 0.55,
-        bottom: 0.05,
-        width: 0.40,
-        height: 0.10,
-      )
-    : PdfSignatureAppearance(
-        fieldIds: selectedFields.map((f) => f.name).toList(),
-      );
-
-// 6. Firma il documento
-final signedDoc = await cieSign.signPdfWithNfc(
-  pdfBytes,
-  pin: userPin,
-  appearance: appearance,
-);
-
-// 7. Salva il risultato
-await signedDoc.saveToFile('documento_firmato.pdf');
-```
+| `isSigned` | `bool` | `true` se il campo contiene gia una firma |
 
 ---
 
@@ -805,9 +811,7 @@ await signedDoc.saveToFile('documento_firmato.pdf');
 
 L'SDK include un widget Flutter per la visualizzazione e cattura di firme manoscritte.
 
-### Modalità Sola Lettura (default)
-
-Per default il widget mostra la firma in sola lettura. L'utente deve aprire la modalità fullscreen per modificarla:
+### Modalita Sola Lettura (default)
 
 ```dart
 import 'package:cie_sign_flutter/cie_sign_flutter.dart';
@@ -815,83 +819,53 @@ import 'package:cie_sign_flutter/cie_sign_flutter.dart';
 Uint8List? _signatureBytes;
 
 CieHandSignature(
-  signatureImage: _signatureBytes,  // Immagine corrente (o null)
-  readOnly: true,                   // Solo visualizzazione (default)
+  signatureImage: _signatureBytes,
+  readOnly: true,
   onSignatureSaved: (bytes) {
     setState(() => _signatureBytes = bytes);
   },
 )
 ```
 
-L'utente vede l'immagine (o un placeholder). Toccando il widget o il pulsante fullscreen può modificare la firma. Le modifiche sono applicate **solo al salvataggio**.
-
-### Modalità Disegno Diretto
-
-Per permettere il disegno diretto sul widget senza aprire fullscreen:
+### Modalita Disegno Diretto
 
 ```dart
 CieHandSignature(
-  readOnly: false,  // Permette disegno diretto
+  readOnly: false,
   onSignatureSaved: (bytes) => saveSignature(bytes),
   onSignatureCleared: () => clearSignature(),
 )
 ```
 
-### Configurazione Pulsanti
+### Configurazione Pulsanti e Fullscreen
 
 ```dart
 CieHandSignature(
   signatureImage: _signatureBytes,
   readOnly: true,
-
-  // Testi pulsanti (solo se readOnly=false)
-  clearButtonText: 'Cancella',
-  saveButtonText: 'Conferma',
-
-  // Pulsante fullscreen
   showFullscreenButton: true,
-  fullscreenTooltip: 'Modifica a tutto schermo',
-
-  // Configurazione dialog fullscreen
   fullscreenOrientation: SignatureOrientation.landscape,
   fullscreenTitle: 'Firma documento',
-  fullscreenSaveText: 'Salva',
-  fullscreenCancelText: 'Annulla',
-
-  // Placeholder personalizzato (quando non c'è firma)
   emptyPlaceholder: Text('Nessuna firma'),
+  onSignatureSaved: (bytes) => handleSignature(bytes),
 )
 ```
 
-### Flusso Fullscreen
-
-1. L'utente tocca il pulsante fullscreen (o il widget in readOnly mode)
-2. Si apre l'editor con la firma esistente (se presente)
-3. L'utente può disegnare o cancellare
-4. **Salva**: modifiche applicate, callback `onSignatureSaved` chiamata
-5. **Annulla**: modifiche scartate, firma originale preservata
+### Apertura Fullscreen Programmatica
 
 ```dart
-// Aprire fullscreen programmaticamente
 final bytes = await CieHandSignature.openFullscreen(
   context,
-  initialImage: _currentSignature,  // Immagine esistente da modificare
+  initialImage: _currentSignature,
   orientation: SignatureOrientation.landscape,
 );
 
 if (bytes != null && bytes.isNotEmpty) {
-  // Utente ha salvato una nuova firma
   setState(() => _signatureBytes = bytes);
-} else if (bytes != null && bytes.isEmpty) {
-  // Utente ha cancellato la firma e salvato
-  setState(() => _signatureBytes = null);
 }
-// Se bytes == null, utente ha annullato
 ```
 
 ### Configurazione Aspetto
-
-Personalizza l'aspetto del widget tramite `CieHandSignatureConfig`:
 
 ```dart
 CieHandSignature(
@@ -902,8 +876,6 @@ CieHandSignature(
     maxStrokeWidth: 5.0,
     outputWidth: 800,
     outputHeight: 300,
-    threshold: 2.5,
-    smoothRatio: 0.7,
   ),
   aspectRatio: 4.0,
   borderRadius: BorderRadius.circular(12),
@@ -953,67 +925,41 @@ if (signatureBytes != null && signatureBytes.isNotEmpty) {
 | `fullscreenTitle` | `String` | `'Firma qui'` | Titolo dialog fullscreen |
 | `emptyPlaceholder` | `Widget?` | icona+testo | Widget quando firma vuota |
 
-### Riferimento Configurazione
-
-| Proprietà | Tipo | Default | Descrizione |
-|-----------|------|---------|-------------|
-| `strokeColor` | `Color` | `Colors.black` | Colore del tratto |
-| `backgroundColor` | `Color` | `Color(0xFFF5F5F5)` | Colore di sfondo |
-| `minStrokeWidth` | `double` | `2.0` | Larghezza minima del tratto |
-| `maxStrokeWidth` | `double` | `6.0` | Larghezza massima del tratto |
-| `outputWidth` | `int` | `600` | Larghezza PNG in output |
-| `outputHeight` | `int` | `200` | Altezza PNG in output |
-| `threshold` | `double` | `3.0` | Soglia di movimento minimo |
-| `smoothRatio` | `double` | `0.65` | Ratio di smoothing curve |
-| `velocityRange` | `double` | `2.0` | Range sensibilità velocità |
-| `transparentBackground` | `bool` | `true` | Sfondo trasparente nel PNG |
-
 ---
 
 ## Posizionamento Firma PDF
 
-L'SDK supporta due modalità per posizionare la firma visiva nel documento PDF.
+L'SDK supporta due modalita per posizionare la firma visiva nel documento PDF.
 
-### Modalità 1: Firma su campi esistenti (consigliata)
+### Modalita 1: Firma su campi esistenti (consigliata)
 
-Se il PDF contiene già campi firma predefiniti, specificare i nomi dei campi tramite `fieldIds`:
+Se il PDF contiene gia campi firma predefiniti, specificare i nomi dei campi tramite `fieldIds`:
 
 ```dart
 final appearance = PdfSignatureAppearance(
-  fieldIds: ['SignatureField1', 'SignatureField2'],  // Firma questi campi nell'ordine
-  signatureImageBytes: signatureImage,               // Immagine PNG/JPEG della firma
+  fieldIds: ['SignatureField1', 'SignatureField2'],
+  signatureImageBytes: signatureImage,
   reason: 'Approvazione documento',
   location: 'Roma, Italia',
   name: 'Mario Rossi',
 );
 ```
 
-**Comportamento**:
-- La firma viene apposta **solo** sui campi specificati, nell'ordine indicato
-- La posizione e dimensione sono quelle definite nel PDF originale
-- Se un campo non esiste o è già firmato, viene restituito un errore
+### Modalita 2: Creazione nuovo campo firma
 
-### Modalità 2: Creazione nuovo campo firma
-
-Se `fieldIds` non è specificato o è vuoto, l'SDK crea un nuovo campo firma:
+Se `fieldIds` non e specificato o e vuoto, l'SDK crea un nuovo campo firma:
 
 ```dart
 final appearance = PdfSignatureAppearance(
-  // Coordinate frazionali (0-1) rispetto alla pagina
-  pageIndex: 0,      // Pagina (0 = prima, default: ultima se non specificato)
-  left: 0.20,        // 20% dalla sinistra
-  bottom: 0.10,      // 10% dal basso (vicino al margine inferiore)
-  width: 0.50,       // 50% della larghezza pagina
-  height: 0.15,      // 15% dell'altezza pagina
+  pageIndex: 0,
+  left: 0.20,
+  bottom: 0.10,
+  width: 0.50,
+  height: 0.15,
   signatureImageBytes: signatureImage,
   reason: 'Firma con CIE',
 );
 ```
-
-**Comportamento**:
-- Se esistono campi firma vuoti nel PDF: vengono firmati automaticamente (solo Android)
-- Se non esistono campi firma: viene creato un nuovo campo sulla **ultima pagina** (fallback)
-- Se `pageIndex > 0`: viene usata la pagina specificata
 
 ### Sistema di Coordinate
 
@@ -1021,137 +967,37 @@ Le coordinate usano il sistema **frazionale** (valori da 0 a 1):
 
 ```
                     Pagina PDF (612 x 792 pt)
-    ┌─────────────────────────────────────────────┐
-    │                                             │  top = 1.0
-    │                                             │
-    │    ┌─────────────────────────┐              │
-    │    │                         │              │
-    │    │    CAMPO FIRMA          │              │  bottom = 0.65
-    │    │    (left=0.20, w=0.50)  │              │  (65% dal basso)
-    │    │                         │              │
-    │    └─────────────────────────┘              │
-    │         height = 0.20                       │
-    │                                             │
-    │                                             │
-    └─────────────────────────────────────────────┘
-   left=0                                    right=1.0
-        └─ left=0.20 (20% dalla sinistra)
-```
-
-| Parametro | Tipo | Descrizione | Esempio |
-|-----------|------|-------------|---------|
-| `pageIndex` | `int` | Indice pagina (0-based). Se 0 e nessun fieldIds, usa ultima pagina | `0` |
-| `left` | `double` | Posizione X come frazione (0-1) della larghezza pagina | `0.20` = 20% |
-| `bottom` | `double` | Posizione Y come frazione (0-1) dell'altezza pagina (dal basso) | `0.10` = 10% |
-| `width` | `double` | Larghezza come frazione (0-1) della larghezza pagina | `0.50` = 50% |
-| `height` | `double` | Altezza come frazione (0-1) dell'altezza pagina | `0.15` = 15% |
-
-### Conversione a Punti PDF
-
-L'SDK converte automaticamente le coordinate frazionali in punti PDF:
-
-```
-Per una pagina Letter (612 x 792 pt):
-  left   = 0.20 × 612 = 122.4 pt
-  bottom = 0.10 × 792 =  79.2 pt
-  width  = 0.50 × 612 = 306.0 pt
-  height = 0.15 × 792 = 118.8 pt
+    +-------------------------------------------------+
+    |                                                 |  top = 1.0
+    |                                                 |
+    |    +-----------------------------+              |
+    |    |                             |              |
+    |    |    CAMPO FIRMA              |              |  bottom = 0.65
+    |    |    (left=0.20, w=0.50)      |              |
+    |    |                             |              |
+    |    +-----------------------------+              |
+    |         height = 0.20                           |
+    |                                                 |
+    +-------------------------------------------------+
+   left=0                                        right=1.0
 ```
 
 ### Parametri `PdfSignatureAppearance`
 
-```dart
-class PdfSignatureAppearance {
-  final int pageIndex;              // Pagina target (0 = prima, -1 o omesso = ultima)
-  final double left;                // Coordinata X (0-1)
-  final double bottom;              // Coordinata Y dal basso (0-1)
-  final double width;               // Larghezza (0-1)
-  final double height;              // Altezza (0-1)
-  final String? reason;             // Motivo della firma
-  final String? location;           // Luogo
-  final String? name;               // Nome firmatario
-  final List<String>? fieldIds;     // Nomi campi esistenti da firmare
-  final Uint8List? signatureImageBytes;  // Immagine firma PNG/JPEG
-}
-```
-
-### Logica di Selezione Pagina
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    INPUT                                     │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-              ┌─────────────────────────┐
-              │  fieldIds specificati?  │
-              └─────────────────────────┘
-                     │           │
-                    YES         NO
-                     │           │
-                     ▼           ▼
-          ┌──────────────┐  ┌────────────────────┐
-          │ Firma SOLO   │  │ Esistono campi     │
-          │ quei campi   │  │ firma vuoti?       │
-          │ (posizione   │  └────────────────────┘
-          │ dal PDF)     │       │           │
-          └──────────────┘      YES         NO
-                                 │           │
-                                 ▼           ▼
-                      ┌──────────────┐  ┌──────────────────┐
-                      │ Firma campi  │  │ pageIndex > 0?   │
-                      │ esistenti    │  └──────────────────┘
-                      │ (Android)    │       │           │
-                      └──────────────┘      YES         NO
-                                             │           │
-                                             ▼           ▼
-                                  ┌──────────────┐  ┌──────────────┐
-                                  │ Crea campo   │  │ Crea campo   │
-                                  │ su pagina    │  │ su ULTIMA    │
-                                  │ specificata  │  │ PAGINA       │
-                                  └──────────────┘  └──────────────┘
-```
-
-### Esempi Completi
-
-#### Firma su campo esistente
-```dart
-// Il PDF ha un campo "Firma_Direttore" predefinito
-final appearance = PdfSignatureAppearance(
-  fieldIds: ['Firma_Direttore'],
-  signatureImageBytes: await loadSignatureImage(),
-  reason: 'Approvazione definitiva',
-  name: 'Dott. Mario Rossi',
-);
-
-final signedPdf = await cieSign.signPdfWithNfc(pdfBytes, pin: pin, appearance: appearance);
-```
-
-#### Firma in basso a destra dell'ultima pagina
-```dart
-final appearance = PdfSignatureAppearance(
-  // Nessun fieldIds → crea nuovo campo sull'ultima pagina
-  left: 0.55,       // 55% dalla sinistra (verso destra)
-  bottom: 0.05,     // 5% dal basso (vicino al margine)
-  width: 0.40,      // 40% larghezza
-  height: 0.10,     // 10% altezza
-  signatureImageBytes: signatureImage,
-  reason: 'Firma digitale',
-  location: 'Milano',
-);
-```
-
-#### Firma al centro della prima pagina
-```dart
-final appearance = PdfSignatureAppearance(
-  pageIndex: 0,     // Prima pagina (esplicito)
-  left: 0.25,       // Centrato orizzontalmente
-  bottom: 0.40,     // Centrato verticalmente
-  width: 0.50,
-  height: 0.20,
-  signatureImageBytes: signatureImage,
-);
-```
+| Parametro | Tipo | Descrizione |
+|-----------|------|-------------|
+| `pageIndex` | `int` | Pagina target (0 = prima, omesso = ultima) |
+| `left` | `double` | Posizione X come frazione (0-1) |
+| `bottom` | `double` | Posizione Y dal basso come frazione (0-1) |
+| `width` | `double` | Larghezza come frazione (0-1) |
+| `height` | `double` | Altezza come frazione (0-1) |
+| `reason` | `String?` | Motivo della firma |
+| `location` | `String?` | Luogo |
+| `name` | `String?` | Nome firmatario |
+| `fieldIds` | `List<String>?` | Nomi campi esistenti da firmare |
+| `signatureImageBytes` | `Uint8List?` | Immagine firma PNG/JPEG |
+| `useAutoSignature` | `bool` | Genera firma testuale automatica dal nome |
+| `signerNameOverride` | `String?` | Override nome per firma auto-generata |
 
 ### API C++ Sottostante
 
@@ -1164,14 +1010,14 @@ typedef struct {
     const char *name;
     const uint8_t *signature_image;
     size_t signature_image_len;
-    uint32_t signature_image_width;   // 0 per PNG/JPEG (auto-detect)
-    uint32_t signature_image_height;  // 0 per PNG/JPEG (auto-detect)
+    uint32_t signature_image_width;
+    uint32_t signature_image_height;
     uint32_t page_index;
-    float left;                       // Coordinata frazionale 0-1
-    float bottom;                     // Coordinata frazionale 0-1
-    float width;                      // Coordinata frazionale 0-1
-    float height;                     // Coordinata frazionale 0-1
-    const char *const *field_ids;     // Array di nomi campi
+    float left;
+    float bottom;
+    float width;
+    float height;
+    const char *const *field_ids;
     size_t field_ids_len;
 } cie_pdf_options;
 ```
@@ -1182,24 +1028,24 @@ typedef struct {
 
 | Stato | Dettagli |
 |-------|----------|
-| ✅ Core C/C++ modernizzato | PoDoFo 1.x, toolkit mock, CLI, API `cie_sign_verify_pin` |
-| ✅ Plugin Flutter headless | Mock signing, firma NFC Android, verifica PIN + eventi NFC |
-| ✅ Deploy iOS su device | App Flutter testata su iPhone fisico con mock signing funzionante |
-| ✅ Script automazione | `build_ios_libs.sh`, `deploy_ios_device.sh`, `deploy_android_device.sh` |
-| 🔄 Firma NFC iOS reale | CoreNFC bridge pronto, da testare con carta CIE fisica |
-| 🔜 Automazione CI | Pipeline macOS per build host + test Flutter/Android |
+| Core C/C++ modernizzato | PoDoFo 1.x, toolkit mock, CLI, API `cie_sign_verify_pin`, firma auto-generata |
+| Plugin Flutter headless | Mock signing, firma NFC Android, verifica PIN + eventi NFC |
+| SDK nativi standalone | Android SDK (Kotlin+JNI) e iOS SDK (ObjC++) separati dal plugin Flutter |
+| Deploy iOS su device | App Flutter testata su iPhone fisico con mock signing funzionante |
+| Script automazione | `build_ios_libs.sh`, `deploy_ios_device.sh`, `deploy_android_device.sh` |
+| Firma NFC iOS reale | CoreNFC bridge pronto, da testare con carta CIE fisica |
+| Automazione CI | Pipeline macOS per build host + test Flutter/Android |
 
 ---
 
 ## Contribuire
 
-1. Installa gli strumenti necessari (Xcode, Android SDK+NDK r26, Flutter SDK, vcpkg)
-2. Segui gli script in `cie_sign_sdk/scripts/` per compilare le dipendenze native (arm64 host/ios/android)
-3. Verifica sempre i test pertinenti (`ctest`, `flutter test`, `gradlew connectedAndroidTest`) prima della PR
-4. Non committare output generati (`Dependencies-*`, `.cxx`, `build/`, PDF firmati, ecc.)
-5. Documenta le novita qui nel README quando impattano il flusso (nuove API, strumenti, requisiti)
-
-Il contributo di ciascuno aiuta ad arrivare rapidamente all'integrazione completa, in particolare lato **CoreNFC iOS**: se hai accesso a dispositivi fisici o puoi lavorare sull'UX di avvicinamento carta, sei il benvenuto.
+1. Installa gli strumenti necessari (Xcode, Android SDK+NDK r26, Flutter SDK)
+2. Inizializza vcpkg: `cd cie_sign_sdk && ./scripts/bootstrap_vcpkg.sh`
+3. Compila le dipendenze per la piattaforma target (vedi sezione Compilazione Dipendenze)
+4. Verifica sempre i test pertinenti (`ctest`, `flutter test`, `gradlew connectedAndroidTest`) prima della PR
+5. Non committare output generati (`Dependencies-*`, `.cxx`, `build/`, PDF firmati, file `.a`)
+6. Documenta le novita qui nel README quando impattano il flusso (nuove API, strumenti, requisiti)
 
 ---
 

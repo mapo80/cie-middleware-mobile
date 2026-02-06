@@ -1,0 +1,10 @@
+# Dependencies (rebuilt with vcpkg via scripts/build_dependencies.sh)
+Dependencies/
+Dependencies-ios/
+Dependencies-ios-sim/
+Dependencies-ios-sim-x86/
+Dependencies-arm64-android/
+Dependencies-x64-android/
+
+# Build output
+build/

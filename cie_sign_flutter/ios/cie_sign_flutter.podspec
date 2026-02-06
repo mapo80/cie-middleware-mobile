@@ -3,6 +3,7 @@ require 'pathname'
 
 plugin_ios_dir = File.realpath(__dir__)
 sdk_root = File.expand_path('../../cie_sign_sdk', plugin_ios_dir)
+ios_sdk_root = File.expand_path('../../cie_sign_ios_sdk', plugin_ios_dir)
 vcpkg_device_lib = File.join(sdk_root, '.vcpkg/installed/arm64-ios/lib')
 sim_podofo_lib = File.join(sdk_root, 'Dependencies-ios-sim/podofo/lib')
 
@@ -94,8 +95,12 @@ Pod::Spec.new do |s|
   s.license          = { :type => 'MIT', :file => '../LICENSE' }
   s.author           = { 'IPZS' => 'info@ipzs.it' }
   s.source           = { :path => '.' }
-  s.source_files     = 'Classes/**/*'
-  s.private_header_files = 'Classes/Mock/**/*.h'
+  s.source_files     = [
+    'Classes/**/*',
+    "#{ios_sdk_root}/Bridge/**/*.{h,m,mm}",
+    "#{ios_sdk_root}/Mock/**/*.{h,cpp}"
+  ]
+  s.private_header_files = ["#{ios_sdk_root}/Mock/**/*.h"]
   s.dependency 'Flutter'
   s.platform         = :ios, '13.0'
 
@@ -103,7 +108,7 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
     'ARCHS[sdk=iphonesimulator*]' => 'arm64',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386 x86_64',
-    'HEADER_SEARCH_PATHS' => "$(inherited) #{header_paths}",
+    'HEADER_SEARCH_PATHS' => "$(inherited) #{header_paths} #{File.join(ios_sdk_root, 'Bridge')}",
     'CLANG_CXX_LANGUAGE_STANDARD' => 'gnu++17',
     'OTHER_CPLUSPLUSFLAGS' => '$(inherited) -std=gnu++17',
     'LIBRARY_SEARCH_PATHS[sdk=iphoneos*]' => ([ '$(inherited)' ] + device_lib_paths).join(' '),

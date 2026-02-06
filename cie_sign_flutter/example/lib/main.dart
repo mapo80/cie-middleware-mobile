@@ -9,6 +9,21 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'pdf_preview_page.dart';
 
+// Enterprise color scheme - PDF red theme
+class AppColors {
+  static const Color primary = Color(0xFFE53935); // PDF Red
+  static const Color primaryDark = Color(0xFFB71C1C);
+  static const Color accent = Color(0xFF424242);
+  static const Color background = Color(0xFFFAFAFA);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color textPrimary = Color(0xFF212121);
+  static const Color textSecondary = Color(0xFF757575);
+  static const Color border = Color(0xFFE0E0E0);
+  static const Color success = Color(0xFF43A047);
+  static const Color warning = Color(0xFFFB8C00);
+  static const Color divider = Color(0xFFEEEEEE);
+}
+
 void runCieSignApp({
   bool enablePdfView = true,
   Future<Uint8List> Function()? loadSamplePdf,
@@ -61,9 +76,12 @@ class _MyAppState extends State<MyApp> {
   /// List of available sample PDFs
   static const List<SamplePdfItem> _availablePdfs = [
     SamplePdfItem(name: 'Sample.pdf', assetPath: 'assets/sample.pdf'),
+    SamplePdfItem(
+        name: 'Contratto Multi-pagina',
+        assetPath: 'assets/multipage_contract.pdf'),
   ];
 
-  String _status = 'Premi il pulsante per firmare il PDF di esempio.';
+  String _status = 'Seleziona un documento e procedi con la firma.';
   String? _outputPath;
   bool _busy = false;
   Uint8List? _signatureImage;
@@ -81,6 +99,9 @@ class _MyAppState extends State<MyApp> {
 
   /// Selected field IDs to sign (checkboxlist state)
   Set<String> _selectedFieldIds = {};
+
+  /// Current signature type selection
+  SignatureType _signatureType = SignatureType.manual;
 
   @override
   void initState() {
@@ -102,18 +123,16 @@ class _MyAppState extends State<MyApp> {
         setState(() {
           _signatureFields = fields;
           // Pre-select unsigned fields
-          _selectedFieldIds = fields
-              .where((f) => !f.isSigned)
-              .map((f) => f.name)
-              .toSet();
+          _selectedFieldIds =
+              fields.where((f) => !f.isSigned).map((f) => f.name).toSet();
           if (fields.isNotEmpty) {
             final unsigned = fields.where((f) => !f.isSigned).length;
             final signed = fields.length - unsigned;
             _status =
-                'PDF caricato: ${fields.length} campi firma trovati ($unsigned da firmare, $signed firmati).';
+                '${fields.length} campi firma rilevati ($unsigned da firmare, $signed firmati)';
           } else {
             _status =
-                'PDF caricato: nessun campo firma trovato. La firma sarà posizionata in basso a destra dell\'ultima pagina.';
+                'Nessun campo firma nel documento. La firma verra posizionata automaticamente.';
           }
         });
       }
@@ -122,7 +141,7 @@ class _MyAppState extends State<MyApp> {
         setState(() {
           _signatureFields = [];
           _selectedFieldIds = {};
-          _status = 'Errore nel caricamento del PDF: $err';
+          _status = 'Errore nel caricamento: $err';
         });
       }
     }
@@ -180,45 +199,35 @@ class _MyAppState extends State<MyApp> {
         final status = event.status;
         String? message;
         if (status == 'not_supported') {
-          message = 'NFC non supportato su questo dispositivo.';
+          message = 'NFC non supportato su questo dispositivo';
         } else if (status == 'disabled') {
-          message = 'Attiva l\'NFC per procedere con la firma.';
+          message = 'Attivare NFC per procedere';
         } else if (status == 'ready') {
-          message = 'NFC pronto. Premi “Firma con NFC” per iniziare.';
+          message = 'NFC pronto';
         }
         if (message != null) {
-          final text = message;
-          setState(() {
-            _status = text;
-          });
+          setState(() => _status = message!);
         }
         break;
       case NfcSessionEventType.listening:
-        setState(() {
-          _status = 'In ascolto... avvicina la CIE al lettore.';
-        });
+        setState(() => _status = 'In attesa della CIE...');
         break;
       case NfcSessionEventType.tag:
-        setState(() {
-          _status = 'Carta rilevata, autenticazione in corso...';
-        });
+        setState(() => _status = 'Autenticazione in corso...');
         break;
       case NfcSessionEventType.completed:
-        setState(() {
-          _status = 'Sessione NFC completata.';
-        });
+        setState(() => _status = 'Operazione completata');
         break;
       case NfcSessionEventType.canceled:
         setState(() {
           _busy = false;
-          _status = 'Sessione NFC annullata.';
+          _status = 'Operazione annullata';
         });
         break;
       case NfcSessionEventType.error:
         setState(() {
           _busy = false;
-          _status =
-              event.message ?? 'Errore NFC: ${event.code ?? 'sconosciuto'}';
+          _status = event.message ?? 'Errore NFC: ${event.code ?? 'sconosciuto'}';
         });
         break;
     }
@@ -234,14 +243,14 @@ class _MyAppState extends State<MyApp> {
       return cached;
     }
     throw StateError(
-      'Per procedere devi prima disegnare e salvare la tua firma.',
+      'Firma grafica non disponibile. Disegnare la firma o selezionare "Automatica".',
     );
   }
 
   void _onSignatureSaved(Uint8List pngBytes) {
     setState(() {
       _signatureImage = pngBytes;
-      _status = 'Firma salvata. Ora puoi firmare il PDF.';
+      _status = 'Firma grafica acquisita';
     });
     _persistSignatureImage(pngBytes);
   }
@@ -250,32 +259,6 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _signatureImage = null;
     });
-  }
-
-  Future<void> _openFullscreenSignature() async {
-    final navContext = _navigatorKey.currentContext;
-    if (navContext == null) return;
-
-    final bytes = await CieHandSignature.openFullscreen(
-      navContext,
-      initialImage: _signatureImage,
-      config: const CieHandSignatureConfig(
-        strokeColor: Colors.black,
-        outputWidth: 600,
-        outputHeight: 200,
-      ),
-      orientation: SignatureOrientation.landscape,
-      title: 'Firma qui',
-      saveButtonText: 'Salva',
-      cancelButtonText: 'Annulla',
-    );
-
-    if (bytes != null && bytes.isNotEmpty && mounted) {
-      _onSignatureSaved(bytes);
-    } else if (bytes != null && bytes.isEmpty && mounted) {
-      // User cleared the signature and saved
-      _onSignatureCleared();
-    }
   }
 
   Future<void> _persistSignatureImage(Uint8List image) async {
@@ -295,9 +278,7 @@ class _MyAppState extends State<MyApp> {
       final target = File('${cacheDir.path}/$fileName');
       await target.writeAsBytes(await File(path).readAsBytes(), flush: true);
       if (mounted) {
-        setState(() {
-          _viewerPath = target.path;
-        });
+        setState(() => _viewerPath = target.path);
       } else {
         _viewerPath = target.path;
       }
@@ -307,41 +288,46 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-
   Future<PdfSignatureAppearance> _buildAppearance() async {
-    final image = await _resolveSignatureImage();
+    Uint8List? image;
+    bool useAutoSignature = false;
 
-    // If user selected specific fields, use them
+    if (_signatureType == SignatureType.manual) {
+      image = await _resolveSignatureImage();
+    } else if (_signatureType == SignatureType.automatic) {
+      useAutoSignature = true;
+    }
+
     if (_selectedFieldIds.isNotEmpty) {
       return PdfSignatureAppearance(
-        reason: 'Flutter demo',
-        location: 'Mobile SDK',
+        reason: 'Firma digitale',
+        location: 'CIE Sign SDK',
         name: 'CIE Sign',
         fieldIds: _selectedFieldIds.toList(),
         signatureImageBytes: image,
+        useAutoSignature: useAutoSignature,
       );
     }
 
-    // No fields selected: sign at bottom-right of last page
-    // pageIndex: 0 with no fieldIds defaults to last page in the SDK
     return PdfSignatureAppearance(
-      pageIndex: 0, // Will use last page when no fieldIds specified
-      left: 0.55, // 55% from left (toward right)
-      bottom: 0.05, // 5% from bottom (near margin)
-      width: 0.40, // 40% width
-      height: 0.10, // 10% height
-      reason: 'Flutter demo',
-      location: 'Mobile SDK',
+      pageIndex: 0,
+      left: 0.55,
+      bottom: 0.05,
+      width: 0.40,
+      height: 0.10,
+      reason: 'Firma digitale',
+      location: 'CIE Sign SDK',
       name: 'CIE Sign',
       fieldIds: null,
       signatureImageBytes: image,
+      useAutoSignature: useAutoSignature,
     );
   }
 
   Future<void> _runMockSign() async {
     setState(() {
       _busy = true;
-      _status = 'Firma mock in corso...';
+      _status = 'Elaborazione in corso...';
       _outputPath = null;
     });
 
@@ -361,8 +347,8 @@ class _MyAppState extends State<MyApp> {
         _busy = false;
         _outputPath = output.path;
         _status = header.startsWith('%PDF')
-            ? 'Firma mock completata (${signed.sizeInBytes} bytes).'
-            : 'Output non riconosciuto.';
+            ? 'Documento firmato (${signed.sizeInBytes} bytes)'
+            : 'Errore: output non valido';
       });
       if (mounted) {
         await _showPdfPreview(output.path);
@@ -370,7 +356,7 @@ class _MyAppState extends State<MyApp> {
     } on StateError catch (err) {
       setState(() {
         _busy = false;
-        _status = err.message ?? 'Firma non disponibile.';
+        _status = err.message ?? 'Operazione non disponibile';
       });
     } catch (err) {
       setState(() {
@@ -383,15 +369,13 @@ class _MyAppState extends State<MyApp> {
   Future<void> _runSignWithNfc() async {
     final pin = _pinController.text.trim();
     if (pin.length != 8) {
-      setState(() {
-        _status = 'Inserisci un PIN di 8 cifre.';
-      });
+      setState(() => _status = 'Inserire PIN di 8 cifre');
       return;
     }
 
     setState(() {
       _busy = true;
-      _status = 'Avvicina la CIE al lettore NFC...';
+      _status = 'Avvicinare la CIE al dispositivo...';
       _outputPath = null;
     });
 
@@ -410,7 +394,7 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         _busy = false;
         _outputPath = output.path;
-        _status = 'Firma con NFC completata (${signed.sizeInBytes} bytes).';
+        _status = 'Firma completata (${signed.sizeInBytes} bytes)';
       });
       if (mounted) {
         await _showPdfPreview(output.path);
@@ -418,12 +402,12 @@ class _MyAppState extends State<MyApp> {
     } on StateError catch (err) {
       setState(() {
         _busy = false;
-        _status = err.message ?? 'Firma non disponibile.';
+        _status = err.message ?? 'Operazione non disponibile';
       });
     } catch (err) {
       setState(() {
         _busy = false;
-        _status = 'Errore NFC: $err';
+        _status = 'Errore: $err';
       });
     }
   }
@@ -431,15 +415,13 @@ class _MyAppState extends State<MyApp> {
   Future<void> _runVerifyPin() async {
     final pin = _pinController.text.trim();
     if (pin.length != 8) {
-      setState(() {
-        _status = 'Inserisci un PIN di 8 cifre.';
-      });
+      setState(() => _status = 'Inserire PIN di 8 cifre');
       return;
     }
 
     setState(() {
       _busy = true;
-      _status = 'Avvicina la CIE al lettore per verificare il PIN...';
+      _status = 'Verifica PIN in corso...';
     });
 
     try {
@@ -447,52 +429,50 @@ class _MyAppState extends State<MyApp> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _status = verified
-            ? 'PIN verificato correttamente.'
-            : 'Verifica PIN non riuscita.';
+        _status = verified ? 'PIN verificato' : 'PIN non valido';
       });
       await _showPinResultDialog(
         verified,
-        verified
-            ? 'La verifica del PIN è andata a buon fine.'
-            : 'Il PIN inserito non è stato accettato.',
+        verified ? 'Verifica completata con successo.' : 'PIN non accettato.',
       );
     } on PlatformException catch (err) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _status = 'Verifica PIN fallita: ${err.message ?? err.code}.';
+        _status = 'Errore: ${err.message ?? err.code}';
       });
-      await _showPinResultDialog(
-        false,
-        'Verifica PIN fallita: ${err.message ?? err.code}.',
-      );
+      await _showPinResultDialog(false, 'Errore: ${err.message ?? err.code}');
     } catch (err) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _status = 'Verifica PIN fallita: $err';
+        _status = 'Errore: $err';
       });
-      await _showPinResultDialog(
-        false,
-        'Verifica PIN fallita: $err',
-      );
+      await _showPinResultDialog(false, 'Errore: $err');
     }
   }
 
   Future<void> _showPinResultDialog(bool success, String message) async {
     final ctx = _navigatorKey.currentContext ?? context;
-    if (!mounted || ctx == null) return;
+    if (!mounted) return;
     await showDialog<void>(
       context: ctx,
       builder: (context) {
         return AlertDialog(
-          title: Text(success ? 'Verifica PIN riuscita' : 'Verifica PIN fallita'),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: Text(
+            success ? 'Verifica Completata' : 'Verifica Fallita',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
           content: Text(message),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              ),
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: const Text('CHIUDI'),
             ),
           ],
         );
@@ -505,113 +485,178 @@ class _MyAppState extends State<MyApp> {
     if (canceled) {
       setState(() {
         _busy = false;
-        _status = 'Sessione NFC annullata.';
+        _status = 'Operazione annullata';
       });
     }
   }
 
-  /// Builds the PDF selector dropdown with preview button
-  Widget _buildPdfSelector() {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Documento PDF',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<SamplePdfItem>(
-                    key: const Key('pdfDropdown'),
-                    value: _selectedPdf,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                    items: _availablePdfs.map((pdf) {
-                      return DropdownMenuItem<SamplePdfItem>(
-                        value: pdf,
-                        child: Text(pdf.name),
-                      );
-                    }).toList(),
-                    onChanged: _busy ? null : _onPdfSelected,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  key: const Key('previewPdfButton'),
-                  onPressed: _busy || _selectedPdfBytes == null
-                      ? null
-                      : _previewSelectedPdf,
-                  icon: const Icon(Icons.visibility),
-                  label: const Text('Anteprima'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Shows preview of the currently selected (unsigned) PDF
   Future<void> _previewSelectedPdf() async {
     if (_selectedPdfBytes == null) return;
 
     try {
-      // Write the PDF to a temp file for preview
       final cacheDir = await getTemporaryDirectory();
       final fileName = 'preview_${DateTime.now().millisecondsSinceEpoch}.pdf';
       final tempFile = File('${cacheDir.path}/$fileName');
       await tempFile.writeAsBytes(_selectedPdfBytes!, flush: true);
       await _showPdfPreview(tempFile.path);
     } catch (err) {
-      setState(() {
-        _status = 'Errore nell\'anteprima: $err';
-      });
+      setState(() => _status = 'Errore anteprima: $err');
     }
   }
 
-  /// Builds the signature fields checkboxlist
+  void _toggleAllFields() {
+    setState(() {
+      final unsignedFields =
+          _signatureFields.where((f) => !f.isSigned).map((f) => f.name).toSet();
+      if (_selectedFieldIds.length == unsignedFields.length) {
+        _selectedFieldIds.clear();
+      } else {
+        _selectedFieldIds = unsignedFields;
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // UI COMPONENTS
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  Widget _buildSectionHeader(String title, {IconData? icon}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({required String title, IconData? icon, required Widget child}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: AppColors.primary),
+                  const SizedBox(width: 10),
+                ],
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPdfSelector() {
+    return _buildSection(
+      title: 'Documento',
+      icon: Icons.description_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<SamplePdfItem>(
+                      key: const Key('pdfDropdown'),
+                      value: _selectedPdf,
+                      isExpanded: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textPrimary,
+                      ),
+                      items: _availablePdfs.map((pdf) {
+                        return DropdownMenuItem<SamplePdfItem>(
+                          value: pdf,
+                          child: Text(pdf.name, overflow: TextOverflow.ellipsis),
+                        );
+                      }).toList(),
+                      onChanged: _busy ? null : _onPdfSelected,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: _busy || _selectedPdfBytes == null ? null : _previewSelectedPdf,
+                icon: const Icon(Icons.visibility_outlined),
+                tooltip: 'Anteprima',
+                style: IconButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  disabledForegroundColor: AppColors.border,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSignatureFieldsList() {
     if (_signatureFields.isEmpty) {
-      return Card(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      return _buildSection(
+        title: 'Campi Firma',
+        icon: Icons.edit_document,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: const Row(
             children: [
-              const Text(
-                'Campi Firma',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.grey),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Nessun campo firma trovato nel PDF.\n'
-                        'La firma sarà posizionata in basso a destra dell\'ultima pagina.',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  ],
+              Icon(Icons.info_outline, size: 18, color: AppColors.textSecondary),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Nessun campo firma nel documento.\nLa firma sara posizionata automaticamente.',
+                  style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                 ),
               ),
             ],
@@ -620,116 +665,261 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final unsignedCount = _signatureFields.where((f) => !f.isSigned).length;
+
+    return _buildSection(
+      title: 'Campi Firma',
+      icon: Icons.edit_document,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${_selectedFieldIds.length}/$unsignedCount selezionati',
+                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: _busy ? null : _toggleAllFields,
+                child: Text(
+                  _selectedFieldIds.length == unsignedCount
+                      ? 'Deseleziona tutti'
+                      : 'Seleziona tutti',
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ..._signatureFields.map((field) => _buildFieldItem(field)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFieldItem(PdfSignatureFieldInfo field) {
+    final isSelected = _selectedFieldIds.contains(field.name);
+    final isDisabled = field.isSigned || _busy;
+
+    return InkWell(
+      onTap: isDisabled
+          ? null
+          : () {
+              setState(() {
+                if (isSelected) {
+                  _selectedFieldIds.remove(field.name);
+                } else {
+                  _selectedFieldIds.add(field.name);
+                }
+              });
+            },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.05) : AppColors.background,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Campi Firma',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  width: 1.5,
                 ),
-                TextButton(
-                  onPressed: _busy ? null : _toggleAllFields,
-                  child: Text(
-                    _selectedFieldIds.length ==
-                            _signatureFields.where((f) => !f.isSigned).length
-                        ? 'Deseleziona tutti'
-                        : 'Seleziona tutti',
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, size: 14, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    field.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: field.isSigned ? AppColors.textSecondary : AppColors.textPrimary,
+                    ),
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Pag. ${field.pageIndex + 1}  |  ${field.width.toStringAsFixed(0)} x ${field.height.toStringAsFixed(0)} pt',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: field.isSigned
+                    ? AppColors.success.withOpacity(0.1)
+                    : AppColors.warning.withOpacity(0.1),
+              ),
+              child: Text(
+                field.isSigned ? 'FIRMATO' : 'DA FIRMARE',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: field.isSigned ? AppColors.success : AppColors.warning,
+                  letterSpacing: 0.5,
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              '${_selectedFieldIds.length} campo/i selezionato/i',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            ..._signatureFields.map((field) => _buildFieldCheckbox(field)),
           ],
         ),
       ),
     );
   }
 
-  /// Builds a single checkbox item for a signature field
-  Widget _buildFieldCheckbox(PdfSignatureFieldInfo field) {
-    final isSelected = _selectedFieldIds.contains(field.name);
-    final isDisabled = field.isSigned || _busy;
-
-    return CheckboxListTile(
-      key: Key('fieldCheckbox_${field.name}'),
-      value: isSelected,
-      onChanged: isDisabled
-          ? null
-          : (bool? value) {
-              setState(() {
-                if (value == true) {
-                  _selectedFieldIds.add(field.name);
-                } else {
-                  _selectedFieldIds.remove(field.name);
-                }
-              });
-            },
-      title: Text(
-        field.name,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: field.isSigned ? Colors.grey : null,
-        ),
+  Widget _buildPinSection() {
+    return _buildSection(
+      title: 'Autenticazione',
+      icon: Icons.lock_outline,
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              key: const Key('pinField'),
+              controller: _pinController,
+              maxLength: 8,
+              enabled: !_busy,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              style: const TextStyle(fontSize: 14, letterSpacing: 2),
+              decoration: InputDecoration(
+                labelText: 'PIN CIE',
+                labelStyle: const TextStyle(color: AppColors.textSecondary),
+                counterText: '',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+                enabledBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero,
+                  borderSide: BorderSide(color: AppColors.border),
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.zero,
+                  borderSide: BorderSide(color: AppColors.primary),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          _buildOutlinedButton(
+            onPressed: _busy ? null : _runVerifyPin,
+            label: 'Verifica',
+          ),
+        ],
       ),
-      subtitle: Text(
-        'Pagina ${field.pageIndex + 1} • '
-        '${field.width.toStringAsFixed(0)}×${field.height.toStringAsFixed(0)} pt • '
-        '${field.isSigned ? "Già firmato" : "Da firmare"}',
-        style: TextStyle(
-          fontSize: 12,
-          color: field.isSigned ? Colors.grey : Colors.grey.shade600,
-        ),
-      ),
-      secondary: Icon(
-        field.isSigned ? Icons.check_circle : Icons.edit_note,
-        color: field.isSigned ? Colors.green : Colors.orange,
-      ),
-      controlAffinity: ListTileControlAffinity.leading,
-      dense: true,
     );
   }
 
-  /// Toggles selection of all unsigned fields
-  void _toggleAllFields() {
-    setState(() {
-      final unsignedFields =
-          _signatureFields.where((f) => !f.isSigned).map((f) => f.name).toSet();
-      if (_selectedFieldIds.length == unsignedFields.length) {
-        // All selected -> deselect all
-        _selectedFieldIds.clear();
-      } else {
-        // Not all selected -> select all unsigned
-        _selectedFieldIds = unsignedFields;
-      }
-    });
+  Widget _buildSignatureTypeSelector() {
+    return _buildSection(
+      title: 'Aspetto Firma',
+      icon: Icons.brush_outlined,
+      child: Column(
+        children: [
+          _buildRadioOption(
+            value: SignatureType.manual,
+            title: 'Firma manuale',
+            subtitle: 'Disegna la tua firma',
+          ),
+          _buildRadioOption(
+            value: SignatureType.automatic,
+            title: 'Firma automatica',
+            subtitle: 'Generata dal nominativo CIE',
+          ),
+          _buildRadioOption(
+            value: SignatureType.none,
+            title: 'Solo crittografica',
+            subtitle: 'Nessun aspetto grafico',
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildViewer() {
-    final path = _viewerPath ?? _outputPath;
-    if (path == null) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
-        child: ElevatedButton.icon(
-          key: const Key('openViewerButton'),
-          onPressed: () => _showPdfPreview(path),
-          icon: const Icon(Icons.picture_as_pdf),
-          label: const Text('Apri il PDF firmato'),
+  Widget _buildRadioOption({
+    required SignatureType value,
+    required String title,
+    required String subtitle,
+  }) {
+    final isSelected = _signatureType == value;
+    return InkWell(
+      onTap: _busy ? null : () => setState(() => _signatureType = value),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                  width: 1.5,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -737,59 +927,268 @@ class _MyAppState extends State<MyApp> {
 
   Widget _buildSignaturePad() {
     final hasSavedSignature = _signatureImage != null;
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Firma con il dito',
-              style: TextStyle(fontWeight: FontWeight.bold),
+    return _buildSection(
+      title: 'Firma Grafica',
+      icon: Icons.draw_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CieHandSignature(
+            key: const Key('signaturePad'),
+            signatureImage: _signatureImage,
+            readOnly: true,
+            config: const CieHandSignatureConfig(
+              strokeColor: AppColors.textPrimary,
+              backgroundColor: AppColors.background,
+              minStrokeWidth: 2.0,
+              maxStrokeWidth: 6.0,
+              outputWidth: 600,
+              outputHeight: 200,
             ),
-            const SizedBox(height: 8),
-            CieHandSignature(
-              key: const Key('signaturePad'),
-              signatureImage: _signatureImage,
-              readOnly: true,
-              config: const CieHandSignatureConfig(
-                strokeColor: Colors.black,
-                backgroundColor: Color(0xFFF5F5F5),
-                minStrokeWidth: 2.0,
-                maxStrokeWidth: 6.0,
-                outputWidth: 600,
-                outputHeight: 200,
+            onSignatureSaved: _onSignatureSaved,
+            showFullscreenButton: true,
+            fullscreenOrientation: SignatureOrientation.landscape,
+            fullscreenTitle: 'Firma',
+            fullscreenSaveText: 'Salva',
+            fullscreenCancelText: 'Annulla',
+            emptyPlaceholder: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.touch_app_outlined, size: 28, color: AppColors.textSecondary),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tocca per disegnare la firma',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                ],
               ),
-              onSignatureSaved: _onSignatureSaved,
-              showFullscreenButton: true,
-              fullscreenOrientation: SignatureOrientation.landscape,
-              fullscreenTitle: 'Firma qui',
-              fullscreenSaveText: 'Salva',
-              fullscreenCancelText: 'Annulla',
-              emptyPlaceholder: const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.draw_outlined, size: 32, color: Colors.grey),
-                    SizedBox(height: 8),
-                    Text(
-                      'Tocca per creare la firma',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ],
+            ),
+          ),
+          if (hasSavedSignature) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
+                const SizedBox(width: 6),
+                const Text(
+                  'Firma acquisita',
+                  style: TextStyle(fontSize: 12, color: AppColors.success),
                 ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildPrimaryButton(
+                onPressed: _busy ? null : _runMockSign,
+                label: _busy ? 'Elaborazione...' : 'FIRMA (TEST)',
+                icon: Icons.edit_outlined,
               ),
             ),
-            if (hasSavedSignature) ...[
-              const SizedBox(height: 8),
-              const Text(
-                'Firma salvata (sarà applicata al PDF)',
-                style: TextStyle(fontSize: 12, color: Colors.green),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildPrimaryButton(
+                onPressed: _busy ? null : _runSignWithNfc,
+                label: _busy ? 'Elaborazione...' : 'FIRMA NFC',
+                icon: Icons.contactless_outlined,
               ),
-            ],
+            ),
           ],
         ),
+        if (_busy) ...[
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                padding: EdgeInsets.zero,
+              ),
+              onPressed: _cancelNfcSigning,
+              child: const Text('Annulla operazione'),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildOutputSection() {
+    final path = _viewerPath ?? _outputPath;
+    if (path == null) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.success.withOpacity(0.05),
+        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle, size: 18, color: AppColors.success),
+              const SizedBox(width: 8),
+              const Text(
+                'Documento firmato',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildOutlinedButton(
+                  onPressed: () => _showPdfPreview(path),
+                  icon: Icons.visibility_outlined,
+                  label: 'Apri',
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: _outputPath!));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Percorso copiato'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.copy_outlined, size: 20),
+                tooltip: 'Copia percorso',
+                style: IconButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required VoidCallback? onPressed,
+    required String label,
+    IconData? icon,
+  }) {
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.border,
+          disabledForegroundColor: AppColors.textSecondary,
+          elevation: 0,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 18),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutlinedButton({
+    required VoidCallback? onPressed,
+    required String label,
+    IconData? icon,
+  }) {
+    return SizedBox(
+      height: 40,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.border),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBar() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: [
+          if (_busy)
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            )
+          else
+            const Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _status,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -798,104 +1197,56 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: false,
+        fontFamily: 'Roboto',
+        scaffoldBackgroundColor: AppColors.background,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: false,
+          titleTextStyle: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
       home: Scaffold(
-        appBar: AppBar(title: const Text('CIE Sign Flutter Mock')),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_status, key: const Key('statusText')),
-              const SizedBox(height: 12),
-              if (_busy) ...[
-                const Center(child: CircularProgressIndicator()),
-                const SizedBox(height: 12),
-              ],
-              // PDF Selector dropdown with preview button
-              _buildPdfSelector(),
-              // Signature fields checkboxlist
-              _buildSignatureFieldsList(),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      key: const Key('pinField'),
-                      controller: _pinController,
-                      maxLength: 8,
-                      enabled: !_busy,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'PIN (8 cifre)',
-                        counterText: '',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    key: const Key('verifyPinButton'),
-                    onPressed: _busy ? null : _runVerifyPin,
-                    child: const Text('Verifica PIN'),
-                  ),
-                ],
-              ),
-              if (_outputPath != null) ...[
-                const SizedBox(height: 8),
-                Row(
+        appBar: AppBar(
+          title: const Text('CIE Sign'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.help_outline, size: 22),
+              onPressed: () {},
+              tooltip: 'Guida',
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _buildStatusBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: SelectableText(
-                        'File salvato in\n$_outputPath',
-                        key: const Key('outputPathText'),
-                      ),
-                    ),
-                    IconButton(
-                      key: const Key('copyPathButton'),
-                      icon: const Icon(Icons.copy),
-                      tooltip: 'Copia percorso',
-                      onPressed: () {
-                        final path = _outputPath!;
-                        Clipboard.setData(ClipboardData(text: path));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Percorso copiato')),
-                        );
-                      },
-                    ),
+                    _buildPdfSelector(),
+                    _buildSignatureFieldsList(),
+                    _buildPinSection(),
+                    _buildSignatureTypeSelector(),
+                    if (_signatureType == SignatureType.manual) _buildSignaturePad(),
+                    _buildOutputSection(),
+                    _buildActionButtons(),
+                    const SizedBox(height: 24),
                   ],
                 ),
-              ],
-              _buildSignaturePad(),
-              _buildViewer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      key: const Key('mockSignButton'),
-                      onPressed: _busy ? null : _runMockSign,
-                      child: Text(_busy ? 'In corso...' : 'Firma PDF (mock)'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      key: const Key('nfcSignButton'),
-                      onPressed: _busy ? null : _runSignWithNfc,
-                      child: Text(_busy ? 'In corso...' : 'Firma con NFC'),
-                    ),
-                  ),
-                ],
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _busy ? _cancelNfcSigning : null,
-                  child: const Text('Annulla NFC'),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
