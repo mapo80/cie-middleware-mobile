@@ -363,6 +363,21 @@ extern int podofo_run_all_tests(void);
     } else {
         NSLog(@"[CieSignFlutter] No signature image provided");
     }
+
+    // Auto-signature parameters
+    NSNumber *useAutoSignature = dict[@"useAutoSignature"];
+    if ([useAutoSignature isKindOfClass:[NSNumber class]]) {
+        params.useAutoSignature = useAutoSignature.boolValue;
+    }
+    NSString *signerNameOverride = dict[@"signerNameOverride"];
+    if ([signerNameOverride isKindOfClass:[NSString class]] && signerNameOverride.length > 0) {
+        params.signerNameOverride = signerNameOverride;
+    }
+    if (params.useAutoSignature) {
+        NSLog(@"[CieSignFlutter] Auto-signature enabled, override: %@",
+              params.signerNameOverride ?: @"(from certificate)");
+    }
+
     return params;
 }
 

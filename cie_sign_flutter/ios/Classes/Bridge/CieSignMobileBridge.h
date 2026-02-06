@@ -25,6 +25,8 @@ NS_SWIFT_NAME(CieSignPdfParameters)
 @property (nonatomic, strong, nullable) NSData *signatureImage;
 @property (nonatomic) NSUInteger signatureImageWidth;
 @property (nonatomic) NSUInteger signatureImageHeight;
+@property (nonatomic, assign) BOOL useAutoSignature;
+@property (nonatomic, copy, nullable) NSString *signerNameOverride;
 @end
 
 NS_SWIFT_NAME(CieSignMobileBridge)

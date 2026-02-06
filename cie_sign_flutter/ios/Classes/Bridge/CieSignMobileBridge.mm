@@ -276,6 +276,7 @@ static void ios_nfc_close(void *user_data) {
     std::string name(appearance.name.UTF8String ?: "");
 
     cie_sign_request request{};
+    memset(&request, 0, sizeof(request));  // Ensure all fields are zero-initialized
     request.input = static_cast<const uint8_t *>(pdf.bytes);
     request.input_len = pdf.length;
     request.pin = pinUtf8.c_str();
@@ -325,6 +326,20 @@ static void ios_nfc_close(void *user_data) {
               (unsigned int)appearance.signatureImageHeight);
     } else {
         NSLog(@"[CIE] No signature image to pass to C++");
+    }
+
+    // Auto-signature settings
+    request.pdf.use_auto_signature = appearance.useAutoSignature ? 1 : 0;
+    std::string signerNameOverrideUtf8;
+    if (appearance.signerNameOverride.length > 0) {
+        signerNameOverrideUtf8 = appearance.signerNameOverride.UTF8String ?: "";
+        request.pdf.signer_name_override = signerNameOverrideUtf8.c_str();
+    } else {
+        request.pdf.signer_name_override = nullptr;
+    }
+    if (appearance.useAutoSignature) {
+        NSLog(@"[CIE] Auto-signature enabled, override name: %@",
+              appearance.signerNameOverride ?: @"(from certificate)");
     }
 
     size_t capacity = pdf.length + 65536;
