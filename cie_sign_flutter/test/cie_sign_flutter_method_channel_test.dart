@@ -123,4 +123,107 @@ void main() {
     expect(events.first.type, NfcSessionEventType.state);
     await sub.cancel();
   });
+
+  group('error handling', () {
+    test('mockSignPdf throws StateError when response is null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      expect(
+        () => platform.mockSignPdf(Uint8List.fromList([1, 2, 3])),
+        throwsStateError,
+      );
+    });
+
+    test('signPdfWithNfc throws StateError when response is null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      expect(
+        () => platform.signPdfWithNfc(
+          Uint8List.fromList([1, 2, 3]),
+          pin: '1234',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('verifyPinWithNfc returns false when response is null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.verifyPinWithNfc(pin: '1234');
+      expect(result, isFalse);
+    });
+
+    test('cancelNfcSigning returns false when response is null', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result = await platform.cancelNfcSigning();
+      expect(result, isFalse);
+    });
+
+    test('extractSignatureFields returns empty list when response is null',
+        () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return null;
+      });
+
+      final result =
+          await platform.extractSignatureFields(Uint8List.fromList([1, 2, 3]));
+      expect(result, isEmpty);
+    });
+
+    test('extractSignatureFields parses valid response', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        return [
+          {
+            'name': 'Field1',
+            'pageIndex': 0,
+            'left': 100.0,
+            'bottom': 200.0,
+            'width': 150.0,
+            'height': 50.0,
+            'isSigned': false,
+          },
+          {
+            'name': 'Field2',
+            'pageIndex': 1,
+            'left': 50.0,
+            'bottom': 100.0,
+            'width': 200.0,
+            'height': 60.0,
+            'isSigned': true,
+          },
+        ];
+      });
+
+      final result =
+          await platform.extractSignatureFields(Uint8List.fromList([1, 2, 3]));
+      expect(result, hasLength(2));
+      expect(result[0].name, 'Field1');
+      expect(result[0].isSigned, isFalse);
+      expect(result[1].name, 'Field2');
+      expect(result[1].isSigned, isTrue);
+    });
+  });
+
+  group('watchNfcEvents caching', () {
+    test('returns same stream on multiple calls', () async {
+      final stream1 = platform.watchNfcEvents();
+      final stream2 = platform.watchNfcEvents();
+      expect(identical(stream1, stream2), isTrue);
+    });
+  });
 }

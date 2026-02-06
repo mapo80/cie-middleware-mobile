@@ -51,6 +51,80 @@ void main() {
       expect(notified, isTrue);
       controller.dispose();
     });
+
+    test('hasStrokes returns false when empty', () {
+      final controller = CieHandSignatureController();
+      expect(controller.hasStrokes, isFalse);
+      controller.dispose();
+    });
+
+    test('internal getter returns HandSignatureControl', () {
+      final controller = CieHandSignatureController();
+      expect(controller.internal, isNotNull);
+      controller.dispose();
+    });
+
+    test('config getter returns current config', () {
+      final controller = CieHandSignatureController();
+      expect(controller.config, isNotNull);
+      expect(controller.config.strokeColor, const Color(0xFF000000));
+      controller.dispose();
+    });
+
+    test('config setter updates config and notifies', () {
+      final controller = CieHandSignatureController();
+      var notified = false;
+      controller.addListener(() => notified = true);
+
+      controller.config =
+          controller.config.copyWith(strokeColor: const Color(0xFFFF0000));
+
+      expect(notified, isTrue);
+      expect(controller.config.strokeColor, const Color(0xFFFF0000));
+      controller.dispose();
+    });
+
+    test('config setter does not notify if same config', () {
+      final controller = CieHandSignatureController();
+      var notifyCount = 0;
+      controller.addListener(() => notifyCount++);
+
+      // Set same config should not notify
+      controller.config = controller.config;
+
+      expect(notifyCount, 0);
+      controller.dispose();
+    });
+
+    test('toPngBytes returns null when empty', () async {
+      final controller = CieHandSignatureController();
+      final bytes = await controller.toPngBytes();
+      expect(bytes, isNull);
+      controller.dispose();
+    });
+
+    test('toPngBytes returns null after dispose', () async {
+      final controller = CieHandSignatureController(
+        initialImage: Uint8List.fromList([1, 2, 3]),
+      );
+      controller.dispose();
+      final bytes = await controller.toPngBytes();
+      expect(bytes, isNull);
+    });
+
+    test('clear does nothing after dispose', () {
+      final controller = CieHandSignatureController();
+      controller.dispose();
+      // Should not throw
+      controller.clear();
+    });
+
+    test('dispose can be called multiple times', () {
+      final controller = CieHandSignatureController();
+      controller.dispose();
+      // Second dispose should not throw
+      controller.dispose();
+    });
   });
 
   group('CieHandSignature - ReadOnly Mode', () {
